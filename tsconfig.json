@@ -1,0 +1,33 @@
+/*
+File    : tsconfig.json
+Author  : 김민정
+Create  : 2026-04-20
+Description : TypeScript 컴파일러 설정 및 경로 별칭(@) 정의
+
+Modification History:
+    - 2026-04-20 (김민정) : 초기 프로젝트 설정 및 Vite 환경에 맞춘 옵션 지정
+ */
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "types": ["vite/client"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "**/*.ts", "**/*.tsx"]
+}

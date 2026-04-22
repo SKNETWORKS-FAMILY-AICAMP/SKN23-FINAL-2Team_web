@@ -1,6 +1,20 @@
+/*
+File    : src/app/App.tsx
+Author  : 김민정
+Create  : 2026-04-20
+Description : 랜딩 페이지 및 도메인별(건축, 전기, 소방, 배관) 지능화 서비스 소개 컴포넌트
+
+Modification History:
+    - 2026-04-21 (김민정) : AuthContext 연동 및 네비게이션 개선
+    - 2026-04-22 (김민정) : 요금제 정보 기반 동적 내비게이션 및 비로그인 플로우 최적화
+    - 2026-04-23 (김민정) : 랜딩 페이지 섹션 모듈화 및 스크롤 섹션 유지 보강
+ */
 import { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import Spline from '@splinetool/react-spline';
+import { useAuth } from './context/AuthContext';
+
 import {
   Building2,
   Zap,
@@ -13,7 +27,16 @@ import {
   Terminal
 } from 'lucide-react';
 
+// Modular Landing Components
+import { LandingNav } from '@/app/components/landing/LandingNav';
+import { LandingFeatures } from '@/app/components/landing/LandingFeatures';
+import { LandingWorkflow } from '@/app/components/landing/LandingWorkflow';
+import { LandingPricing } from '@/app/components/landing/LandingPricing';
+import { LandingFooter } from '@/app/components/landing/LandingFooter';
+
 const domains = [
+  // ... (omitted for brevity, keeping the domains array as is in the file)
+  // ... (domains array remains the same)
   {
     id: 'architecture',
     icon: Building2,
@@ -68,6 +91,8 @@ const domains = [
 export default function App() {
   const [activeDomain, setActiveDomain] = useState(0);
   const { scrollYProgress } = useScroll();
+  const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
 
   const heroOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.95]);
@@ -93,30 +118,9 @@ export default function App() {
 
   return (
     <div className="dark min-h-screen bg-[#0e0e0e] text-zinc-100">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-[100] border-b border-white/5 bg-zinc-950/60 backdrop-blur-xl">
-        <div className="flex justify-between items-center w-full px-8 py-4 max-w-screen-2xl mx-auto">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-8 bg-[#0071e3]"></span>
-            <span className="text-xl font-bold tracking-tighter text-zinc-100">Cadence AI</span>
-          </div>
-          <div className="hidden md:flex gap-10">
-            <a href="#features" className="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest">Features</a>
-            <a href="#showcase" className="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest">Showcase</a>
-            <a href="#how-it-works" className="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest">How It Works</a>
-            <a href="#pricing" className="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest">Pricing</a>
-          </div>
-          <button className="bg-[#0071e3] text-white px-6 py-2 rounded-lg font-semibold hover:brightness-110 transition-all text-sm">
-            시작하기
-          </button>
-        </div>
-      </nav>
+      <LandingNav isAuthenticated={isAuthenticated} user={user} logout={logout} />
 
-      {/* 💡 구조 변경 포인트 1: 스크롤 애니메이션 전용 컨테이너 (1000vh)
-        이 영역 안에서만 Hero와 Showcase가 화면에 꽉 찬 채로 고정(sticky)됩니다.
-      */}
       <div className="h-[1000vh] relative z-10">
-
         {/* HERO */}
         <section
           className="sticky top-0 h-screen flex items-center justify-center overflow-hidden"
@@ -257,6 +261,7 @@ export default function App() {
             </div>
 
             <div className="hidden md:block w-7/12 h-[70vh] relative pl-12">
+              <div className="absolute inset-0 bg-[#0071e3]/10 blur-[120px] rounded-full"></div>
               <div className="w-full h-full rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#0071e3]/10 to-transparent z-10"></div>
 
@@ -297,200 +302,13 @@ export default function App() {
         </section>
       </div>
 
-      {/* 💡 구조 변경 포인트 2: 일반 컨텐츠 영역 (main)
-        1000vh 스크롤이 완전히 끝난 후, 이전 섹션들을 덮으면서 자연스럽게 올라옵니다.
-      */}
       <main className="relative z-30 bg-[#1f1f1f]">
-
-        {/* HOW IT WORKS */}
-        <section className="py-32" id="how-it-works">
-          <div className="max-w-7xl mx-auto px-8">
-            <div className="flex flex-col md:flex-row gap-20 items-center">
-              <div className="w-full md:w-1/2 space-y-12">
-                <motion.h2
-                  className="text-4xl md:text-5xl font-black text-white tracking-tight"
-                  initial={{ opacity: 0, x: -30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6 }}
-                >
-                  How It Works
-                </motion.h2>
-
-                <div className="space-y-8">
-                  {[
-                    { num: '01', title: '도면 데이터 로드', desc: 'AutoCAD 플러그인을 통해 현재 도면의 객체 데이터와 레이어 정보를 sLLM 엔진으로 실시간 전송합니다.' },
-                    { num: '02', title: '지능형 법규 분석', desc: '학습된 전문 지식 데이터베이스와 실시간 법령 API를 대조하여 설계상의 오류 및 위반 사항을 초 단위로 식별합니다.' },
-                    { num: '03', title: '원클릭 자동 보정', desc: '발견된 문제를 해결하기 위한 최적의 대안을 제안하며, 승인 시 도면 내 객체들을 표준에 맞게 즉시 재배치합니다.' }
-                  ].map((step, idx) => (
-                    <motion.div
-                      key={step.num}
-                      className="flex gap-6 group"
-                      initial={{ opacity: 0, x: -30 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.6, delay: idx * 0.2 }}
-                    >
-                      <div className="w-12 h-12 rounded-full border border-[#0071e3]/30 flex items-center justify-center text-[#abc7ff] font-bold shrink-0 group-hover:bg-[#0071e3] group-hover:text-white transition-all">
-                        {step.num}
-                      </div>
-                      <div>
-                        <h4 className="text-xl font-bold text-white mb-2">{step.title}</h4>
-                        <p className="text-zinc-400">{step.desc}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-
-              <motion.div
-                className="w-full md:w-1/2"
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
-              >
-                <div className="aspect-video bg-white/[0.03] backdrop-blur-xl border border-[#0071e3]/30 rounded-2xl overflow-hidden relative">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Terminal className="w-32 h-32 text-[#0071e3]/20" />
-                  </div>
-                  <div className="absolute bottom-4 left-4 right-4 bg-black/60 p-4 rounded-lg font-mono text-[10px] text-[#abc7ff]">
-                    &gt; [SYSTEM] Analyzing 1,240 entities...<br />
-                    &gt; [ALERT] Minimum clearance violation at Sect-B<br />
-                    &gt; [PROPOSAL] Auto-shifting node 42 by 200mm... [Y/n]
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* PRICING */}
-        <section className="bg-[#131313] py-32 border-t border-white/5" id="pricing">
-          <div className="max-w-7xl mx-auto px-8">
-            <motion.div
-              className="text-center mb-24"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <h2 className="text-4xl md:text-5xl font-black text-white mb-6">Pricing Plans</h2>
-              <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
-                평생 소장을 통한 영구적 사용부터 대규모 팀을 위한 유연한 구독 모델까지, <br className="hidden md:block" />
-                비즈니스 규모에 맞는 최적의 플랜을 선택하세요.
-              </p>
-              <div className="w-16 h-1 bg-[#0071e3] mx-auto mt-8"></div>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <motion.div
-                className="bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] p-10 rounded-2xl flex flex-col hover:border-white/20 transition-all group"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-bold">Basic</h3>
-                  <span className="text-[10px] bg-white/10 px-2 py-1 rounded text-zinc-400 font-bold tracking-widest uppercase">One-time</span>
-                </div>
-                <div className="text-4xl font-black mb-1">₩300,000</div>
-                <div className="text-sm text-[#abc7ff] font-medium mb-8">(평생 소장)</div>
-                <ul className="space-y-4 text-zinc-400 text-sm mb-12 flex-grow">
-                  <li className="flex items-start gap-3"><CheckCircle className="w-5 h-5 text-[#abc7ff] shrink-0" /><span>평생 5개의 API 키 지원</span></li>
-                  <li className="flex items-start gap-3"><CheckCircle className="w-5 h-5 text-[#abc7ff] shrink-0" /><span>4개 전 도메인 지원 (건축, 전기, 소방, 배관)</span></li>
-                  <li className="flex items-start gap-3"><CheckCircle className="w-5 h-5 text-[#abc7ff] shrink-0" /><span>14일 무료 체험 가능</span></li>
-                  <li className="flex items-start gap-3"><CheckCircle className="w-5 h-5 text-[#abc7ff] shrink-0" /><span>기본 법규 DB 업데이트 포함</span></li>
-                </ul>
-                <button className="w-full py-4 border border-white/10 rounded-lg hover:bg-white/5 transition-all uppercase tracking-widest text-xs font-bold">시작하기</button>
-              </motion.div>
-
-              <motion.div
-                className="bg-zinc-900/40 backdrop-blur-xl border border-[#0071e3] p-10 rounded-2xl flex flex-col relative scale-105 shadow-[0_0_40px_rgba(0,113,227,0.2)]"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-              >
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0071e3] text-white px-4 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">Best for Teams</div>
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-bold">Pro</h3>
-                  <span className="text-[10px] bg-[#0071e3]/20 px-2 py-1 rounded text-[#abc7ff] font-bold tracking-widest uppercase">Subscription</span>
-                </div>
-                <div className="text-4xl font-black mb-1">₩100,000</div>
-                <div className="text-sm text-zinc-400 mb-8">/ 월</div>
-                <ul className="space-y-4 text-zinc-200 text-sm mb-12 flex-grow">
-                  <li className="flex items-start gap-3"><ShieldCheck className="w-5 h-5 text-[#47e266] shrink-0" /><span>Basic의 모든 혜택 포함</span></li>
-                  <li className="flex items-start gap-3"><ShieldCheck className="w-5 h-5 text-[#47e266] shrink-0" /><span>5개 초과 API 키 무제한 등록 및 관리</span></li>
-                  <li className="flex items-start gap-3"><ShieldCheck className="w-5 h-5 text-[#47e266] shrink-0" /><span>시방서 무제한 저장 공간 (DB 구축)</span></li>
-                  <li className="flex items-start gap-3"><ShieldCheck className="w-5 h-5 text-[#47e266] shrink-0" /><span>우선 순위 기술 지원</span></li>
-                  <li className="flex items-start gap-3"><ShieldCheck className="w-5 h-5 text-[#47e266] shrink-0" /><span>팀 협업 기능 제공</span></li>
-                </ul>
-                <button className="w-full py-4 bg-[#0071e3] text-white rounded-lg hover:brightness-110 transition-all shadow-xl shadow-[#0071e3]/20 uppercase tracking-widest text-xs font-bold">구독 시작</button>
-              </motion.div>
-
-              <motion.div
-                className="bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] p-10 rounded-2xl flex flex-col hover:border-white/20 transition-all"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-bold">Enterprise</h3>
-                  <span className="text-[10px] bg-white/10 px-2 py-1 rounded text-zinc-400 font-bold tracking-widest uppercase">Custom</span>
-                </div>
-                <div className="text-4xl font-black mb-8">별도 문의</div>
-                <ul className="space-y-4 text-zinc-400 text-sm mb-12 flex-grow">
-                  <li className="flex items-start gap-3"><CheckCircle className="w-5 h-5 text-[#abc7ff] shrink-0" /><span>온프레미스 설치 및 보안망 지원</span></li>
-                  <li className="flex items-start gap-3"><CheckCircle className="w-5 h-5 text-[#abc7ff] shrink-0" /><span>기업 전용 sLLM 튜닝 및 학습</span></li>
-                  <li className="flex items-start gap-3"><CheckCircle className="w-5 h-5 text-[#abc7ff] shrink-0" /><span>24/7 전담 엔지니어 지원</span></li>
-                  <li className="flex items-start gap-3"><CheckCircle className="w-5 h-5 text-[#abc7ff] shrink-0" /><span>API 통합 커스텀 개발</span></li>
-                </ul>
-                <button className="w-full py-4 border border-white/10 rounded-lg hover:bg-white/5 transition-all uppercase tracking-widest text-xs font-bold">Contact Sales</button>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
+        <LandingFeatures />
+        <LandingWorkflow />
+        <LandingPricing isAuthenticated={isAuthenticated} user={user} />
       </main>
 
-      {/* Footer */}
-      <footer className="bg-zinc-950 border-t border-white/5 py-24 px-8 relative z-30">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-16">
-          <div className="max-w-md space-y-6">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-8 bg-zinc-600"></span>
-              <span className="text-xl font-black tracking-tight text-white">Cadence AI</span>
-            </div>
-            <p className="text-zinc-500 text-sm leading-relaxed">
-              Cadence는 CAD와 Essence(본질)을 합쳐 도면의 흐름을 완벽하게 관리한다는 의미를 가지며, 단순한 플러그인을 넘어, 도면 위의 모든 엔티티를 법적 관점에서 이해하는 지능형 코파일럿입니다.
-            </p>
-            <div className="text-[10px] uppercase tracking-widest text-zinc-600">© 2026 skn23 family networks inc. Seoul, KR.</div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-12">
-            <div className="space-y-4">
-              <h5 className="text-white text-sm font-bold uppercase tracking-widest">Solutions</h5>
-              <nav className="flex flex-col gap-2">
-                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Architecture</a>
-                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Electrical</a>
-                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Fire Safety</a>
-                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Piping</a>
-              </nav>
-            </div>
-            <div className="space-y-4">
-              <h5 className="text-white text-sm font-bold uppercase tracking-widest">Company</h5>
-              <nav className="flex flex-col gap-2">
-                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Documentation</a>
-                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Safety Standard</a>
-                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Terms</a>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }
