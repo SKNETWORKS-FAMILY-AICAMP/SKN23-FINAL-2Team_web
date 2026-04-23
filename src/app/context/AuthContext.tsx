@@ -26,7 +26,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   login: (email: string, password?: string) => Promise<void>;
-  register: (companyName: string, email: string, password: string) => Promise<void>;
+  register: (companyName: string, email: string, password: string, certificateFile: File) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   refreshToken: () => Promise<void>;
@@ -158,12 +158,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (companyName: string, email: string, password: string) => {
+  const register = async (companyName: string, email: string, password: string, certificateFile: File) => {
     try {
+      const formData = new FormData();
+      formData.append('company_name', companyName);
+      formData.append('email', email);
+      formData.append('password', password);
+      formData.append('certificate', certificateFile);
+
       const response = await fetch('http://localhost:8000/api/v1/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company_name: companyName, email, password })
+        body: formData,
+        // FormData를 보낼 때는 Content-Type을 수동으로 설정하지 않아야 브라우저가 바운더리를 포함해 자동 설정합니다.
       });
       const data = await response.json();
 

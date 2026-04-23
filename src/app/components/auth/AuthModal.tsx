@@ -94,7 +94,7 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
             return;
           }
 
-          await register(formData.companyName, formData.email, formData.password);
+          await register(formData.companyName, formData.email, formData.password, formData.certificateFile);
           setSuccessMessage('회원가입 신청이 완료되었습니다!');
         } else {
           if (!formData.email || !formData.password) {

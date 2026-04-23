@@ -12,7 +12,7 @@ Modification History:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import server
-from .routers import auth, payments, keys, usage, devices, support
+from .routers import auth, payments, keys, usage, devices, support, admin
 
 app = FastAPI(title="Cadence AI Backend")
 
@@ -32,6 +32,7 @@ app.include_router(keys.router)
 app.include_router(usage.router)
 app.include_router(devices.router)
 app.include_router(support.router)
+app.include_router(admin.router)
 
 @app.get("/")
 def read_root():

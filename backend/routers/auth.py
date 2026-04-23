@@ -8,12 +8,15 @@ Modification History:
     - 2026-04-23 (김민정) : 모듈화 작업으로 인한 파일 분리 생성
     - 2026-04-23 (김민정) : 관리자 계정 권한 부여
 """
-from fastapi import APIRouter, Depends, HTTPException, Body
+import os
+import boto3
+from fastapi import APIRouter, Depends, HTTPException, Body, UploadFile, File, Form
 from sqlalchemy.orm import Session
+from datetime import datetime
 from jose import jwt
 import traceback
 
-from .. import models, schemas, auth
+from .. import models, schemas, auth_utils as auth
 from ..database import get_db
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -39,20 +42,53 @@ def refresh_token(payload: dict = Body(...), db: Session = Depends(get_db)):
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
+# AWS S3 초기화
+s3_client = boto3.client(
+    "s3",
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    region_name=os.getenv("AWS_REGION", "ap-northeast-2")
+)
+BUCKET_NAME = os.getenv("AWS_S3_BUCKET_NAME", "skn23-final-2team")
+
 @router.post("/register", response_model=schemas.LoginResponse)
-def register(org_data: schemas.OrgCreate, db: Session = Depends(get_db)):
+async def register(
+    company_name: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    certificate: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
     try:
-        db_org = db.query(models.Organization).filter(models.Organization.admin_email == org_data.admin_email).first()
+        db_org = db.query(models.Organization).filter(models.Organization.admin_email == email).first()
         if db_org:
             raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
         
-        hashed_pwd = auth.get_password_hash(org_data.password)
+        # 1. S3 업로드 처리
+        file_ext = certificate.filename.split(".")[-1]
+        s3_key = f"business_regs/{email}_{int(datetime.now().timestamp())}.{file_ext}"
+        
+        try:
+            s3_client.upload_fileobj(
+                certificate.file,
+                BUCKET_NAME,
+                s3_key,
+                ExtraArgs={"ContentType": certificate.content_type}
+            )
+            s3_url = f"https://{BUCKET_NAME}.s3.{os.getenv('AWS_REGION', 'ap-northeast-2')}.amazonaws.com/{s3_key}"
+        except Exception as s3_err:
+            print(f"[S3 Upload Error] {str(s3_err)}")
+            raise HTTPException(status_code=500, detail="사업자등록증 업로드 중 오류가 발생했습니다.")
+
+        # 2. DB 저장
+        hashed_pwd = auth.get_password_hash(password)
         new_org = models.Organization(
-            admin_email=org_data.admin_email,
+            admin_email=email,
             password_hash=hashed_pwd,
-            company_name=org_data.company_name or "Unknown",
+            company_name=company_name,
             plan="none",
             verification_status="pending",
+            business_reg_s3_url=s3_url,
             is_active=True
         )
         db.add(new_org)
@@ -74,9 +110,9 @@ def register(org_data: schemas.OrgCreate, db: Session = Depends(get_db)):
                 "plan": new_org.plan
             }
         }
+    except HTTPException: raise
     except Exception as e:
         db.rollback()
-        print(f"[Register Error] {str(e)}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"회원 등록 실패: {str(e)}")
 
