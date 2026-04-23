@@ -137,6 +137,7 @@ export default function ProfilePage() {
   const [devices, setDevices] = useState<any[]>([
     { id: 1, hostname: 'MacBook-Pro', os_user: 'admin', is_active: true, last_seen: new Date().toISOString() }
   ]);
+  const [newGeneratedKey, setNewGeneratedKey] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchApiKeys = async () => {
@@ -269,6 +270,8 @@ export default function ProfilePage() {
       const res = await fetch('http://localhost:8000/api/v1/keys/generate', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
       if (res.ok) {
         toast.success('새 API 키가 생성되었습니다.');
+        const data = await res.json();
+        setNewGeneratedKey(data.key);
         fetchKeys();
       } else {
         const data = await res.json();
@@ -420,6 +423,43 @@ export default function ProfilePage() {
                 <input type="email" value={deleteEmail} onChange={(e) => setDeleteEmail(e.target.value)} className="w-full bg-zinc-900 border border-white/10 p-3 rounded-xl text-sm outline-none" placeholder="이메일 확인" />
                 <input type="password" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} className="w-full bg-zinc-900 border border-white/10 p-3 rounded-xl text-sm outline-none" placeholder="비밀번호 확인" />
                 <button onClick={handleDeleteAccountSubmit} className="w-full py-3 bg-red-500 text-white font-bold rounded-xl">탈퇴 신청</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {newGeneratedKey && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-3xl shadow-2xl p-8 space-y-6">
+              <div className="text-center space-y-2">
+                <div className="bg-[#47e266]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-8 h-8 text-[#47e266]" />
+                </div>
+                <h3 className="text-xl font-bold text-white">API 키 발급 완료</h3>
+                <p className="text-sm text-red-400 font-bold">이 키는 보안을 위해 지금 한 번만 표시됩니다.<br />반드시 안전한 곳에 복사해 두시기 바랍니다.</p>
+              </div>
+              <div className="bg-black/50 p-4 rounded-xl border border-white/10 break-all text-center font-mono text-white text-sm select-all">
+                {newGeneratedKey}
+              </div>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(newGeneratedKey);
+                    toast.success('API 키가 클립보드에 복사되었습니다.');
+                  }} 
+                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl border border-white/10 transition-colors"
+                >
+                  복사하기
+                </button>
+                <button 
+                  onClick={() => setNewGeneratedKey(null)} 
+                  className="flex-1 py-3 bg-[#0071e3] hover:bg-[#0071e3]/90 text-white font-bold rounded-xl transition-colors"
+                >
+                  확인 완료
+                </button>
               </div>
             </motion.div>
           </div>

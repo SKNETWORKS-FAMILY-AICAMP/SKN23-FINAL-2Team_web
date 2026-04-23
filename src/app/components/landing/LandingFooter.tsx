@@ -11,41 +11,39 @@ import React from 'react';
 
 export const LandingFooter: React.FC = () => {
   return (
-    <footer className="py-20 px-8 border-t border-white/5 bg-black">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-12">
-        <div className="space-y-6">
-          <div className="text-xl font-black tracking-tighter text-white">CADENCE AI</div>
-          <p className="text-zinc-500 text-sm max-w-xs leading-relaxed">
-            건축과 인공지능의 만남. 더 정확하고 빠른 설계를 위한 차세대 CAD 플랫폼.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-12">
-          <div className="space-y-4">
-            <h5 className="text-xs font-bold text-white uppercase tracking-widest">Platform</h5>
-            <ul className="space-y-2 text-sm text-zinc-500">
-              <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">API Reference</a></li>
-            </ul>
+      <footer className="bg-zinc-950 border-t border-white/5 py-24 px-8 relative z-30">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-16">
+          <div className="max-w-md space-y-6">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-8 bg-zinc-600"></span>
+              <span className="text-xl font-black tracking-tight text-white">Cadence AI</span>
+            </div>
+            <p className="text-zinc-500 text-sm leading-relaxed">
+              Cadence는 CAD와 Essence(본질)을 합쳐 도면의 흐름을 완벽하게 관리한다는 의미를 가지며, 단순한 플러그인을 넘어, 도면 위의 모든 엔티티를 법적 관점에서 이해하는 지능형 코파일럿입니다.
+            </p>
+            <div className="text-[10px] uppercase tracking-widest text-zinc-600">© 2026 skn23 family networks inc. Seoul, KR.</div>
           </div>
-          <div className="space-y-4">
-            <h5 className="text-xs font-bold text-white uppercase tracking-widest">Company</h5>
-            <ul className="space-y-2 text-sm text-zinc-500">
-              <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-            </ul>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-12">
+            <div className="space-y-4">
+              <h5 className="text-white text-sm font-bold uppercase tracking-widest">Solutions</h5>
+              <nav className="flex flex-col gap-2">
+                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Architecture</a>
+                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Electrical</a>
+                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Fire Safety</a>
+                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Piping</a>
+              </nav>
+            </div>
+            <div className="space-y-4">
+              <h5 className="text-white text-sm font-bold uppercase tracking-widest">Company</h5>
+              <nav className="flex flex-col gap-2">
+                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Documentation</a>
+                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Safety Standard</a>
+                <a href="#" className="text-zinc-600 text-xs hover:text-[#abc7ff] transition-colors">Terms</a>
+              </nav>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-zinc-600 font-medium tracking-widest uppercase">
-        <div>© 2026 CADENCE AI. ALL RIGHTS RESERVED.</div>
-        <div className="flex gap-8">
-          <a href="#" className="hover:text-white transition-colors">Twitter</a>
-          <a href="#" className="hover:text-white transition-colors">LinkedIn</a>
-          <a href="#" className="hover:text-white transition-colors">GitHub</a>
-        </div>
-      </div>
-    </footer>
+      </footer>
   );
 };

@@ -8,6 +8,7 @@ Modification History:
     - 2026-04-23 (김민정) : 모듈화 작업으로 인한 파일 분리 생성
  */
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MessageSquarePlus, Clock, CheckCircle2, ChevronRight, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -20,6 +21,8 @@ export const MyQnaTab: React.FC<MyQnaTabProps> = ({
   isLoadingQna,
   myTickets
 }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
       <div className="flex justify-between items-end">
@@ -27,7 +30,7 @@ export const MyQnaTab: React.FC<MyQnaTabProps> = ({
           <h2 className="text-2xl font-bold">1:1 문의 내역</h2>
           <p className="text-sm text-zinc-500 mt-1">도면 분석 오류 및 기술 지원 문의 현황입니다.</p>
         </div>
-        <button className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl text-sm font-bold transition-all border border-white/5">
+        <button onClick={() => navigate('/qna', { state: { tab: 'new' } })} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl text-sm font-bold transition-all border border-white/5">
           <MessageSquarePlus className="w-4 h-4" />
           신규 문의하기
         </button>
@@ -40,7 +43,7 @@ export const MyQnaTab: React.FC<MyQnaTabProps> = ({
           <div className="bg-zinc-900/30 border border-dashed border-white/10 p-16 rounded-3xl text-center">
             <HelpCircle className="w-10 h-10 text-zinc-700 mx-auto mb-4" />
             <p className="text-zinc-500 text-sm">문의 내역이 없습니다.</p>
-            <button className="mt-6 text-[#0071e3] text-sm font-bold hover:underline underline-offset-4">자주 묻는 질문(FAQ) 확인하기</button>
+            <button onClick={() => navigate('/faq')} className="mt-6 text-[#0071e3] text-sm font-bold hover:underline underline-offset-4">자주 묻는 질문(FAQ) 확인하기</button>
           </div>
         ) : (
           myTickets.map((ticket) => (
@@ -50,14 +53,14 @@ export const MyQnaTab: React.FC<MyQnaTabProps> = ({
             >
               <div className="flex items-center gap-5">
                 <div className={`p-3 rounded-xl ${
-                  ticket.status === 'resolved' ? 'bg-green-500/10 text-green-400' : 'bg-blue-500/10 text-blue-400'
+                  ticket.status === 'answered' ? 'bg-green-500/10 text-green-400' : 'bg-blue-500/10 text-blue-400'
                 }`}>
-                  {ticket.status === 'resolved' ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
+                  {ticket.status === 'answered' ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
                 </div>
                 <div>
                   <div className="flex items-center gap-3">
                     <span className="font-bold text-white group-hover:text-[#abc7ff] transition-colors">{ticket.title}</span>
-                    <span className="text-[10px] text-zinc-500 font-mono">{ticket.category}</span>
+                    <span className="text-[10px] text-zinc-500 font-mono">{ticket.type}</span>
                   </div>
                   <div className="text-xs text-zinc-500 mt-1.5 flex items-center gap-3">
                     <span>문의일: {format(new Date(ticket.created_at), 'yyyy-MM-dd HH:mm')}</span>

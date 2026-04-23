@@ -17,6 +17,7 @@ import QnAPage from "@/app/pages/QnAPage";
 import PaymentSuccessPage from "@/app/pages/PaymentSuccessPage";
 import PaymentFailPage from "@/app/pages/PaymentFailPage";
 import { AuthProvider } from "./app/context/AuthContext";
+import { AuthModal } from "@/app/components/auth/AuthModal";
 import { Toaster } from "./app/components/ui/sonner";
 import "./styles/index.css";
 
@@ -32,6 +33,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/qna" element={<QnAPage />} />
       </Routes>
+      <AuthModal />
       <Toaster />
     </AuthProvider>
   </BrowserRouter>

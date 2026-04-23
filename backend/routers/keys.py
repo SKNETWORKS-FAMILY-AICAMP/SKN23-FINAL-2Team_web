@@ -28,7 +28,22 @@ def generate_api_key(current_org: models.Organization = Depends(ensure_subscribe
 @router.get("")
 def get_api_keys(current_org: models.Organization = Depends(get_current_user), db: Session = Depends(get_db)):
     keys = db.query(models.License).filter(models.License.org_id == current_org.id).order_by(models.License.created_at.desc()).all()
-    return keys
+    
+    result = []
+    for k in keys:
+        # Convert SQLAlchemy model to dict
+        key_dict = {c.name: getattr(k, c.name) for c in k.__table__.columns}
+        
+        # Mask the api_key if it's long enough
+        if key_dict.get("api_key") and len(key_dict["api_key"]) > 8:
+            prefix = key_dict["api_key"][:3] # 'sk-'
+            suffix = key_dict["api_key"][-4:]
+            hidden_len = len(key_dict["api_key"]) - 7
+            key_dict["api_key"] = f"{prefix}{'*' * 24}{suffix}"
+            
+        result.append(key_dict)
+        
+    return result
 
 @router.delete("/{key_id}")
 def delete_api_key(key_id: str, current_org: models.Organization = Depends(ensure_subscribed), db: Session = Depends(get_db)):

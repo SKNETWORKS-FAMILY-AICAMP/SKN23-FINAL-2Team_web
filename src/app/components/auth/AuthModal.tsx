@@ -9,7 +9,7 @@ Modification History:
     - 2026-04-21 (김민정) : 자동 닫기 성공 모달 및 UI 개선
     - 2026-04-22 (김민정) : 로그인/회원가입 후 구독 상태에 따른 지능형 내비게이션(onSuccess) 연동
 */
-import React, { useState, forwardRef } from 'react';
+import React, { useState, forwardRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Input } from "@/app/components/ui/input";
@@ -28,6 +28,20 @@ interface AuthModalProps {
 export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
   ({ children, onSuccess }, ref) => {
     const { login, register } = useAuth();
+    const [isOpen, setIsOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('login');
+
+    useEffect(() => {
+      const handleOpen = (e: any) => {
+        if (e.detail?.mode) {
+          setActiveTab(e.detail.mode);
+        }
+        setIsOpen(true);
+      };
+      window.addEventListener('open-auth-modal', handleOpen);
+      return () => window.removeEventListener('open-auth-modal', handleOpen);
+    }, []);
+
     const [formData, setFormData] = useState({
       email: '',
       password: '',
@@ -79,7 +93,7 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
             toast.error('비밀번호가 일치하지 않습니다.');
             return;
           }
-          
+
           await register(formData.companyName, formData.email, formData.password);
           setSuccessMessage('회원가입 신청이 완료되었습니다!');
         } else {
@@ -91,8 +105,9 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
           setSuccessMessage('로그인 되었습니다!');
         }
 
-        // toast 알림 표시 후 즉시 이동
+        // toast 알림 표시 후 모달 닫기
         toast.success(type === 'signup' ? '회원가입 신청이 완료되었습니다!' : '로그인 되었습니다!');
+        setIsOpen(false);
         if (onSuccess) onSuccess();
       } catch (error) {
         console.error("Auth Request Failed", error);
@@ -101,9 +116,9 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
 
     return (
       <>
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <div ref={ref} className="inline-block w-full">
+            <div ref={ref} className={children ? "inline-block w-full" : "hidden"}>
               {children ? children : <Button variant="outline">로그인 / 회원가입</Button>}
             </div>
           </DialogTrigger>
@@ -113,7 +128,7 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
               <DialogTitle className="text-2xl font-bold text-center">Cadence AI</DialogTitle>
             </DialogHeader>
 
-            <Tabs defaultValue="login" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4 bg-zinc-900">
                 <TabsTrigger value="login">로그인</TabsTrigger>
                 <TabsTrigger value="signup">회원가입</TabsTrigger>

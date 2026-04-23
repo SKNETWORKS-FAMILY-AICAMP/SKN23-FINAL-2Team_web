@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, MessageSquare, Send, Paperclip, List, CheckCircle, Clock } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { toast } from 'sonner';
 
 export default function QnAPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'new' | 'list'>('list');
+  const [activeTab, setActiveTab] = useState<'new' | 'list'>((location.state?.tab as 'new' | 'list') || 'list');
 
   const [qaForm, setQaForm] = useState({ type: '결제/요금', title: '', content: '' });
   const [file, setFile] = useState<File | null>(null);
@@ -142,7 +143,7 @@ export default function QnAPage() {
                 <p className="text-sm text-zinc-500">새 문의 작성을 통해 궁금한 점을 남겨주시면 빠르게 답변해 드리겠습니다.</p>
               </div>
             ) : (
-              tickets.map((t: any) => (
+              tickets.slice(0, 5).map((t: any) => (
                 <div key={t.id} className="bg-zinc-900/50 border border-white/10 p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:border-[#0071e3]/50 transition-colors">
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-3">

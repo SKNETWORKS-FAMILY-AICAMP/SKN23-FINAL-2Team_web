@@ -6,6 +6,7 @@ Description : 랜딩 페이지 상단 네비게이션바 컴포넌트
 
 Modification History:
     - 2026-04-23 (김민정) : 모듈화 작업으로 인한 파일 분리 생성
+    - 2026-04-23 (김민정) : FAQ, Q&A 페이지로 이동하는 버튼 추가
  */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -21,21 +22,20 @@ export const LandingNav: React.FC<LandingNavProps> = ({ isAuthenticated, user, l
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed top-0 w-full z-[100] border-b border-white/5 bg-black/40 backdrop-blur-2xl">
-      <div className="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-12">
-          <div className="text-2xl font-black tracking-tighter text-white flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#0071e3] rounded-lg flex items-center justify-center">
-              <span className="text-white text-lg">C</span>
-            </div>
-            CADENCE AI
-          </div>
-          <div className="hidden md:flex gap-8 text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-400">
-            <a href="#showcase" className="hover:text-white transition-colors">Solutions</a>
-            <a href="#features" className="hover:text-white transition-colors">Platform</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-            <a href="#" className="hover:text-white transition-colors">Resources</a>
-          </div>
+    <nav className="fixed top-0 w-full z-[100] border-b border-white/5 bg-zinc-950/60 backdrop-blur-xl">
+      <div className="flex justify-between items-center w-full px-8 py-4 max-w-screen-2xl mx-auto">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-8 bg-[#0071e3]"></span>
+          <span className="text-xl font-bold tracking-tighter text-zinc-100">Cadence AI</span>
+        </div>
+        
+        <div className="hidden md:flex gap-10">
+          <a href="#features" className="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest">Features</a>
+          <a href="#showcase" className="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest">Showcase</a>
+          <a href="#how-it-works" className="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest">How It Works</a>
+          <a href="#pricing" className="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest">Pricing</a>
+          <button onClick={() => navigate('/faq')} className="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest">FAQ</button>
+          <button onClick={() => navigate('/qna')} className="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest">Q&A</button>
         </div>
 
         <div className="flex items-center gap-4">
@@ -60,20 +60,12 @@ export const LandingNav: React.FC<LandingNavProps> = ({ isAuthenticated, user, l
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-6">
-              <button 
-                onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }))}
-                className="text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors"
-              >
-                Sign In
-              </button>
-              <button 
-                onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'register' } }))}
-                className="bg-[#0071e3] text-white px-6 py-2.5 rounded-full text-xs font-bold tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[#0071e3]/20"
-              >
-                GET STARTED
-              </button>
-            </div>
+            <button 
+              onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }))}
+              className="bg-[#0071e3] text-white px-6 py-2 rounded-lg font-semibold hover:brightness-110 transition-all text-sm"
+            >
+              시작하기
+            </button>
           )}
         </div>
       </div>
