@@ -2,11 +2,14 @@
 File    : src/app/components/landing/LandingPricing.tsx
 Author  : 김민정
 Create  : 2026-04-23
-Description : 랜딩 페이지 가격 정책 및 결제 안내 컴포넌트 (1번 코드의 콘텐츠 통합 버전)
+Description : 랜딩 페이지 가격 정책 및 결제 안내 컴포넌트 
+Modification History:
+    - 2026-04-23 (김민정) : 결제 페이지로 이동하는 버튼 추가
 */
 import React from 'react';
 import { motion } from 'framer-motion'; // motion/react 대신 일반적인 framer-motion 라이브러리 기준
 import { CheckCircle, ShieldCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const plans = [
   {
@@ -61,6 +64,33 @@ interface LandingPricingProps {
 }
 
 export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated, user }) => {
+  const navigate = useNavigate();
+
+  const handleAction = (planName: string) => {
+    if (planName === 'Enterprise') {
+      return; // Enterprise 버튼 동작 생략
+    }
+
+    if (isAuthenticated) {
+      // 관리자 권한인 경우 마이페이지나 결제창 대신 관리자 페이지로 이동
+      if (user?.role === 'admin' || user?.role === 'superuser') {
+        navigate('/admin');
+        return;
+      }
+
+      // user.plan이 존재하고 'free'가 아니면 결제되어 있는 상태로 판단
+      const isSubscribed = user?.plan && user.plan.toLowerCase() !== 'free';
+
+      if (isSubscribed) {
+        navigate('/profile', { state: { tab: 'billing' } });
+      } else {
+        navigate('/payment');
+      }
+    } else {
+      window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }));
+    }
+  };
+
   return (
     <section className="bg-[#131313] py-32 border-t border-white/5" id="pricing">
       <div className="max-w-7xl mx-auto px-8">
@@ -128,10 +158,12 @@ export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated,
                 ))}
               </ul>
 
-              <button className={`w-full py-4 rounded-lg transition-all uppercase tracking-widest text-xs font-bold ${plan.highlight
-                ? 'bg-[#0071e3] text-white hover:brightness-110 shadow-xl shadow-[#0071e3]/20'
-                : 'border border-white/10 text-white hover:bg-white/5'
-                }`}>
+              <button
+                onClick={() => handleAction(plan.name)}
+                className={`w-full py-4 rounded-lg transition-all uppercase tracking-widest text-xs font-bold ${plan.highlight
+                  ? 'bg-[#0071e3] text-white hover:brightness-110 shadow-xl shadow-[#0071e3]/20'
+                  : 'border border-white/10 text-white hover:bg-white/5'
+                  }`}>
                 {plan.name === 'Enterprise' ? 'Contact Sales' : '시작하기'}
               </button>
             </motion.div>

@@ -8,8 +8,10 @@ Modification History:
     - 2026-04-23 (김민정) : 모듈화 작업으로 인한 파일 분리 생성
  */
 import React from 'react';
-import { Monitor, Puzzle, CheckCircle, Clock } from 'lucide-react';
+import { Monitor, Puzzle, CheckCircle, Clock, Power } from 'lucide-react';
 import { format } from 'date-fns';
+import { useAuth } from '@/app/context/AuthContext';
+import { toast } from 'sonner';
 
 interface DeviceTabProps {
   isLoadingDevices: boolean;
@@ -20,11 +22,47 @@ export const DeviceTab: React.FC<DeviceTabProps> = ({
   isLoadingDevices,
   devices
 }) => {
+  const { user } = useAuth();
+  
+  // 현재 플랜에 따른 최대 대수 (예: 기본 5대, Pro/Enterprise는 무제한)
+  const isUnlimited = user?.plan?.toLowerCase() === 'pro' || user?.plan?.toLowerCase() === 'enterprise';
+  const maxDevices = isUnlimited ? '무제한' : 5;
+  const currentCount = devices.length;
+
+  const handleToggleStatus = async (deviceId: string, currentStatus: boolean) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`http://localhost:8000/api/v1/devices/${deviceId}/toggle`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        toast.success(currentStatus ? '해당 기기의 사용이 일시 중지되었습니다.' : '기기가 다시 활성화되었습니다.');
+        // 상태 갱신을 위해 임시 새로고침
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        toast.error('기기 상태를 변경할 수 없습니다.');
+      }
+    } catch (e) {
+      toast.error('서버와의 통신 오류가 발생했습니다.');
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
-      <div>
-        <h2 className="text-2xl font-bold">기기 관리</h2>
-        <p className="text-sm text-zinc-500 mt-1">플러그인이 설치되고 활성화된 기기 목록입니다.</p>
+      <div className="flex justify-between items-end pb-4 border-b border-white/5">
+        <div>
+          <h2 className="text-2xl font-bold">기기 관리</h2>
+          <p className="text-sm text-zinc-500 mt-1">플러그인이 설치되고 활성화된 기기 목록입니다.</p>
+        </div>
+        <div className="text-right">
+          <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">현재 등록 현황</div>
+          <div className="text-xl font-black text-white">
+            <span className={currentCount >= 5 && !isUnlimited ? "text-red-400" : "text-[#0071e3]"}>{currentCount}</span>
+            <span className="text-zinc-600 font-normal text-sm"> / {maxDevices}대</span>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-4">
@@ -60,25 +98,53 @@ export const DeviceTab: React.FC<DeviceTabProps> = ({
                   </div>
                 </div>
               </div>
-              <div className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] text-zinc-500">
-                Key: {device.api_key_snippet}
+              <div className="flex items-center gap-3">
+                <div className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] text-zinc-500">
+                  Key Snippet: {device.api_key_snippet || '보안상 숨김'}
+                </div>
+                <div className="relative group flex items-center">
+                  <button 
+                    onClick={() => handleToggleStatus(device.id, device.is_active)}
+                    className={`p-2 rounded-xl transition-all border ${
+                      device.is_active 
+                        ? 'bg-zinc-800 border-red-500/10 text-red-400 hover:bg-red-500/20' 
+                        : 'bg-zinc-800 border-green-500/10 text-green-400 hover:bg-green-500/20'
+                    }`}
+                  >
+                    <Power className="w-4 h-4" />
+                  </button>
+                  {/* Tailwind Custom Tooltip */}
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-zinc-800 border border-white/10 text-[10px] text-white font-bold rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap pointer-events-none z-10 shadow-xl">
+                    {device.is_active ? '클릭 시 기기 사용 중지' : '클릭 시 기기 활성화'}
+                  </div>
+                </div>
               </div>
             </div>
           ))
         )}
       </div>
 
-      <div className="bg-zinc-900/50 border border-white/10 p-6 rounded-2xl flex items-start gap-4">
-        <div className="bg-[#0071e3]/20 p-2 rounded-lg">
-          <CheckCircle className="w-5 h-5 text-[#abc7ff]" />
+      <div className="bg-zinc-900/50 border border-white/10 p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="flex items-start gap-4">
+          <div className="bg-[#0071e3]/20 p-2 rounded-lg mt-1">
+            <CheckCircle className="w-5 h-5 text-[#abc7ff]" />
+          </div>
+          <div>
+            <h4 className="font-bold text-white text-sm">새 기기 등록 방법</h4>
+            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+              AutoCAD 전용 플러그인을 다운로드하여 설치한 후, 플러그인 설정 메뉴에서 본인의 <br className="hidden md:block" />
+              API Key를 입력하면 해당 기기가 자동으로 등록됩니다. (플랜 별 최대 접속 대수 유의)
+            </p>
+          </div>
         </div>
-        <div>
-          <h4 className="font-bold text-white text-sm">새 기기 등록 방법</h4>
-          <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-            AutoCAD 실행 후 플러그인 설정 메뉴에서 본인의 API Key를 입력하면 자동으로 새로운 기기가 등록됩니다.<br />
-            현재 사용 중인 플랜의 최대 동시 접속 기기 수를 확인해 주세요.
-          </p>
-        </div>
+        
+        <button 
+          onClick={() => { /* 실제 다운로드 로직: 예) window.open('/downloads/CadSllmAgent.zip') */ }}
+          className="shrink-0 px-6 py-3 bg-[#0071e3] text-white text-xs font-bold rounded-xl hover:bg-[#0071e3]/90 transition-all shadow-lg flex items-center gap-2"
+        >
+          <Puzzle className="w-4 h-4" /> 
+          AutoCAD 플러그인 다운로드
+        </button>
       </div>
     </div>
   );

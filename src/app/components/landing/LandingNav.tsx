@@ -44,11 +44,15 @@ export const LandingNav: React.FC<LandingNavProps> = ({ isAuthenticated, user, l
               <span className="text-xs font-bold text-zinc-300">{user?.companyName || 'Member'}</span>
               <div className="flex gap-1">
                 <button 
-                  onClick={() => navigate('/profile')}
-                  className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-all"
-                  title="마이페이지"
+                  onClick={() => navigate((user?.role === 'admin' || user?.role === 'superuser') ? '/admin' : '/profile')}
+                  className={`p-2 rounded-full transition-all ${
+                    (user?.role === 'admin' || user?.role === 'superuser') 
+                      ? 'bg-red-500/20 hover:bg-red-500/30 text-red-100' 
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                  title={(user?.role === 'admin' || user?.role === 'superuser') ? '관리자 페이지' : '마이페이지'}
                 >
-                  <User className="w-4 h-4 text-white" />
+                  <User className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={logout}

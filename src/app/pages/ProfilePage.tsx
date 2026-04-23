@@ -36,7 +36,16 @@ type TabType = 'account' | 'billing' | 'api' | 'usage' | 'devices' | 'downloads'
 export default function ProfilePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
+
+  // 권한 기반 라우팅 방어 로직 (비로그인자 튕기기 및 관리자 계정 자동 리다이렉트)
+  useEffect(() => {
+    if (!user && !isAuthenticated) {
+      // 0.5초 등 약간의 딜레이가 있을 수 있으나 단순하게 처리
+    } else if (user?.role === 'admin' || user?.role === 'superuser') {
+       navigate('/admin', { replace: true });
+    }
+  }, [user, navigate, isAuthenticated]);
 
   // URL state나 navigation state에서 탭 정보를 가져옴
   const initialTab = (location.state?.tab as TabType) || 'account';
@@ -351,7 +360,7 @@ export default function ProfilePage() {
     { id: 'usage', label: '실시간 사용량', icon: Activity },
     { id: 'devices', label: '기기 등록 현황', icon: Monitor },
     { id: 'my_qna', label: '내 문의 내역', icon: MessageSquare },
-    { id: 'downloads', label: '다운로드 센터', icon: FileDown },
+    { id: 'downloads', label: '감리 리포트 다운로드', icon: FileDown },
   ];
 
   return (
@@ -444,21 +453,31 @@ export default function ProfilePage() {
               <div className="bg-black/50 p-4 rounded-xl border border-white/10 break-all text-center font-mono text-white text-sm select-all">
                 {newGeneratedKey}
               </div>
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(newGeneratedKey);
-                    toast.success('API 키가 클립보드에 복사되었습니다.');
-                  }} 
-                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl border border-white/10 transition-colors"
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(newGeneratedKey);
+                      toast.success('API 키가 클립보드에 복사되었습니다.');
+                    }}
+                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white font-bold text-sm rounded-xl border border-white/10 transition-colors"
+                  >
+                    키 복사하기
+                  </button>
+                  {devices?.length === 0 && (
+                    <button
+                      onClick={() => { /* 플러그인 다운로드 로직 수행 */ }}
+                      className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-sm rounded-xl border border-white/10 transition-colors"
+                    >
+                      플러그인 다운로드
+                    </button>
+                  )}
+                </div>
+                <button
+                  onClick={() => setNewGeneratedKey(null)}
+                  className="w-full py-3 bg-[#0071e3] hover:bg-[#0071e3]/90 text-white font-bold text-sm rounded-xl transition-colors"
                 >
-                  복사하기
-                </button>
-                <button 
-                  onClick={() => setNewGeneratedKey(null)} 
-                  className="flex-1 py-3 bg-[#0071e3] hover:bg-[#0071e3]/90 text-white font-bold rounded-xl transition-colors"
-                >
-                  확인 완료
+                  닫기
                 </button>
               </div>
             </motion.div>

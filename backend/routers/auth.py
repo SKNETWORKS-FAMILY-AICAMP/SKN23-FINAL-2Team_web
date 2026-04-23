@@ -6,6 +6,7 @@ Description : 인증(Login/Register/Refresh) 관련 API 라우터
 
 Modification History:
     - 2026-04-23 (김민정) : 모듈화 작업으로 인한 파일 분리 생성
+    - 2026-04-23 (김민정) : 관리자 계정 권한 부여
 """
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
@@ -67,7 +68,7 @@ def register(org_data: schemas.OrgCreate, db: Session = Depends(get_db)):
             "user": {
                 "email": new_org.admin_email,
                 "companyName": new_org.company_name,
-                "role": "admin",
+                "role": "user",
                 "orgId": str(new_org.id),
                 "verification_status": new_org.verification_status,
                 "plan": new_org.plan
@@ -82,6 +83,26 @@ def register(org_data: schemas.OrgCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=schemas.LoginResponse)
 def login(login_data: schemas.OrgLogin, db: Session = Depends(get_db)):
     try:
+        # 1. 시스템 관리자 테이블 먼저 확인
+        admin = db.query(models.SystemAdmin).filter(models.SystemAdmin.email == login_data.email).first()
+        if admin and auth.verify_password(login_data.password, admin.password_hash):
+            token = auth.create_access_token(data={"sub": admin.email})
+            refresh_token = auth.create_refresh_token(data={"sub": admin.email})
+            return {
+                "success": True,
+                "token": token,
+                "refresh_token": refresh_token,
+                "user": {
+                    "email": admin.email,
+                    "companyName": "System Administrator",
+                    "role": "admin",
+                    "orgId": "admin",
+                    "verification_status": "verified",
+                    "plan": "enterprise"
+                }
+            }
+
+        # 2. 일반 기업 사용자 확인
         org = db.query(models.Organization).filter(models.Organization.admin_email == login_data.email).first()
         if not org or not auth.verify_password(login_data.password, org.password_hash):
             raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
@@ -95,7 +116,7 @@ def login(login_data: schemas.OrgLogin, db: Session = Depends(get_db)):
             "user": {
                 "email": org.admin_email,
                 "companyName": org.company_name,
-                "role": "admin",
+                "role": "user",
                 "orgId": str(org.id),
                 "verification_status": org.verification_status,
                 "plan": org.plan

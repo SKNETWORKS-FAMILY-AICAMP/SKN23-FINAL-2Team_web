@@ -11,6 +11,7 @@ import React from 'react';
 import { Activity, Calendar as CalendarIcon, RefreshCw, ChevronDown } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
+import { getDummyUsageStats } from '../../../../devtools/dummyUsageData';
 
 interface UsageTabProps {
   isLoadingUsage: boolean;
@@ -24,13 +25,36 @@ interface UsageTabProps {
 
 export const UsageTab: React.FC<UsageTabProps> = ({
   isLoadingUsage,
-  usageStats,
+  usageStats: originalUsageStats,
   usageDateRange,
   handleCustomDateChange,
   setQuickRange,
   selectedMetric,
   setSelectedMetric
 }) => {
+  // 1. DB 연동이 완료되면 아래 "getDummyUsageStats()" 부분을 지우고 
+  // 바로 아래의 "originalUsageStats"를 사용하도록 주석을 변경해 주시면 됩니다!
+  const baseUsageStats = getDummyUsageStats();
+  // const baseUsageStats = originalUsageStats;
+
+  // 2. 선택된 날짜 범위(usageDateRange)에 맞게 데이터를 필터링합니다.
+  const filteredDailyStats = baseUsageStats?.daily_stats?.filter((stat: any) => {
+    if (!usageDateRange.start || !usageDateRange.end) return true;
+    const statDate = new Date(stat.date).getTime();
+    const startDate = new Date(usageDateRange.start).getTime();
+    // end 날짜의 경우 해당 일의 23:59:59까지 포함되도록 처리 (+1일 -1ms)
+    const endDate = new Date(usageDateRange.end).getTime() + 86400000 - 1;
+    return statDate >= startDate && statDate <= endDate;
+  }) || [];
+
+  // 3. 필터링된 배열을 바탕으로 토큰 및 호출 횟수를 다시 합산한 최종 객체 생성
+  const usageStats = baseUsageStats ? {
+    ...baseUsageStats,
+    total_calls: filteredDailyStats.reduce((acc: number, curr: any) => acc + curr.calls, 0),
+    total_tokens: filteredDailyStats.reduce((acc: number, curr: any) => acc + curr.tokens, 0),
+    daily_stats: filteredDailyStats
+  } : null;
+
   return (
     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">

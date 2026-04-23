@@ -2,11 +2,12 @@
 File    : backend/models.py
 Author  : 김민정
 Create  : 2026-04-21
-Description : 데이터베이스 테이블 정의 (Organization, License, Payment 등)
+Description : 데이터베이스 테이블 정의
 
 Modification History:
     - 2026-04-21 (김민정) : 초기 모델링 및 License 테이블 추가
     - 2026-04-22 (Antigravity) : 최신 DB 스키마 이미지에 맞춰 모든 테이블 동기화 및 Payment 테이블 추가
+    - 2026-04-23 (김민정) : SystemAdmin 테이블 추가
 """
 from sqlalchemy import Column, String, Boolean, Integer, TIMESTAMP, Numeric, Text, Date
 from sqlalchemy.dialects.postgresql import UUID
@@ -96,4 +97,12 @@ class SupportTicket(Base):
     content = Column(Text, nullable=False)
     file_path = Column(String(500), nullable=True)
     status = Column(String(20), default="pending", nullable=False) # pending, answered
+    created_at = Column(TIMESTAMP, server_default="now()", nullable=False)
+
+class SystemAdmin(Base):
+    __tablename__ = "system_admins"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    password_hash = Column(Text, nullable=False)
     created_at = Column(TIMESTAMP, server_default="now()", nullable=False)
