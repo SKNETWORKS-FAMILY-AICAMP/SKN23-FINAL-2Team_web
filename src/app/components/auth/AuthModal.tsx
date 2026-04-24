@@ -8,64 +8,68 @@ Modification History:
     - 2026-04-20 (김민정) : 로그인 및 회원가입 모달 UI 초기 구현
     - 2026-04-21 (김민정) : 자동 닫기 성공 모달 및 UI 개선
     - 2026-04-22 (김민정) : 로그인/회원가입 후 구독 상태에 따른 지능형 내비게이션(onSuccess) 연동
+    - 2026-04-24 (김민정) : Redis 기반 이메일 인증 및 비밀번호 재설정 UX 구현
 */
 import React, { useState, forwardRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
-import { Label } from "@/app/components/ui/label";
 import { useAuth } from '@/app/context/AuthContext';
 import { toast } from 'sonner';
 import { CheckCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+
+import { LoginForm } from '@/app/components/auth/LoginForm';
+import { SignupForm } from '@/app/components/auth/SignupForm';
+import { VerificationStep } from '@/app/components/auth/EmailVerification';
+import { ResetPasswordStep } from '@/app/components/auth/ResetPassword';
 
 interface AuthModalProps {
   children?: React.ReactNode;
   onSuccess?: () => void;
 }
 
+type AuthStep = 'login' | 'signup' | 'verify' | 'forgot_password' | 'reset_password';
+
 export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
   ({ children, onSuccess }, ref) => {
-    const { login, register } = useAuth();
+    const { login, register, verifyEmail, requestPasswordReset, resetPassword } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('login');
-
-    useEffect(() => {
-      const handleOpen = (e: any) => {
-        if (e.detail?.mode) {
-          setActiveTab(e.detail.mode);
-        }
-        setIsOpen(true);
-      };
-      window.addEventListener('open-auth-modal', handleOpen);
-      return () => window.removeEventListener('open-auth-modal', handleOpen);
-    }, []);
+    const [activeTab, setActiveTab] = useState<AuthStep>('login');
+    const [prevStep, setPrevStep] = useState<AuthStep>('login');
 
     const [formData, setFormData] = useState({
       email: '',
       password: '',
       companyName: '',
       passwordConfirm: '',
-      certificateFile: null as File | null
+      certificateFile: null as File | null,
+      verificationCode: '',
+      newPassword: '',
+      newPasswordConfirm: ''
     });
 
+    const [isLoading, setIsLoading] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
 
+    // --- 기존 핸들러 로직 (수정 없이 그대로 유지) ---
+    useEffect(() => {
+      const handleOpen = (e: any) => {
+        if (e.detail?.mode) setActiveTab(e.detail.mode as AuthStep);
+        setIsOpen(true);
+      };
+      window.addEventListener('open-auth-modal', handleOpen);
+      return () => window.removeEventListener('open-auth-modal', handleOpen);
+    }, []);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData({
-        ...formData,
-        [e.target.name]: e.target.value
-      });
+      setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
-        setFormData({
-          ...formData,
-          certificateFile: e.target.files[0]
-        });
+        setFormData({ ...formData, certificateFile: e.target.files[0] });
       }
     };
 
@@ -75,45 +79,84 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
     };
 
     const handleSubmit = async (type: 'login' | 'signup') => {
+      setIsLoading(true);
       try {
         if (type === 'signup') {
           if (!formData.companyName || !formData.email || !formData.password || !formData.passwordConfirm) {
-            toast.error('모든 필드를 입력해주세요.');
-            return;
+            toast.error('모든 필드를 입력해주세요.'); setIsLoading(false); return;
           }
           if (!formData.certificateFile) {
-            toast.error('사업자등록증을 첨부해주세요.');
-            return;
+            toast.error('사업자등록증을 첨부해주세요.'); setIsLoading(false); return;
           }
           if (!validatePassword(formData.password)) {
-            toast.error('비밀번호는 최소 8자이며, 영문 + 숫자 + 특수문자 조합이어야 합니다.');
-            return;
+            toast.error('비밀번호는 최소 8자이며, 영문 + 숫자 + 특수문자 조합이어야 합니다.'); setIsLoading(false); return;
           }
           if (formData.password !== formData.passwordConfirm) {
-            toast.error('비밀번호가 일치하지 않습니다.');
-            return;
+            toast.error('비밀번호가 일치하지 않습니다.'); setIsLoading(false); return;
           }
-
           await register(formData.companyName, formData.email, formData.password, formData.certificateFile);
-          setSuccessMessage('회원가입 신청이 완료되었습니다!');
+          toast.success('인증 메일이 발송되었습니다.');
+          setPrevStep('signup'); setActiveTab('verify');
         } else {
           if (!formData.email || !formData.password) {
-            toast.error('이메일과 비밀번호를 입력해주세요.');
-            return;
+            toast.error('이메일과 비밀번호를 입력해주세요.'); setIsLoading(false); return;
           }
-          await login(formData.email, formData.password);
-          setSuccessMessage('로그인 되었습니다!');
+          try {
+            await login(formData.email, formData.password);
+            handleSuccess('로그인 되었습니다!');
+          } catch (err: any) {
+            if (err.message.includes('인증이 완료되지 않았습니다')) {
+              toast.info('이메일 인증이 필요합니다.');
+              setPrevStep('login'); setActiveTab('verify');
+            }
+          }
         }
-
-        // toast 알림 표시 후 모달 닫기
-        toast.success(type === 'signup' ? '회원가입 신청이 완료되었습니다!' : '로그인 되었습니다!');
-        setIsOpen(false);
-        if (onSuccess) onSuccess();
-      } catch (error) {
-        console.error("Auth Request Failed", error);
-      }
+      } catch (error) { console.error(error); } finally { setIsLoading(false); }
     };
 
+    const handleVerify = async () => {
+      if (formData.verificationCode.length !== 6) { toast.error('인증 번호 6자리를 입력해주세요.'); return; }
+      setIsLoading(true);
+      try {
+        if (prevStep === 'forgot_password') {
+          setActiveTab('reset_password');
+        } else {
+          await verifyEmail(formData.email, formData.verificationCode);
+          handleSuccess('회원가입이 성공적으로 완료되었습니다!');
+        }
+      } catch (error) { console.error(error); } finally { setIsLoading(false); }
+    };
+
+    const handleRequestReset = async () => {
+      if (!formData.email) { toast.error('이메일을 입력해주세요.'); return; }
+      setIsLoading(true);
+      try {
+        await requestPasswordReset(formData.email);
+        toast.success('비밀번호 재설정 코드가 발송되었습니다.');
+        setPrevStep('forgot_password'); setActiveTab('verify');
+      } catch (err) { } finally { setIsLoading(false); }
+    };
+
+    const handleConfirmReset = async () => {
+      if (!validatePassword(formData.newPassword)) { toast.error('비밀번호 규칙을 확인해주세요.'); return; }
+      if (formData.newPassword !== formData.newPasswordConfirm) { toast.error('비밀번호가 일치하지 않습니다.'); return; }
+      setIsLoading(true);
+      try {
+        await resetPassword(formData.email, formData.verificationCode, formData.newPassword);
+        handleSuccess('비밀번호가 변경되었습니다. 다시 로그인해주세요.');
+        setActiveTab('login');
+      } catch (err) { } finally { setIsLoading(false); }
+    };
+
+    const handleSuccess = (msg: string) => {
+      setSuccessMessage(msg); setShowSuccessModal(true);
+      setTimeout(() => {
+        setShowSuccessModal(false); setIsOpen(false);
+        if (onSuccess) onSuccess();
+      }, 2000);
+    };
+
+    // --- Render ---
     return (
       <>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -123,89 +166,87 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
             </div>
           </DialogTrigger>
 
-          <DialogContent className="sm:max-w-[450px] bg-zinc-950 text-white border-zinc-800">
+          <DialogContent className="sm:max-w-[450px] bg-zinc-950 text-white border-zinc-800 overflow-hidden">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold text-center">Cadence AI</DialogTitle>
             </DialogHeader>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4 bg-zinc-900">
-                <TabsTrigger value="login">로그인</TabsTrigger>
-                <TabsTrigger value="signup">회원가입</TabsTrigger>
-              </TabsList>
+            <AnimatePresence mode="wait">
+              {/* 1. 인증 코드 입력 단계 */}
+              {activeTab === 'verify' && (
+                <VerificationStep
+                  email={formData.email}
+                  onChange={handleChange}
+                  onVerify={handleVerify}
+                  onResend={handleRequestReset}
+                  onBack={() => setActiveTab(prevStep)}
+                  isLoading={isLoading}
+                />
+              )}
 
-              <TabsContent value="login" className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">이메일</Label>
-                  <Input id="email" name="email" placeholder="example@cadence.ai" onChange={handleChange} className="bg-zinc-900 border-zinc-800 text-white" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">비밀번호</Label>
-                    <button
-                      type="button"
-                      className="text-xs text-[#0071e3] hover:underline"
-                      onClick={() => toast.info('비밀번호 찾기 기능은 현재 준비 중입니다.')}
-                    >
-                      비밀번호를 잊었나요?
-                    </button>
-                  </div>
-                  <Input id="password" name="password" type="password" onChange={handleChange} className="bg-zinc-900 border-zinc-800 text-white" />
-                </div>
-                <Button className="w-full bg-[#0071e3] hover:bg-[#0071e3]/90 text-white font-bold h-12" onClick={() => handleSubmit('login')}>
-                  로그인
-                </Button>
-              </TabsContent>
+              {/* 2. 새 비밀번호 설정 단계 */}
+              {activeTab === 'reset_password' && (
+                <ResetPasswordStep
+                  onChange={handleChange}
+                  onSubmit={handleConfirmReset}
+                  isLoading={isLoading}
+                />
+              )}
 
-              <TabsContent value="signup" className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="companyName">기업명</Label>
-                  <Input id="companyName" name="companyName" placeholder="주식회사 케이던스" onChange={handleChange} className="bg-zinc-900 border-zinc-800 text-white" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="certificate">사업자등록증 파일 첨부 (.pdf)</Label>
-                  <Input
-                    id="certificate"
-                    name="certificate"
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    className="bg-zinc-900 border-zinc-800 text-white file:bg-[#0071e3] file:text-white file:border-0 file:rounded file:px-2 file:py-1 file:mr-2 file:hover:cursor-pointer"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">담당자 이메일</Label>
-                  <Input id="signup-email" name="email" placeholder="manager@cadence.ai" onChange={handleChange} className="bg-zinc-900 border-zinc-800 text-white" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">비밀번호 (8자 이상, 영문+숫자+특수문자)</Label>
-                  <Input id="signup-password" name="password" type="password" placeholder="조합하여 8자 이상" onChange={handleChange} className="bg-zinc-900 border-zinc-800 text-white" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="passwordConfirm">비밀번호 확인</Label>
-                  <Input id="passwordConfirm" name="passwordConfirm" type="password" onChange={handleChange} className="bg-zinc-900 border-zinc-800 text-white" />
-                </div>
-                <Button className="w-full bg-[#0071e3] hover:bg-[#0071e3]/90 text-white font-bold h-12" onClick={() => handleSubmit('signup')}>
-                  회원가입 신청
-                </Button>
-                <p className="text-[10px] text-zinc-500 text-center">
-                  가입 신청 후 관리자의 승인이 완료되어야 서비스를 이용하실 수 있습니다.
-                </p>
-              </TabsContent>
-            </Tabs>
+              {/* 3. 메인 로그인/회원가입/비밀번호찾기 탭 */}
+              {(activeTab === 'login' || activeTab === 'signup' || activeTab === 'forgot_password') && (
+                <motion.div key="main-tabs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  {activeTab !== 'forgot_password' && (
+                    <Tabs value={activeTab as string} onValueChange={(v) => setActiveTab(v as AuthStep)} className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 mb-4 bg-zinc-900">
+                        <TabsTrigger value="login">로그인</TabsTrigger>
+                        <TabsTrigger value="signup">회원가입</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="login">
+                        <LoginForm
+                          mode="login"
+                          onChange={handleChange}
+                          onSubmit={handleSubmit}
+                          onRequestReset={handleRequestReset}
+                          onSetTab={setActiveTab}
+                          isLoading={isLoading}
+                        />
+                      </TabsContent>
+
+                      <TabsContent value="signup">
+                        <SignupForm
+                          onChange={handleChange}
+                          onFileChange={handleFileChange}
+                          onSubmit={handleSubmit}
+                          isLoading={isLoading}
+                        />
+                      </TabsContent>
+                    </Tabs>
+                  )}
+
+                  {/* 비밀번호 찾기 UI (탭이 없을 때 노출) */}
+                  {activeTab === 'forgot_password' && (
+                    <LoginForm
+                      mode="forgot_password"
+                      onChange={handleChange}
+                      onSubmit={handleSubmit}
+                      onRequestReset={handleRequestReset}
+                      onSetTab={setActiveTab}
+                      isLoading={isLoading}
+                    />
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </DialogContent>
         </Dialog>
 
-        {/* Success Modal Overlay */}
+        {/* 성공 모달 Overlay (기존 유지) */}
         <AnimatePresence>
           {showSuccessModal && (
             <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="bg-zinc-900 border border-white/10 p-10 rounded-3xl shadow-2xl text-center space-y-4 max-w-xs w-full"
-              >
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-zinc-900 border border-white/10 p-10 rounded-3xl text-center space-y-4 max-w-sm w-full">
                 <div className="w-16 h-16 bg-[#47e266]/20 rounded-full flex items-center justify-center mx-auto mb-2">
                   <CheckCircle className="w-8 h-8 text-[#47e266]" />
                 </div>

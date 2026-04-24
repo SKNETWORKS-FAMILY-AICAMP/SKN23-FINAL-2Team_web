@@ -53,6 +53,9 @@ class Device(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     first_seen = Column(TIMESTAMP, server_default="now()", nullable=False)
     last_seen = Column(TIMESTAMP, server_default="now()", nullable=False)
+    hostname = Column(Text, nullable=True)
+    os_user = Column(Text, nullable=True)
+    display_name = Column(Text, nullable=True)
 
 class APIUsageLog(Base):
     __tablename__ = "api_usage_logs"
@@ -105,4 +108,12 @@ class SystemAdmin(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(Text, nullable=False)
+    created_at = Column(TIMESTAMP, server_default="now()", nullable=False)
+
+class DocumentsS3(Base):
+    __tablename__ = "documents_s3"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    file_name = Column(String(255), nullable=False)
+    s3_url = Column(Text, nullable=False)
     created_at = Column(TIMESTAMP, server_default="now()", nullable=False)
