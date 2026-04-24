@@ -11,7 +11,7 @@ import React from 'react';
 import { Activity, Calendar as CalendarIcon, RefreshCw, ChevronDown } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
-import { getDummyUsageStats } from '../../../../devtools/dummyUsageData';
+import { getDummyUsageStats } from '../../../../../devtools/dummyUsageData';
 
 interface UsageTabProps {
   isLoadingUsage: boolean;

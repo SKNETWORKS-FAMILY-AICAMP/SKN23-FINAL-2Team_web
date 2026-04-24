@@ -7,6 +7,7 @@ Description : Pydantic 스키마 정의 (요청/응답 모델)
 Modification History:
     - 2026-04-21 (김민정) : 초기 생성 및 기본 스키마 정의
     - 2026-04-22 (김민정) : LoginResponse 내 refresh_token 추가 및 필드 바인딩 최적화
+    
 """
 from pydantic import BaseModel, Field, AliasChoices
 from typing import Optional
@@ -35,6 +36,22 @@ class OrgResponse(BaseModel):
     class Config:
         from_attributes = True
         populate_by_name = True
+
+class EmailVerification(BaseModel):
+    email: str
+    code: str
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+class PasswordResetConfirm(BaseModel):
+    email: str
+    code: str
+    new_password: str
+
+class CommonResponse(BaseModel):
+    success: bool
+    message: str
 
 class LoginResponse(BaseModel):
     success: bool

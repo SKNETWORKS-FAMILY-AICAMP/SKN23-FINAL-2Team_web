@@ -18,6 +18,7 @@ import base64
 from .. import models
 from ..database import get_db
 from ..dependencies import get_current_user, ensure_verified
+from ..email_service import EmailService
 
 router = APIRouter(prefix="/api/v1/payments", tags=["payments"])
 
@@ -92,6 +93,17 @@ def toss_confirm(payload: dict, current_org: models.Organization = Depends(get_c
             )
             db.add(new_payment)
             db.commit()
+            
+            # [영수증 메일 발송]
+            try:
+                EmailService.send_receipt_email(
+                    current_org.admin_email, 
+                    current_org.company_name, 
+                    amount, 
+                    plan_name
+                )
+            except Exception as e:
+                print(f"[Email Error] Receipt failed: {e}")
             
             return {
                 "success": True, 

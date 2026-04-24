@@ -23,12 +23,12 @@ import { useAuth } from '@/app/context/AuthContext';
 import { toast } from 'sonner';
 
 // Modular Components
-import { AccountTab } from '@/app/components/profile/AccountTab';
-import { BillingTab } from '@/app/components/profile/BillingTab';
-import { APIKeyTab } from '@/app/components/profile/APIKeyTab';
-import { UsageTab } from '@/app/components/profile/UsageTab';
-import { DeviceTab } from '@/app/components/profile/DeviceTab';
-import { MyQnaTab } from '@/app/components/profile/MyQnaTab';
+import { AccountTab } from '@/app/components/profile/auth/AccountTab';
+import { BillingTab } from '@/app/components/profile/auth/BillingTab';
+import { APIKeyTab } from '@/app/components/profile/auth/APIKeyTab';
+import { UsageTab } from '@/app/components/profile/auth/UsageTab';
+import { DeviceTab } from '@/app/components/profile/auth/DeviceTab';
+import { MyQnaTab } from '@/app/components/profile/auth/MyQnaTab';
 
 
 type TabType = 'account' | 'billing' | 'api' | 'usage' | 'devices' | 'downloads' | 'my_qna';
@@ -43,7 +43,7 @@ export default function ProfilePage() {
     if (!user && !isAuthenticated) {
       // 0.5초 등 약간의 딜레이가 있을 수 있으나 단순하게 처리
     } else if (user?.role === 'admin' || user?.role === 'superuser') {
-       navigate('/admin', { replace: true });
+      navigate('/admin', { replace: true });
     }
   }, [user, navigate, isAuthenticated]);
 

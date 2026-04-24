@@ -1,5 +1,5 @@
 """
-File    : backend/routers/support.py
+File    : backend/routers/qna_api.py
 Author  : 김민정
 Create  : 2026-04-23
 Description : 고객 지원(QnA) 및 파일 업로드 라우터
@@ -17,7 +17,7 @@ from .. import models
 from ..database import get_db
 from ..dependencies import get_current_user
 
-router = APIRouter(prefix="/api/v1/support", tags=["support"])
+router = APIRouter(prefix="/api/v1/qna", tags=["qna"])
 
 UPLOAD_DIR = "uploads"
 if not os.path.exists(UPLOAD_DIR):
