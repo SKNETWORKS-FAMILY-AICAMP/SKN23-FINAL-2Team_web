@@ -6,6 +6,7 @@ Description : 고객 지원(QnA) 및 파일 업로드 라우터
 
 Modification History:
     - 2026-04-23 (김민정) : 모듈화 작업으로 인한 파일 분리 생성
+    - 2026-04-26 (김민정) : qna 파일명 변경
 """
 from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
 from sqlalchemy.orm import Session
@@ -41,9 +42,9 @@ async def create_support_ticket(
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
                 
-        ticket = models.SupportTicket(
+        ticket = models.SupportInquiry(
             org_id=current_user.id,
-            ticket_type=type,
+            inquiry_type=type,
             title=title,
             content=content,
             file_path=file_path,
@@ -59,9 +60,9 @@ async def create_support_ticket(
 
 @router.get("/tickets")
 async def get_support_tickets(db: Session = Depends(get_db)):
-    tickets_query = db.query(models.SupportTicket, models.Organization.company_name) \
-        .outerjoin(models.Organization, models.SupportTicket.org_id == models.Organization.id) \
-        .order_by(models.SupportTicket.created_at.desc()).all()
+    tickets_query = db.query(models.SupportInquiry, models.Organization.company_name) \
+        .outerjoin(models.Organization, models.SupportInquiry.org_id == models.Organization.id) \
+        .order_by(models.SupportInquiry.created_at.desc()).all()
     
     result = []
     for t_obj, c_name in tickets_query:
@@ -73,7 +74,7 @@ async def get_support_tickets(db: Session = Depends(get_db)):
                 
         result.append({
             "id": t_obj.id,
-            "type": t_obj.ticket_type,
+            "type": t_obj.inquiry_type,
             "title": t_obj.title,
             "status": t_obj.status,
             "created_at": t_obj.created_at.isoformat(),
@@ -87,16 +88,17 @@ async def get_my_support_tickets(
     current_user: models.Organization = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    tickets = db.query(models.SupportTicket).filter(models.SupportTicket.org_id == current_user.id).order_by(models.SupportTicket.created_at.desc()).all()
+    tickets = db.query(models.SupportInquiry).filter(models.SupportInquiry.org_id == current_user.id).order_by(models.SupportInquiry.created_at.desc()).all()
     return {
         "success": True,
         "tickets": [
             {
                 "id": t.id,
-                "type": t.ticket_type,
+                "type": t.inquiry_type,
                 "title": t.title,
                 "content": t.content,
                 "status": t.status,
+                "answer": t.answer_content,
                 "created_at": t.created_at.isoformat(),
                 "has_attachment": bool(t.file_path)
             } for t in tickets

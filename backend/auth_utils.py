@@ -7,6 +7,7 @@ Description : JWT 인증 유틸리티 (Access/Refresh Token 및 암호화)
 Modification History:
     - 2026-04-21 (김민정) : 초기 생성 및 JWT 설정
     - 2026-04-22 (김민정) : Refresh Token 생성 및 토션 검증 로직 고도화
+    - 2026-04-26 (김민정) : qna 파일명 변경
 """
 import os
 import bcrypt

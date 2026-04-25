@@ -1,11 +1,12 @@
 """
-File    : backend/routers/usage.py
+File    : backend/routers/usage_api.py
 Author  : 김민정
 Create  : 2026-04-23
 Description : 사용량(Usage) 통계 조회 API 라우터
 
 Modification History:
     - 2026-04-23 (김민정) : 모듈화 작업으로 인한 파일 분리 생성
+    - 2026-04-26 (김민정) : qna 파일명 변경
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -32,14 +33,14 @@ def get_usage_stats(
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
     
     logs = db.query(
-        models.APIUsageLog.date_dt,
-        func.sum(models.APIUsageLog.total_requests).label("total_calls"),
-        func.sum(models.APIUsageLog.total_tokens_used).label("total_tokens")
+        models.ApiUsageLog.date_dt,
+        func.sum(models.ApiUsageLog.total_requests).label("total_calls"),
+        func.sum(models.ApiUsageLog.total_tokens_used).label("total_tokens")
     ).filter(
-        models.APIUsageLog.org_id == current_org.id,
-        models.APIUsageLog.date_dt >= start_dt,
-        models.APIUsageLog.date_dt <= end_dt
-    ).group_by(models.APIUsageLog.date_dt).all()
+        models.ApiUsageLog.org_id == current_org.id,
+        models.ApiUsageLog.date_dt >= start_dt,
+        models.ApiUsageLog.date_dt <= end_dt
+    ).group_by(models.ApiUsageLog.date_dt).all()
     
     log_map = {str(log.date_dt): {"calls": log.total_calls or 0, "tokens": log.total_tokens or 0} for log in logs}
     

@@ -6,6 +6,7 @@ Description : 시스템 전체 사용량 통계 페이지
 
 Modification History:
     - 2026-04-24 (김민정) : 지표 드롭다운 UI 고도화
+    - 2026-04-26 (김민정) : 기업별 사용량 집계 데이터 연동 및 UI 개선
 */
 import React, { useState } from 'react';
 import { BarChart3, Calendar, Search, Building2, Zap, Activity, ChevronDown, X } from 'lucide-react';
@@ -220,7 +221,7 @@ export const UsageTab = ({ isLoading: isFetching, stats: originalStats, orgs, on
               </PopoverContent>
             </Popover>
 
-            <span className="text-zinc-600 font-black italic">to</span>
+            <span className="text-zinc-400 font-black italic">to</span>
 
             <Popover>
               <PopoverTrigger asChild>
@@ -285,7 +286,7 @@ export const UsageTab = ({ isLoading: isFetching, stats: originalStats, orgs, on
                       </div>
                     ))}
                     {filteredOrgs.length === 0 && (
-                      <div className="px-5 py-8 text-center text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
+                      <div className="px-5 py-8 text-center text-zinc-400 text-[10px] font-bold uppercase tracking-widest">
                         검색 결과가 없습니다.
                       </div>
                     )}
@@ -364,7 +365,7 @@ export const UsageTab = ({ isLoading: isFetching, stats: originalStats, orgs, on
            </div>
            <div className="flex items-baseline gap-3">
               <span className="text-4xl font-black text-white italic tracking-tighter">{totalCalls.toLocaleString()}</span>
-              <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest italic">Calls</span>
+              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest italic">Calls</span>
            </div>
         </div>
 
@@ -378,7 +379,7 @@ export const UsageTab = ({ isLoading: isFetching, stats: originalStats, orgs, on
            </div>
            <div className="flex items-baseline gap-3">
               <span className="text-4xl font-black text-[#abc7ff] italic tracking-tighter">{totalTokens.toLocaleString()}</span>
-              <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest italic">Tokens</span>
+              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest italic">Tokens</span>
            </div>
         </div>
       </div>

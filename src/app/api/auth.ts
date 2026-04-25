@@ -6,6 +6,7 @@ Description : 인증 API 모듈
 
 Modification History:
     - 2026-04-24 (김민정) : 모듈화
+    - 2026-04-26 (김민정) : qna 파일명 변경
 */
 const BASE_URL = 'http://localhost:8000/api/v1';
 
@@ -20,7 +21,7 @@ export const authApi = {
   register: (formData: FormData) =>
     fetch(`${BASE_URL}/auth/register`, {
       method: 'POST',
-      body: formData, // FormData는 Content-Type을 브라우저가 자동 설정하게 둡니다.
+      body: formData,
     }),
 
   refresh: (refreshToken: string) =>

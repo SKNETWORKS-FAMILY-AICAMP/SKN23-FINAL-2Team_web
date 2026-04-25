@@ -10,6 +10,7 @@ Modification History:
     - 2026-04-22 (김민정) : 요금제 변경(업그레이드/다운그레이드) 로직 및 가격 정책 업데이트
     - 2026-04-23 (김민정) : 컴포넌트 기능별 추출(Account, Billing, API, Usage, Device, QnA) 및 대규모 최적화
     - 2026-04-24 (김민정) : 마이페이지 내 결제 및 계정 관리 UI/UX 개선
+    - 2026-04-26 (김민정) : qna 파일명 변경
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';

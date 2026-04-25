@@ -3,6 +3,8 @@ File    : src/app/components/profile/admin/DocumentsTab.tsx
 Author  : 김민정
 Create  : 2026-04-24
 Description : S3 전역 표준 문서 관리 탭 (배관 Prefix 수정 및 UsageTab 스타일 커스텀 드롭다운 적용)
+Modification History:
+    - 2026-04-26 (김민정) : 카테고리별 문서 관리 및 S3 업로드/삭제 로직 점검
 */
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -38,7 +40,7 @@ import {
 interface Document {
   id: string;
   file_name: string;
-  s3_url: string;
+  raw_s3_url: string;
   created_at: string;
 }
 
@@ -259,9 +261,9 @@ export const DocumentsTab = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/5 bg-white/[0.01]">
-                <th className="px-10 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em]">Integrated Archive / Spec Identification</th>
-                <th className="px-10 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em]">Timestamp</th>
-                <th className="px-10 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] text-right">Actions</th>
+                <th className="px-10 py-6 text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em]">Integrated Archive / Spec Identification</th>
+                <th className="px-10 py-6 text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em]">Timestamp</th>
+                <th className="px-10 py-6 text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em] text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -307,11 +309,11 @@ export const DocumentsTab = () => {
                                 </div>
                                 <span className="text-xl font-black text-white italic tracking-tighter group-hover:text-blue-500 transition-colors uppercase">{displayName}</span>
                               </div>
-                              <span className="text-[9px] font-black text-zinc-700 uppercase tracking-widest italic opacity-40">Encryption Verified · Cadence Tech Verified Entry</span>
+                              <span className="text-[13px] font-mono text-zinc-400 tracking-wide truncate max-w-[520px] block" title={doc.raw_s3_url}>{doc.raw_s3_url}</span>
                             </div>
                           </div>
                         </td>
-                        <td className="px-10 py-8 text-[11px] font-black text-zinc-600 tabular-nums grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100 transition-all uppercase italic">
+                        <td className="px-10 py-8 text-sm font-black text-zinc-400 tabular-nums transition-all uppercase italic">
                           {new Date(doc.created_at).toLocaleString('ko-KR', {
                             year: 'numeric', month: '2-digit', day: '2-digit',
                             hour: '2-digit', minute: '2-digit'
@@ -321,15 +323,9 @@ export const DocumentsTab = () => {
                           <div className="flex justify-end gap-3 opacity-30 group-hover:opacity-100 transition-all">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <button
-                                  onClick={() => setPreviewUrl(doc.s3_url)}
-                                  className="p-4 bg-zinc-900 border border-white/5 hover:bg-blue-600 text-zinc-500 hover:text-white rounded-[20px] transition-all shadow-2xl active:scale-95"
-                                >
-                                  <Eye className="w-5 h-5" />
-                                </button>
                               </TooltipTrigger>
-                              <TooltipContent className="bg-blue-600 text-white font-black text-[10px] uppercase py-2.5 px-5 rounded-2xl border-none shadow-[0_10px_30px_rgba(59,130,246,0.3)]">
-                                Open Protocol
+                              <TooltipContent className="bg-blue-600 text-white font-mono text-[10px] py-2.5 px-5 rounded-2xl border-none shadow-[0_10px_30px_rgba(59,130,246,0.3)] max-w-[400px] break-all">
+                                {doc.raw_s3_url}
                               </TooltipContent>
                             </Tooltip>
 
@@ -375,7 +371,7 @@ export const DocumentsTab = () => {
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <h5 className="text-white font-black uppercase text-2xl tracking-tighter leading-none italic">Secured Stream Channel</h5>
-                      <span className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.6em] italic">Level 4 Encryption Authorized</span>
+                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.6em] italic">Level 4 Encryption Authorized</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-12">
@@ -414,7 +410,7 @@ export const DocumentsTab = () => {
                 <div className="px-16 py-10 bg-black/80 border-t border-white/5 flex justify-between items-center">
                   <div className="flex items-center gap-4">
                     <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse shadow-[0_0_15px_rgba(59,130,246,0.8)]"></div>
-                    <p className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.7em] italic">Real-Time Data Decryption Node Active · Cadence AI Security Tunnel v2.4</p>
+                    <p className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.7em] italic">Real-Time Data Decryption Node Active · Cadence AI Security Tunnel v2.4</p>
                   </div>
                   <p className="text-[11px] font-black text-zinc-800 uppercase tracking-[1em] italic">CADENCE AI CORE</p>
                 </div>

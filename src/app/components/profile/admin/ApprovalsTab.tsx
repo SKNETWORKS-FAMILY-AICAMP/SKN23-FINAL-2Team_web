@@ -6,6 +6,7 @@ Description : 가입 신청 승인 대기열
 
 Modification History:
     - 2026-04-24 (김민정) : 승인/거절 버튼 UI 및 사업자등록증 미리보기 UI 
+    - 2026-04-26 (김민정) : 가입 승인 로직 및 프리사인드 URL 연동 확인
 */
 import React, { useState } from 'react';
 import { Users, ShieldCheck, Search, CheckCircle, XCircle, FileText, X, ChevronLeft } from 'lucide-react';
@@ -58,7 +59,7 @@ export const ApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
       <div className="w-20 h-20 bg-zinc-800/30 rounded-full flex items-center justify-center mb-8 border border-white/5">
         <Users className="w-8 h-8 text-zinc-700" />
       </div>
-      <p className="font-black text-xs uppercase tracking-[0.3em] opacity-40">Zero Pending Registrations.</p>
+      <p className="font-black text-xs uppercase tracking-[0.3em] text-zinc-400">Zero Pending Registrations.</p>
     </div>
   );
 
@@ -78,9 +79,9 @@ export const ApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
               </div>
               <div className="space-y-2">
                 <h4 className="font-black text-white text-xl tracking-tighter uppercase mb-0.5">{org.company_name}</h4>
-                <div className="flex items-center gap-6 text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] opacity-60">
-                  <span className="flex items-center gap-2 italic"><FileText className="w-3 h-3 text-zinc-600" /> {org.admin_email}</span>
-                  <span>{org.created_at ? format(new Date(org.created_at), 'yyyy.MM.dd HH:mm') : 'N/A'}</span>
+                <div className="flex items-center gap-6 text-[13px] text-zinc-400 font-black uppercase tracking-[0.2em]">
+                  <span className="flex items-center gap-2 italic"><FileText className="w-3 h-3 text-zinc-600" /> 담당자 이메일: {org.admin_email}</span>
+                  <span>가입 일자: {org.created_at ? format(new Date(org.created_at), 'yyyy.MM.dd HH:mm') : 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -196,7 +197,7 @@ export const ApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
               </div>
               
               <div className="px-10 py-5 bg-black/40 border-t border-white/5 text-center">
-                 <p className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.5em] italic">Encryption Protocol Active · Cadence AI Verified Document</p>
+                 <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.5em] italic">Encryption Protocol Active · Cadence AI Verified Document</p>
               </div>
             </motion.div>
           </div>

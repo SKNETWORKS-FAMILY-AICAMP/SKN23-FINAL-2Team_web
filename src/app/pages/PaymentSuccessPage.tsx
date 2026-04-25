@@ -7,6 +7,7 @@ Description : 결제 승인 성공 시 처리 및 자동 API 키 발급 안내 �
 Modification History:
     - 2026-04-21 (김민정) : 초기 생성 및 토스 페이먼츠 승인 연동
     - 2026-04-22 (김민정) : 자동 API 키 발급 결과 전시 및 UI 개선
+    - 2026-04-26 (김민정) : 결제수단 추가 및 결제취소 기능 추가
  */
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -37,6 +38,8 @@ export default function PaymentSuccessPage() {
 
       try {
         const token = localStorage.getItem('access_token');
+        const pending_added_seats = localStorage.getItem('pending_added_seats') || '0';
+
         const response = await fetch('http://localhost:8000/api/v1/payments/toss-confirm', {
           method: 'POST',
           headers: {
@@ -47,7 +50,8 @@ export default function PaymentSuccessPage() {
             paymentKey,
             orderId,
             amount: Number(amount),
-            plan_name
+            plan_name,
+            added_seats: Number(pending_added_seats)
           })
         });
 
@@ -77,7 +81,7 @@ export default function PaymentSuccessPage() {
 
   return (
     <div className="min-h-screen bg-[#0e0e0e] text-white flex items-center justify-center p-6">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full bg-zinc-900/50 backdrop-blur-2xl border border-white/10 p-10 rounded-3xl text-center space-y-6"
@@ -98,7 +102,7 @@ export default function PaymentSuccessPage() {
             <div className="space-y-2">
               <h2 className="text-3xl font-black">결제 완료!</h2>
               <p className="text-zinc-400">구독이 성공적으로 시작되었습니다.</p>
-              
+
               {autoKey && (
                 <div className="mt-8 p-4 bg-black/40 border border-[#0071e3]/30 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <p className="text-[10px] text-[#0071e3] font-bold uppercase tracking-widest text-left">Auto-Generated API Key</p>
@@ -108,7 +112,7 @@ export default function PaymentSuccessPage() {
                     </code>
                   </div>
                   <p className="text-[10px] text-zinc-500 text-left leading-relaxed">
-                    첫 API 키가 자동으로 발급되었습니다. <br/>
+                    첫 API 키가 자동으로 발급되었습니다. <br />
                     마이페이지의 'API Key 관리' 탭에서 언제든 확인하실 수 있습니다.
                   </p>
                 </div>

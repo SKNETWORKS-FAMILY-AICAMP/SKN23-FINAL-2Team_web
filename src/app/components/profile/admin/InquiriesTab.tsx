@@ -6,6 +6,7 @@ Description : Q&A 관리 페이지
 
 Modification History:
     - 2026-04-24 (김민정) : 답변 등록 및 알림 발송 로직(handleAnswerSubmit) 내장형 모듈화
+    - 2026-04-26 (김민정) : 고객 문의 답변 등록 로직 연동
 */
 import React, { useState } from 'react';
 import { MessageSquare, Send, CheckCircle2, Clock } from 'lucide-react';
@@ -125,7 +126,7 @@ export const InquiriesTab = ({ isLoading, inquiries, onRefresh }: Props) => {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-zinc-600">
+          <div className="flex-1 flex flex-col items-center justify-center text-zinc-400">
             <Clock className="w-12 h-12 mb-4 opacity-20" />
             <p className="text-sm font-medium">관리할 문의를 선택해주세요.</p>
           </div>

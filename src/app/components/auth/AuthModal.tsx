@@ -9,6 +9,7 @@ Modification History:
     - 2026-04-21 (김민정) : 자동 닫기 성공 모달 및 UI 개선
     - 2026-04-22 (김민정) : 로그인/회원가입 후 구독 상태에 따른 지능형 내비게이션(onSuccess) 연동
     - 2026-04-24 (김민정) : Redis 기반 이메일 인증 및 비밀번호 재설정 UX 구현
+    - 2026-04-26 (김민정) : 인증 성공 시 메인 대시보드 연동
 */
 import React, { useState, forwardRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
@@ -198,11 +199,20 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
                 <motion.div key="main-tabs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   {activeTab !== 'forgot_password' && (
                     <Tabs value={activeTab as string} onValueChange={(v) => setActiveTab(v as AuthStep)} className="w-full">
-                      <TabsList className="grid w-full grid-cols-2 mb-4 bg-zinc-900">
-                        <TabsTrigger value="login">로그인</TabsTrigger>
-                        <TabsTrigger value="signup">회원가입</TabsTrigger>
+                      <TabsList className="grid w-full grid-cols-2 mb-6 bg-zinc-900/50 p-1 h-12">
+                        <TabsTrigger 
+                          value="login" 
+                          className="flex items-center justify-center h-full text-zinc-400 font-bold data-[state=active]:bg-white data-[state=active]:text-black transition-all rounded-md"
+                        >
+                          로그인
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="signup" 
+                          className="flex items-center justify-center h-full text-zinc-400 font-bold data-[state=active]:bg-white data-[state=active]:text-black transition-all rounded-md"
+                        >
+                          회원가입
+                        </TabsTrigger>
                       </TabsList>
-
                       <TabsContent value="login">
                         <LoginForm
                           mode="login"
