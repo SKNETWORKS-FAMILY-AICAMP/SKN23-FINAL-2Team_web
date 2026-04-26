@@ -6,7 +6,7 @@ Description : 인증 API 모듈
 
 Modification History:
     - 2026-04-24 (김민정) : 모듈화
-    - 2026-04-26 (김민정) : qna 파일명 변경
+    - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경
 */
 const BASE_URL = 'http://localhost:8000/api/v1';
 

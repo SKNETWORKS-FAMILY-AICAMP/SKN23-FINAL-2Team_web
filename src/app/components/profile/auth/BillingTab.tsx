@@ -6,7 +6,7 @@ Description : 마이페이지 - 요금제 및 결제 관리 탭 컴포넌트
 
 Modification History:
     - 2026-04-23 (김민정) : 모듈화 작업으로 인한 파일 분리 생성
-    - 2026-04-26 (김민정) : 현재 플랜 정보 내 결제일, 다음 구독일, 남은 일수 표시 기능 추가
+    - 2026-04-26 (김민정) : 현재 플랜 정보 내 결제일, 다음 구독일, 남은 일수 표시 기능 추가, 구독 해지 버튼 추가
  */
 import React from 'react';
 import { CreditCard, AlertTriangle, Zap } from 'lucide-react';
@@ -18,6 +18,7 @@ interface BillingTabProps {
   isVerified: boolean;
   triggerConfirm: (title: string, message: string, onConfirm: () => void, type?: 'blue' | 'red') => void;
   navigate: any;
+  refetchPayment: () => void;
 }
 
 export const BillingTab: React.FC<BillingTabProps> = ({
@@ -25,7 +26,8 @@ export const BillingTab: React.FC<BillingTabProps> = ({
   paymentInfo,
   isVerified,
   triggerConfirm,
-  navigate
+  navigate,
+  refetchPayment
 }) => {
   if (isLoadingPayment || !paymentInfo) {
     return <div className="text-center py-12 text-zinc-500 animate-pulse">정보를 불러오는 중입니다...</div>;
@@ -114,41 +116,81 @@ export const BillingTab: React.FC<BillingTabProps> = ({
         </div>
 
         <div className="bg-zinc-900/50 border border-white/10 p-8 rounded-3xl flex flex-col justify-between relative overflow-hidden group">
-          {/* 배경에 은은한 경고 아이콘 효과 */}
+          {/* 배경에 은은한 상징 아이콘 효과 */}
           <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <AlertTriangle className="w-40 h-40 text-red-500" />
+            {paymentInfo?.is_cancelling ? (
+              <Zap className="w-40 h-40 text-blue-500" />
+            ) : (
+              <AlertTriangle className="w-40 h-40 text-red-500" />
+            )}
           </div>
 
           <div className="relative z-10">
             <h4 className="font-bold text-white mb-2 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-500" /> 구독 관리 및 해지
+              <AlertTriangle className={`w-4 h-4 ${paymentInfo?.is_cancelling ? 'text-blue-500' : 'text-red-500'}`} />
+              {paymentInfo?.is_cancelling ? '구독 해지 예약됨' : '구독 관리 및 해지'}
             </h4>
             <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
-              현재 결제 주기 종료일(
-              <span className="text-white font-bold">
-                {paymentInfo?.next_payment_date?.split('T')[0] || '-'}
-              </span>
-              )까지는 모든 기능을 정상적으로 이용하실 수 있습니다.
+              {paymentInfo?.is_cancelling ? (
+                <>  구독 해지가 예약되었습니다. <span className="text-white font-bold">{paymentInfo?.next_payment_date?.split('T')[0]}</span> 이후에는 서비스를 이용할 수 없습니다.</>
+              ) : (
+                <>
+                  현재 결제 주기 종료일(
+                  <span className="text-white font-bold">
+                    {paymentInfo?.next_payment_date?.split('T')[0] || '-'}
+                  </span>
+                  )까지는 모든 기능을 정상적으로 이용하실 수 있습니다.
+                </>
+              )}
             </p>
           </div>
 
           <button
             disabled={!isVerified}
-            onClick={() =>
-              triggerConfirm(
-                '구독 해지',
-                '정말 구독을 해지하시겠습니까? 해지 후에도 현재 주기가 끝날 때까지는 이용 가능합니다.',
-                () => toast.success('해지 예약되었습니다.'),
-                'red'
-              )
-            }
-            className={`w-full py-4 font-bold rounded-2xl transition-all border ${
-              isVerified
-                ? 'border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500/10'
-                : 'border-white/5 bg-white/5 text-zinc-600 cursor-not-allowed'
-            }`}
+            onClick={() => {
+              const token = localStorage.getItem('access_token');
+              if (paymentInfo?.is_cancelling) {
+                triggerConfirm(
+                  '구독 유지',
+                  '해지 예약을 취소하고 구독을 유지하시겠습니까?',
+                  async () => {
+                    const res = await fetch('http://localhost:8000/api/v1/payments/resume', {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                      toast.success('구독 유지가 확정되었습니다.');
+                      refetchPayment();
+                    }
+                  },
+                  'blue'
+                );
+              } else {
+                triggerConfirm(
+                  '구독 해지',
+                  '정말 구독을 해지하시겠습니까? 해지 후에도 현재 주기가 끝날 때까지는 이용 가능합니다.',
+                  async () => {
+                    const res = await fetch('http://localhost:8000/api/v1/payments/cancel', {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                      toast.success('해지 예약되었습니다.');
+                      refetchPayment();
+                    }
+                  },
+                  'red'
+                );
+              }
+            }}
+            className={`w-full py-4 font-bold rounded-2xl transition-all border ${!isVerified
+                ? 'border-white/5 bg-white/5 text-zinc-600 cursor-not-allowed'
+                : paymentInfo?.is_cancelling
+                  ? 'border-blue-500/20 bg-blue-500/5 text-blue-400 hover:bg-blue-500/10'
+                  : 'border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500/10'
+              }`}
           >
-            {isVerified ? '구독 멤버십 해지하기' : '승인 대기 중'}
+            {!isVerified ? '승인 대기 중' : paymentInfo?.is_cancelling ? '구독 해지 취소하기 (구독 유지)' : '구독 멤버십 해지하기'}
           </button>
         </div>
       </div>

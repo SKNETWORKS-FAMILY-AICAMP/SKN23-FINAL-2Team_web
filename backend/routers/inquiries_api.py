@@ -1,12 +1,12 @@
 """
-File    : backend/routers/qna_api.py
+File    : backend/routers/inquiries_api.py
 Author  : 김민정
 Create  : 2026-04-23
-Description : 고객 지원(QnA) 및 파일 업로드 라우터
+Description : 고객 지원(Inquiries) 및 파일 업로드 라우터
 
 Modification History:
     - 2026-04-23 (김민정) : 모듈화 작업으로 인한 파일 분리 생성
-    - 2026-04-26 (김민정) : qna 파일명 변경
+    - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경, 문의 내용과 답변 내용 추가
 """
 from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
 from sqlalchemy.orm import Session
@@ -18,7 +18,7 @@ from .. import models
 from ..database import get_db
 from ..dependencies import get_current_user
 
-router = APIRouter(prefix="/api/v1/qna", tags=["qna"])
+router = APIRouter(prefix="/api/v1/support", tags=["support"])
 
 UPLOAD_DIR = "uploads"
 if not os.path.exists(UPLOAD_DIR):
@@ -76,6 +76,8 @@ async def get_support_tickets(db: Session = Depends(get_db)):
             "id": t_obj.id,
             "type": t_obj.inquiry_type,
             "title": t_obj.title,
+            "content": t_obj.content,
+            "answer": t_obj.answer_content,
             "status": t_obj.status,
             "created_at": t_obj.created_at.isoformat(),
             "has_attachment": bool(t_obj.file_path),

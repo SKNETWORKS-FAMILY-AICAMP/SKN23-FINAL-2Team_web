@@ -5,7 +5,7 @@ Create  : 2026-04-24
 Description : 시스템 관리자 전용 API 호출 함수 고도화 (필터링 및 Q&A 추가)
 
 Modification History:
-    - 2026-04-26 (김민정) : qna 파일명 변경 
+    - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경 
 */
 
 const BASE_URL = 'http://localhost:8000/api/v1/admin';

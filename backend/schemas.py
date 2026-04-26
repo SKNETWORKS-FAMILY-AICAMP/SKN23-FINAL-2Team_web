@@ -32,6 +32,7 @@ class OrgResponse(BaseModel):
     orgId: Optional[str] = None
     verification_status: Optional[str] = "pending"
     plan: Optional[str] = "none"
+    max_seats: Optional[int] = 0
 
     class Config:
         from_attributes = True

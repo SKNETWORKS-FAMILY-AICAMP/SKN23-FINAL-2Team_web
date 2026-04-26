@@ -6,7 +6,7 @@ Description : 인증(Login/Register/Verify/Reset) 관련 API 라우터 (Redis �
 
 Modification History:
     - 2026-04-23 (김민정) : 모듈화 및 Redis 기반 이메일 인증 시스템 구현
-    - 2026-04-26 (김민정) : qna 파일명 변경
+    - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경
 """
 import traceback
 from fastapi import APIRouter, Depends, HTTPException, Body, UploadFile, File, Form
@@ -93,7 +93,8 @@ async def verify_email(data: schemas.EmailVerification, db: Session = Depends(ge
                 "role": "user",
                 "orgId": str(new_org.id),
                 "verification_status": new_org.verification_status,
-                "plan": new_org.plan
+                "plan": new_org.plan,
+                "max_seats": new_org.max_seats
             }
         }
     except Exception as e:
@@ -131,7 +132,8 @@ def login(login_data: schemas.OrgLogin, db: Session = Depends(get_db)):
                 "role": "admin", 
                 "orgId": "admin", 
                 "verification_status": "verified", 
-                "plan": "enterprise"
+                "plan": "enterprise",
+                "max_seats": 0
             }
         }
 
@@ -152,7 +154,8 @@ def login(login_data: schemas.OrgLogin, db: Session = Depends(get_db)):
                 "role": "user",
                 "orgId": str(org.id),
                 "verification_status": org.verification_status,
-                "plan": org.plan
+                "plan": org.plan,
+                "max_seats": org.max_seats
             }
         }
 

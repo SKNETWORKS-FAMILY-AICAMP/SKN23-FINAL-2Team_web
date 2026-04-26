@@ -69,41 +69,41 @@ export const ApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
         {users.map((org) => (
           <div 
             key={org.id} 
-            className="bg-[#0b0b0b] border border-white/5 p-8 rounded-[40px] flex items-center justify-between group hover:border-white/10 transition-all shadow-2xl relative overflow-hidden"
+            className="bg-[#0b0b0b] border border-white/5 p-6 lg:p-8 rounded-[40px] flex flex-col xl:flex-row xl:items-center justify-between gap-6 xl:gap-0 group hover:border-white/10 transition-all shadow-2xl relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-[80px] -z-10 group-hover:bg-blue-600/10 transition-all"></div>
             
-            <div className="flex gap-8 items-center italic">
-              <div className="w-16 h-16 rounded-[22px] bg-zinc-900 border border-white/5 flex items-center justify-center group-hover:bg-blue-600/10 transition-all duration-500 shadow-inner">
+            <div className="flex flex-col sm:flex-row gap-6 lg:gap-8 sm:items-center italic">
+              <div className="w-16 h-16 shrink-0 rounded-[22px] bg-zinc-900 border border-white/5 flex items-center justify-center group-hover:bg-blue-600/10 transition-all duration-500 shadow-inner">
                 <ShieldCheck className="w-7 h-7 text-yellow-500/50 group-hover:text-yellow-500 transition-colors" />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3 sm:space-y-2">
                 <h4 className="font-black text-white text-xl tracking-tighter uppercase mb-0.5">{org.company_name}</h4>
-                <div className="flex items-center gap-6 text-[13px] text-zinc-400 font-black uppercase tracking-[0.2em]">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6 text-[10px] sm:text-[11px] lg:text-[13px] text-zinc-400 font-black uppercase tracking-[0.2em] break-all">
                   <span className="flex items-center gap-2 italic"><FileText className="w-3 h-3 text-zinc-600" /> 담당자 이메일: {org.admin_email}</span>
-                  <span>가입 일자: {org.created_at ? format(new Date(org.created_at), 'yyyy.MM.dd HH:mm') : 'N/A'}</span>
+                  <span className="opacity-60">가입 일자: {org.created_at ? format(new Date(org.created_at), 'yyyy.MM.dd HH:mm') : 'N/A'}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 lg:gap-4">
               <button 
                 onClick={() => setSelectedImg(org.business_reg_s3_url)} 
-                className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-zinc-800/80 text-zinc-300 text-[11px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all border border-white/5 shadow-lg active:scale-95"
+                className="flex-1 md:flex-initial flex items-center justify-center gap-3 px-4 sm:px-8 py-4 rounded-2xl bg-zinc-800/80 text-zinc-300 text-[10px] sm:text-[11px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all border border-white/5 shadow-lg active:scale-95 whitespace-nowrap"
               >
                 <Search className="w-4 h-4" /> 서류 확인
               </button>
               
               <button 
                 onClick={() => setConfirmModal({ show: true, type: 'approve', orgId: org.id, companyName: org.company_name })} 
-                className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-emerald-500/10 text-emerald-500 text-[11px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20 shadow-lg shadow-emerald-500/10 active:scale-95"
+                className="flex-1 md:flex-initial flex items-center justify-center gap-3 px-4 sm:px-8 py-4 rounded-2xl bg-emerald-500/10 text-emerald-500 text-[10px] sm:text-[11px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20 shadow-lg shadow-emerald-500/10 active:scale-95 whitespace-nowrap"
               >
                 <CheckCircle className="w-4 h-4" /> 승인
               </button>
               
               <button 
                 onClick={() => setConfirmModal({ show: true, type: 'reject', orgId: org.id, companyName: org.company_name })} 
-                className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-red-500/10 text-red-500 text-[11px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all border border-red-500/20 shadow-lg shadow-red-500/10 active:scale-95"
+                className="flex-1 md:flex-initial flex items-center justify-center gap-3 px-4 sm:px-8 py-4 rounded-2xl bg-red-500/10 text-red-500 text-[10px] sm:text-[11px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all border border-red-500/20 shadow-lg shadow-red-500/10 active:scale-95 whitespace-nowrap"
               >
                 <XCircle className="w-4 h-4" /> 거절
               </button>

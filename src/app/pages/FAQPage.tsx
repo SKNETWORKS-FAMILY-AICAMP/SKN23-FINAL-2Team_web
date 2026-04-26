@@ -1,3 +1,12 @@
+/*
+File    : src/app/pages/FAQPage.tsx
+Author  : 김민정
+Create  : 2026-04-20
+Description : 자주 묻는 질문(FAQ) 페이지
+
+Modification History:
+    - 2026-04-20 (김민정) : FAQ 페이지 초기 구현
+*/
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, ChevronUp, ChevronLeft, HelpCircle } from 'lucide-react';

@@ -61,6 +61,10 @@ export const DocumentsTab = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
   const [uploadCategory, setUploadCategory] = useState<string>('소방');
   const [isUploadPickerOpen, setIsUploadPickerOpen] = useState(false);
 
@@ -87,7 +91,9 @@ export const DocumentsTab = () => {
 
   useEffect(() => {
     fetchDocuments();
-  }, [selectedCategory]);
+    setCurrentPage(1);
+  }, [selectedCategory, searchTerm]);
+
 
   const getCategoryFromFileName = (fileName: string) => {
     const found = CATEGORIES.find(cat => fileName.startsWith(cat.prefix));
@@ -136,6 +142,19 @@ export const DocumentsTab = () => {
   const filteredDocs = documents.filter(doc =>
     doc.file_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredDocs.length / itemsPerPage);
+  const currentDocs = filteredDocs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const getPageRange = () => {
+    let start = Math.max(1, currentPage - 2);
+    let end = start + 4;
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, end - 4);
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -256,9 +275,9 @@ export const DocumentsTab = () => {
           </div>
         </div>
 
-        {/* 리스트 테이블 */}
-        <div className="bg-[#0b0b0b] border border-white/5 rounded-[40px] overflow-hidden shadow-2xl relative">
-          <table className="w-full text-left border-collapse">
+        {/* 리스트 테이블 (가로 스크롤 및 최소 너비 보장) */}
+        <div className="bg-[#0b0b0b] border border-white/5 rounded-[30px] lg:rounded-[40px] overflow-x-auto shadow-2xl relative scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+          <table className="w-full text-left border-collapse min-w-[1100px] lg:min-w-full">
             <thead>
               <tr className="border-b border-white/5 bg-white/[0.01]">
                 <th className="px-10 py-6 text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em]">Integrated Archive / Spec Identification</th>
@@ -284,7 +303,7 @@ export const DocumentsTab = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredDocs.map((doc) => {
+                  currentDocs.map((doc, index) => {
                     const category = getCategoryFromFileName(doc.file_name);
                     const catInfo = CATEGORIES.find(c => c.id === category) || { id: '전체', prefix: '', icon: FileText, color: 'text-zinc-500', bg: 'bg-zinc-500/10' };
                     const displayName = doc.file_name.replace(catInfo.prefix, '');
@@ -292,9 +311,14 @@ export const DocumentsTab = () => {
                     return (
                       <motion.tr
                         key={doc.id}
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ 
+                          duration: 0.45,
+                          delay: index * 0.04, // 순차 등장 효과
+                          ease: [0.16, 1, 0.3, 1] // 프리미엄 감속 곡선
+                        }}
                         className="border-b border-white/5 hover:bg-white/[0.02] transition-all group"
                       >
                         <td className="px-10 py-8">
@@ -319,29 +343,24 @@ export const DocumentsTab = () => {
                             hour: '2-digit', minute: '2-digit'
                           })}
                         </td>
-                        <td className="px-10 py-8 text-right">
-                          <div className="flex justify-end gap-3 opacity-30 group-hover:opacity-100 transition-all">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                              </TooltipTrigger>
-                              <TooltipContent className="bg-blue-600 text-white font-mono text-[10px] py-2.5 px-5 rounded-2xl border-none shadow-[0_10px_30px_rgba(59,130,246,0.3)] max-w-[400px] break-all">
-                                {doc.raw_s3_url}
-                              </TooltipContent>
-                            </Tooltip>
+                        <td className="px-10 py-8 text-right overflow-visible">
+                          <div className="flex justify-end items-center gap-6 relative">
+                            <div className="relative flex flex-col items-center group/delete">
+                              <button
+                                onClick={() => handleDelete(doc.id, doc.file_name)}
+                                className="absolute bottom-full mb-3 px-6 py-2.5 bg-red-600 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-[0_0_30px_rgba(220,38,38,0.4)] z-50 whitespace-nowrap opacity-0 group-hover/delete:opacity-100 translate-y-2 group-hover/delete:translate-y-0 transition-all duration-300 pointer-events-none group-hover/delete:pointer-events-auto"
+                              >
+                                삭제
+                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-600 rotate-45"></div>
+                              </button>
 
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button
-                                  onClick={() => handleDelete(doc.id, doc.file_name)}
-                                  className="p-4 bg-zinc-900 border border-white/5 hover:bg-red-600 text-zinc-500 hover:text-white rounded-[20px] transition-all shadow-2xl active:scale-95"
-                                >
-                                  <Trash2 className="w-5 h-5" />
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent className="bg-red-600 text-white font-black text-[10px] uppercase py-2.5 px-5 rounded-2xl border-none shadow-[0_10px_30px_rgba(220,38,38,0.3)]">
-                                Erase Entry
-                              </TooltipContent>
-                            </Tooltip>
+                              <button
+                                onClick={() => handleDelete(doc.id, doc.file_name)}
+                                className="p-4 bg-zinc-900 border border-white/5 rounded-[20px] text-zinc-600 group-hover/delete:bg-red-600 group-hover/delete:text-white transition-all shadow-2xl shadow-black/40 active:scale-95"
+                              >
+                                <Trash2 className="w-5 h-5 transition-transform group-hover/delete:rotate-12" />
+                              </button>
+                            </div>
                           </div>
                         </td>
                       </motion.tr>
@@ -352,6 +371,42 @@ export const DocumentsTab = () => {
             </tbody>
           </table>
         </div>
+
+        {/* 페이지네이션 UI */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 py-8">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-3 rounded-xl bg-zinc-900 border border-white/5 text-zinc-500 hover:text-white disabled:opacity-20 transition-all"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            <div className="flex gap-2">
+              {getPageRange().map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-11 h-11 rounded-xl text-xs font-black transition-all border ${currentPage === page
+                      ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/20 scale-110'
+                      : 'bg-zinc-900 border-white/5 text-zinc-500 hover:text-white hover:bg-zinc-800'
+                    }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-3 rounded-xl bg-zinc-900 border border-white/5 text-zinc-500 hover:text-white disabled:opacity-20 transition-all"
+            >
+              <ChevronLeft className="w-5 h-5 rotate-180" />
+            </button>
+          </div>
+        )}
 
         {/* 통합 문서 뷰어 모달 */}
         <AnimatePresence>

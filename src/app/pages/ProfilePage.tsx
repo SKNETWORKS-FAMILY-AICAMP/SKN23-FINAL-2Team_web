@@ -10,7 +10,7 @@ Modification History:
     - 2026-04-22 (김민정) : 요금제 변경(업그레이드/다운그레이드) 로직 및 가격 정책 업데이트
     - 2026-04-23 (김민정) : 컴포넌트 기능별 추출(Account, Billing, API, Usage, Device, QnA) 및 대규모 최적화
     - 2026-04-24 (김민정) : 마이페이지 내 결제 및 계정 관리 UI/UX 개선
-    - 2026-04-26 (김민정) : qna 파일명 변경
+    - 2026-04-26 (김민정) : device 더미 데이터 삭제 및 DB 연동
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -29,10 +29,10 @@ import { BillingTab } from '@/app/components/profile/auth/BillingTab';
 import { APIKeyTab } from '@/app/components/profile/auth/APIKeyTab';
 import { UsageTab } from '@/app/components/profile/auth/UsageTab';
 import { DeviceTab } from '@/app/components/profile/auth/DeviceTab';
-import { MyQnaTab } from '@/app/components/profile/auth/MyQnaTab';
+import { MyInquiriesTab } from '@/app/components/profile/auth/MyInquiriesTab';
 
 
-type TabType = 'account' | 'billing' | 'api' | 'usage' | 'devices' | 'downloads' | 'my_qna';
+type TabType = 'account' | 'billing' | 'api' | 'usage' | 'devices' | 'downloads' | 'my_inquiries';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -48,39 +48,48 @@ export default function ProfilePage() {
     }
   }, [user, navigate, isAuthenticated]);
 
-  // URL state나 navigation state에서 탭 정보를 가져옴
-  const initialTab = (location.state?.tab as TabType) || 'account';
+  // URL 쿼리 스트링에서 탭 정보를 가져와 초기 상태로 설정
+  const searchParams = new URLSearchParams(location.search);
+  const queryTab = searchParams.get('tab') as TabType;
+  const initialTab = queryTab || (location.state?.tab as TabType) || 'account';
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+
+  // 탭 변경 시 URL 갱신
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    navigate(`/profile?tab=${tab}`, { replace: true });
+  };
 
   // --- 1. Subscription & Payment State ---
   const [currentPlan, setCurrentPlan] = useState<string>('');
   const [paymentInfo, setPaymentInfo] = useState<any>(null);
   const [isLoadingPayment, setIsLoadingPayment] = useState(false);
 
-  useEffect(() => {
-    const fetchPayment = async () => {
-      if (activeTab === 'billing' && !paymentInfo && !isLoadingPayment) {
-        setIsLoadingPayment(true);
-        try {
-          const token = localStorage.getItem('access_token');
-          const response = await fetch('http://localhost:8000/api/v1/payments/current', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await response.json();
-          if (data && data.success) {
-            setPaymentInfo(data);
-            setCurrentPlan(data.plan_name);
-          } else {
-            setPaymentInfo({ noPlan: true });
-          }
-        } catch (error) {
-          console.error("Payment Fetch Error", error);
+  const fetchPayment = useCallback(async (force = false) => {
+    if ((activeTab === 'billing' || force) && (!paymentInfo || force) && !isLoadingPayment) {
+      setIsLoadingPayment(true);
+      try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch('http://localhost:8000/api/v1/payments/current', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (data && data.success) {
+          setPaymentInfo(data);
+          setCurrentPlan(data.plan_name);
+        } else {
           setPaymentInfo({ noPlan: true });
-        } finally {
-          setIsLoadingPayment(false);
         }
+      } catch (error) {
+        console.error("Payment Fetch Error", error);
+        setPaymentInfo({ noPlan: true });
+      } finally {
+        setIsLoadingPayment(false);
       }
-    };
+    }
+  }, [activeTab, paymentInfo, isLoadingPayment]);
+
+  useEffect(() => {
     fetchPayment();
   }, [activeTab]);
 
@@ -144,9 +153,7 @@ export default function ProfilePage() {
   // --- 3. API Keys & Devices State ---
   const [apiKeys, setApiKeys] = useState<any[]>([]);
   const [isLoadingKeys, setIsLoadingKeys] = useState(false);
-  const [devices, setDevices] = useState<any[]>([
-    { id: 1, hostname: 'MacBook-Pro', os_user: 'admin', is_active: true, last_seen: new Date().toISOString() }
-  ]);
+  const [devices, setDevices] = useState<any[]>([]);
   const [newGeneratedKey, setNewGeneratedKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -177,7 +184,7 @@ export default function ProfilePage() {
         setIsLoadingDevices(true);
         try {
           const token = localStorage.getItem('access_token');
-          const response = await fetch('http://localhost:8000/api/v1/devices', {
+          const response = await fetch('http://localhost:8000/api/v1/devices/', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const data = await response.json();
@@ -204,14 +211,14 @@ export default function ProfilePage() {
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [certFile, setCertFile] = useState<File | null>(null);
 
-  // --- 5. My QnA States ---
+  // --- 5. My Inquiries States ---
   const [myTickets, setMyTickets] = useState<any[]>([]);
-  const [isLoadingQna, setIsLoadingQna] = useState(false);
+  const [isLoadingInquiries, setIsLoadingInquiries] = useState(false);
 
   useEffect(() => {
-    if (activeTab === 'my_qna') {
+    if (activeTab === 'my_inquiries') {
       const fetchMyTickets = async () => {
-        setIsLoadingQna(true);
+        setIsLoadingInquiries(true);
         try {
           const token = localStorage.getItem('access_token');
           const res = await fetch('http://localhost:8000/api/v1/support/tickets/me', {
@@ -222,7 +229,7 @@ export default function ProfilePage() {
         } catch (e) {
           console.error(e);
         } finally {
-          setIsLoadingQna(false);
+          setIsLoadingInquiries(false);
         }
       };
       fetchMyTickets();
@@ -340,15 +347,24 @@ export default function ProfilePage() {
       case 'account':
         return <AccountTab user={user} setShowPasswordModal={setShowPasswordModal} setShowDeleteModal={setShowDeleteModal} setCertFile={setCertFile} certFile={certFile} />;
       case 'billing':
-        return <BillingTab isLoadingPayment={isLoadingPayment} paymentInfo={paymentInfo} isVerified={isVerified} triggerConfirm={triggerConfirm} navigate={navigate} />;
+        return (
+          <BillingTab
+            isLoadingPayment={isLoadingPayment}
+            paymentInfo={paymentInfo}
+            isVerified={isVerified}
+            triggerConfirm={triggerConfirm}
+            navigate={navigate}
+            refetchPayment={() => fetchPayment(true)}
+          />
+        );
       case 'api':
         return <APIKeyTab user={user} apiKeys={apiKeys} isLoadingKeys={isLoadingKeys} handleGenerateKey={handleGenerateKey} handleDeleteKey={handleDeleteKey} setActiveTab={setActiveTab} />;
       case 'usage':
         return <UsageTab isLoadingUsage={isLoadingUsage} usageStats={usageStats} usageDateRange={usageDateRange} handleCustomDateChange={handleCustomDateChange} setQuickRange={setQuickRange} selectedMetric={selectedMetric} setSelectedMetric={setSelectedMetric} />;
       case 'devices':
         return <DeviceTab isLoadingDevices={isLoadingDevices} devices={devices} />;
-      case 'my_qna':
-        return <MyQnaTab isLoadingQna={isLoadingQna} myTickets={myTickets} />;
+      case 'my_inquiries':
+        return <MyInquiriesTab isLoadingInquiries={isLoadingInquiries} myTickets={myTickets} />;
       default:
         return null;
     }
@@ -360,7 +376,7 @@ export default function ProfilePage() {
     { id: 'api', label: 'API Key 관리', icon: Key },
     { id: 'usage', label: '실시간 사용량', icon: Activity },
     { id: 'devices', label: '기기 등록 현황', icon: Monitor },
-    { id: 'my_qna', label: '내 문의 내역', icon: MessageSquare },
+    { id: 'my_inquiries', label: '내 문의 내역', icon: MessageSquare },
     { id: 'downloads', label: '감리 리포트 다운로드', icon: FileDown },
   ];
 
@@ -387,7 +403,13 @@ export default function ProfilePage() {
       <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row gap-12">
         <aside className="w-full md:w-64 shrink-0 space-y-1">
           {tabs.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-[#0071e3]/10 text-[#abc7ff] shadow-[inset_2px_0_0_#0071e3]' : 'text-zinc-400 hover:bg-white/5'}`}><tab.icon className="w-5 h-5" />{tab.label}</button>
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-[#0071e3]/10 text-[#abc7ff] shadow-[inset_2px_0_0_#0071e3]' : 'text-zinc-400 hover:bg-white/5'}`}
+            >
+              <tab.icon className="w-5 h-5" />{tab.label}
+            </button>
           ))}
         </aside>
         <main className="flex-1 min-w-0">{renderTabContent()}</main>

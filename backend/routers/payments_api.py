@@ -5,7 +5,7 @@ Create  : 2026-04-23
 Description : 결제(Payment) 및 구독 관련 API 라우터 (토스 페이먼츠 연동)
 
 Modification History:
-    - 2026-04-26 (김민정) : 결제 승인 시 상세 필드 계산 및 구독 종료일DB 저장 로직 추가
+    - 2026-04-26 (김민정) : 결제 승인 시 상세 필드 계산 및 구독 종료일DB 저장 로직 추가, 구독 해지
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -25,24 +25,27 @@ router = APIRouter(prefix="/api/v1/payments", tags=["payments"])
 def get_current_payment(current_org: models.Organization =Depends(get_current_user), db: Session = Depends(get_db)):
     if not current_org.plan or current_org.plan == "none":
         return {"success": False, "message": "구독 중인 요금제가 없습니다.","noPlan": True}
+    # 결제 데이터의 status를 통한 해지 예약 확인
     last_payment = db.query(models.Payment).filter(
         models.Payment.org_id == current_org.id,
-        models.Payment.status == "completed"
+        models.Payment.status.in_(["completed", "cancelling"])
     ).order_by(models.Payment.created_at.desc()).first()
+    
+    is_cancelling = last_payment.status == "cancelling" if last_payment else False
+
     remaining_days = 0
     payment_method = last_payment.payment_method if last_payment else "등록된 수단 없음"
     
     if last_payment and last_payment.billing_period_end:
         end_date = last_payment.billing_period_end
-
         if end_date.tzinfo is None:
             end_date = end_date.replace(tzinfo=timezone.utc)
-
         delta = end_date - datetime.now(timezone.utc)
         remaining_days = max(0, delta.days)
 
     amount = last_payment.amount if last_payment else (300000 if current_org.plan == "Basic" else 100000)
     pg_provider = last_payment.pg_provider if last_payment else "TossPayments"
+    
     return {
         "success": True,
         "plan_name": current_org.plan,
@@ -51,8 +54,39 @@ def get_current_payment(current_org: models.Organization =Depends(get_current_us
         "pg_provider": pg_provider,
         "last_payment_date": last_payment.completed_at.isoformat() if last_payment and last_payment.completed_at else None,
         "next_payment_date": last_payment.billing_period_end.isoformat() if last_payment and last_payment.billing_period_end else None,
-        "remaining_days": remaining_days
+        "remaining_days": remaining_days,
+        "is_cancelling": is_cancelling
     }
+
+@router.post("/cancel")
+def cancel_subscription(current_org: models.Organization = Depends(get_current_user), db: Session = Depends(get_db)):
+    # 가장 최근의 성공한 결제 건을 찾아 상태를 cancelling으로 변경
+    last_payment = db.query(models.Payment).filter(
+        models.Payment.org_id == current_org.id,
+        models.Payment.status == "completed"
+    ).order_by(models.Payment.created_at.desc()).first()
+    
+    if not last_payment:
+        raise HTTPException(status_code=404, detail="해지할 활성 구독 결제 내역이 없습니다.")
+        
+    last_payment.status = "cancelling"
+    db.commit()
+    return {"success": True, "message": "해지가 예약되었습니다."}
+
+@router.post("/resume")
+def resume_subscription(current_org: models.Organization = Depends(get_current_user), db: Session = Depends(get_db)):
+    # 해지 예약된 결제 건을 다시 completed로 변경
+    last_payment = db.query(models.Payment).filter(
+        models.Payment.org_id == current_org.id,
+        models.Payment.status == "cancelling"
+    ).order_by(models.Payment.created_at.desc()).first()
+    
+    if not last_payment:
+        raise HTTPException(status_code=404, detail="해지 예약된 구독 결제 내역이 없습니다.")
+        
+    last_payment.status = "completed"
+    db.commit()
+    return {"success": True, "message": "구독 유지가 확정되었습니다."}
 
 @router.post("/toss-confirm")
 def toss_confirm(payload: dict, current_org: models.Organization =Depends(get_current_user), db: Session = Depends(get_db)):

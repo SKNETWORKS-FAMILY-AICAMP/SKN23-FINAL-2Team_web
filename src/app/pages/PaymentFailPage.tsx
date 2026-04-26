@@ -6,6 +6,7 @@ Description : 결제 실패 시 사유 전시 및 재시도 안내 페이지
 
 Modification History:
     - 2026-04-21 (김민정) : 초기 생성
+    
  */
 import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';

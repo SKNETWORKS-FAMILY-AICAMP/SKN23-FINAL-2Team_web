@@ -8,6 +8,7 @@ Modification History:
     - 2026-04-21 (김민정) : AuthContext 연동 및 네비게이션 개선
     - 2026-04-22 (김민정) : 요금제 정보 기반 동적 내비게이션 및 비로그인 플로우 최적화
     - 2026-04-23 (김민정) : 랜딩 페이지 섹션 모듈화 및 스크롤 섹션 유지 보강
+    - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경
  */
 import { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'motion/react';

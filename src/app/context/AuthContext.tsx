@@ -9,7 +9,7 @@ Modification History:
     - 2026-04-21 (김민정) : verification_status 및 plan 필드 추가
     - 2026-04-22 (김민정) : JWT Refresh Token 연동 및 자동 갱신 로직 고도화
     - 2026-04-24 (김민정) : 비밀번호 찾기 및 재설정 기능 추가
-    - 2026-04-26 (김민정) : qna 파일명 변경
+    - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경
 */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -24,6 +24,7 @@ export interface User {
   orgId?: string;
   verification_status?: string;
   plan?: string;
+  max_seats: number;
 }
 
 interface AuthContextType {
