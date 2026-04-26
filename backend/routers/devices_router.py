@@ -1,5 +1,5 @@
 """
-File    : backend/routers/devices.py
+File    : backend/routers/devices_router.py
 Author  : 김민정
 Create  : 2026-04-23
 Description : 사용자 기기 관리(Device) 관련 API 라우터
@@ -10,7 +10,7 @@ Modification History:
 """
 from fastapi import APIRouter, Depends
 from datetime import datetime
-from ..dependencies import get_current_user
+from ..core.dependencies import get_current_user
 
 router = APIRouter(
     prefix="/api/v1/devices",
@@ -18,8 +18,8 @@ router = APIRouter(
 )
 
 from sqlalchemy.orm import Session
-from ..database import get_db
-from .. import models
+from ..core.database import get_db
+from ..models import models
 
 @router.get("/")
 def get_user_devices(

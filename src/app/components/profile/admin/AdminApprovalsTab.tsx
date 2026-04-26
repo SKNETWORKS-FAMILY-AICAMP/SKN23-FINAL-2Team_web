@@ -1,5 +1,5 @@
 /*
-File    : src/app/components/profile/admin/ApprovalsTab.tsx
+File    : src/app/components/profile/admin/AdminApprovalsTab.tsx
 Author  : 김민정
 Create  : 2026-04-24
 Description : 가입 신청 승인 대기열
@@ -22,7 +22,7 @@ interface Props {
   onRefresh: () => void;
 }
 
-export const ApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
+export const AdminApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({ show: false, type: '', orgId: '', companyName: '' });
 

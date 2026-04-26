@@ -1,5 +1,5 @@
 /*
-File    : src/app/components/profile/admin/DocumentsTab.tsx
+File    : src/app/components/profile/admin/AdminDocumentsTab.tsx
 Author  : 김민정
 Create  : 2026-04-24
 Description : S3 전역 표준 문서 관리 탭 (배관 Prefix 수정 및 UsageTab 스타일 커스텀 드롭다운 적용)
@@ -51,7 +51,7 @@ const CATEGORIES = [
   { id: '전기', prefix: 'elec_', icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
 ];
 
-export const DocumentsTab = () => {
+export const AdminDocumentsTab = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);

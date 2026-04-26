@@ -1,5 +1,5 @@
 """
-File    : backend/routers/payments_api.py
+File    : backend/routers/payments_router.py
 Author  : 김민정
 Create  : 2026-04-23
 Description : 결제(Payment) 및 구독 관련 API 라우터 (토스 페이먼츠 연동)
@@ -14,10 +14,10 @@ import os
 import uuid
 import requests
 import base64
-from .. import models
-from ..database import get_db
-from ..dependencies import get_current_user, ensure_verified
-from ..email_service import EmailService
+from ..models import models
+from ..core.database import get_db
+from ..core.dependencies import get_current_user, ensure_verified
+from ..services.email_service import EmailService
 
 router = APIRouter(prefix="/api/v1/payments", tags=["payments"])
 

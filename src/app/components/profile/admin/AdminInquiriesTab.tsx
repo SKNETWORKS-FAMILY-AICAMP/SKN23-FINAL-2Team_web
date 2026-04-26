@@ -1,5 +1,5 @@
 /*
-File    : src/app/components/profile/admin/InquiriesTab.tsx
+File    : src/app/components/profile/admin/AdminInquiriesTab.tsx
 Author  : 김민정
 Create  : 2026-04-24
 Description : Q&A 관리 페이지
@@ -32,7 +32,7 @@ interface Props {
   onRefresh: () => void;
 }
 
-export const InquiriesTab = ({ isLoading, inquiries, onRefresh }: Props) => {
+export const AdminInquiriesTab = ({ isLoading, inquiries, onRefresh }: Props) => {
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [answerText, setAnswerText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

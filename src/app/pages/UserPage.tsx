@@ -1,5 +1,5 @@
 /*
-File    : src/app/pages/ProfilePage.tsx
+File    : src/app/pages/UserPage.tsx
 Author  : 김민정
 Create  : 2026-04-20
 Description : 사용자용 대시보드(마이페이지) 및 결제, 계정, API Key 관리 컴포넌트
@@ -23,13 +23,12 @@ import { format, subDays, startOfMonth, isValid, parseISO } from 'date-fns';
 import { useAuth } from '@/app/context/AuthContext';
 import { toast } from 'sonner';
 
-// Modular Components
-import { AccountTab } from '@/app/components/profile/auth/AccountTab';
-import { BillingTab } from '@/app/components/profile/auth/BillingTab';
-import { APIKeyTab } from '@/app/components/profile/auth/APIKeyTab';
-import { UsageTab } from '@/app/components/profile/auth/UsageTab';
-import { DeviceTab } from '@/app/components/profile/auth/DeviceTab';
-import { MyInquiriesTab } from '@/app/components/profile/auth/MyInquiriesTab';
+import { UserAccountTab } from '@/app/components/profile/user/UserAccountTab';
+import { UserPaymentTab } from '@/app/components/profile/user/UserPaymentTab';
+import { UserAPIKeyTab } from '@/app/components/profile/user/UserAPIKeyTab';
+import { UserUsageTab } from '@/app/components/profile/user/UserUsageTab';
+import { UserDeviceTab } from '@/app/components/profile/user/UserDeviceTab';
+import { UserInquiriesTab } from '@/app/components/profile/user/UserInquiriesTab';
 
 
 type TabType = 'account' | 'billing' | 'api' | 'usage' | 'devices' | 'downloads' | 'my_inquiries';
@@ -345,10 +344,10 @@ export default function ProfilePage() {
 
     switch (activeTab) {
       case 'account':
-        return <AccountTab user={user} setShowPasswordModal={setShowPasswordModal} setShowDeleteModal={setShowDeleteModal} setCertFile={setCertFile} certFile={certFile} />;
+        return <UserAccountTab user={user} setShowPasswordModal={setShowPasswordModal} setShowDeleteModal={setShowDeleteModal} setCertFile={setCertFile} certFile={certFile} />;
       case 'billing':
         return (
-          <BillingTab
+          <UserPaymentTab
             isLoadingPayment={isLoadingPayment}
             paymentInfo={paymentInfo}
             isVerified={isVerified}
@@ -358,13 +357,13 @@ export default function ProfilePage() {
           />
         );
       case 'api':
-        return <APIKeyTab user={user} apiKeys={apiKeys} isLoadingKeys={isLoadingKeys} handleGenerateKey={handleGenerateKey} handleDeleteKey={handleDeleteKey} setActiveTab={setActiveTab} />;
+        return <UserAPIKeyTab user={user} apiKeys={apiKeys} isLoadingKeys={isLoadingKeys} handleGenerateKey={handleGenerateKey} handleDeleteKey={handleDeleteKey} setActiveTab={setActiveTab} />;
       case 'usage':
-        return <UsageTab isLoadingUsage={isLoadingUsage} usageStats={usageStats} usageDateRange={usageDateRange} handleCustomDateChange={handleCustomDateChange} setQuickRange={setQuickRange} selectedMetric={selectedMetric} setSelectedMetric={setSelectedMetric} />;
+        return <UserUsageTab isLoadingUsage={isLoadingUsage} usageStats={usageStats} usageDateRange={usageDateRange} handleCustomDateChange={handleCustomDateChange} setQuickRange={setQuickRange} selectedMetric={selectedMetric} setSelectedMetric={setSelectedMetric} />;
       case 'devices':
-        return <DeviceTab isLoadingDevices={isLoadingDevices} devices={devices} />;
+        return <UserDeviceTab isLoadingDevices={isLoadingDevices} devices={devices} />;
       case 'my_inquiries':
-        return <MyInquiriesTab isLoadingInquiries={isLoadingInquiries} myTickets={myTickets} />;
+        return <UserInquiriesTab isLoadingInquiries={isLoadingInquiries} myTickets={myTickets} />;
       default:
         return null;
     }

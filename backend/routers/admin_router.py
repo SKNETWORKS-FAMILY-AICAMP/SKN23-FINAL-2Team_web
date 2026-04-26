@@ -1,5 +1,5 @@
 """
-File    : backend/routers/admin_api.py
+File    : backend/routers/admin_router.py
 Author  : Antigravity
 Create  : 2026-04-23
 Description : 시스템 관리자 전용 API 라우터 (회원 승인 및 관리 고도화)
@@ -15,10 +15,11 @@ from jose import jwt, JWTError
 import datetime
 import uuid
 
-from .. import models, schemas, auth_utils
-from ..database import get_db
-from ..email_service import EmailService
-from ..dependencies import security
+from ..models import models, schemas
+from ..core import auth_utils
+from ..core.database import get_db
+from ..services.email_service import EmailService
+from ..core.dependencies import security
 from ..services.s3_service import S3Service
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])

@@ -1,5 +1,5 @@
 /*
-File    : src/app/components/profile/admin/UsageTab.tsx
+File    : src/app/components/profile/admin/AdminUsageTab.tsx
 Author  : 김민정
 Create  : 2026-04-24
 Description : 시스템 전체 사용량 통계 페이지
@@ -40,7 +40,7 @@ const generateInternalDummyStats = () => {
   });
 };
 
-export const UsageTab = ({ isLoading: isFetching, stats: originalStats, orgs, onSearch }: Props) => {
+export const AdminUsageTab = ({ isLoading: isFetching, stats: originalStats, orgs, onSearch }: Props) => {
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   
   const [dateRange, setDateRange] = useState({

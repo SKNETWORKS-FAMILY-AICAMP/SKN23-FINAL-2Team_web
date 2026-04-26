@@ -1,5 +1,5 @@
 """
-File    : backend/schemas.py
+File    : backend/models/schemas.py
 Author  : 김민정
 Create  : 2026-04-21
 Description : Pydantic 스키마 정의 (요청/응답 모델)

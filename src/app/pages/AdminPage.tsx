@@ -21,12 +21,12 @@ import { toast } from 'sonner';
 import { adminApi } from '@/app/api/admin';
 import { authStorage } from '@/app/utils/storage';
 import { useAuth } from '@/app/context/AuthContext';
-import { ApprovalsTab } from '@/app/components/profile/admin/ApprovalsTab';
-import { ManagementTab } from '@/app/components/profile/admin/ManagementTab';
-import { UsageTab } from '@/app/components/profile/admin/UsageTab';
-import { DevicesTab } from '@/app/components/profile/admin/DevicesTab';
-import { InquiriesTab } from '@/app/components/profile/admin/InquiriesTab';
-import { DocumentsTab } from '@/app/components/profile/admin/DocumentsTab';
+import { AdminApprovalsTab } from '@/app/components/profile/admin/AdminApprovalsTab';
+import { AdminManagementTab } from '@/app/components/profile/admin/AdminManagementTab';
+import { AdminUsageTab } from '@/app/components/profile/admin/AdminUsageTab';
+import { AdminDevicesTab } from '@/app/components/profile/admin/AdminDevicesTab';
+import { AdminInquiriesTab } from '@/app/components/profile/admin/AdminInquiriesTab';
+import { AdminDocumentsTab } from '@/app/components/profile/admin/AdminDocumentsTab';
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -211,14 +211,14 @@ export default function AdminPage() {
             className="min-h-[600px]"
           >
             {activeTab === 'approvals' && (
-              <ApprovalsTab
+              <AdminApprovalsTab
                 isLoading={isLoading.approvals}
                 users={pendingUsers}
                 onRefresh={fetchPendingApprovals}
               />
             )}
             {activeTab === 'management' && (
-              <ManagementTab
+              <AdminManagementTab
                 isLoading={isLoading.orgs}
                 orgs={allOrganizations}
                 onSearch={fetchAllOrganizations}
@@ -226,7 +226,7 @@ export default function AdminPage() {
               />
             )}
             {activeTab === 'usage' && (
-              <UsageTab
+              <AdminUsageTab
                 isLoading={isLoading.usage}
                 stats={usageStats?.daily_stats || []}
                 orgs={allOrganizations}
@@ -234,7 +234,7 @@ export default function AdminPage() {
               />
             )}
             {activeTab === 'devices' && (
-              <DevicesTab
+              <AdminDevicesTab
                 isLoading={isLoading.devices}
                 devices={devices}
                 orgs={allOrganizations}
@@ -243,14 +243,14 @@ export default function AdminPage() {
               />
             )}
             {activeTab === 'tickets' && (
-              <InquiriesTab
+              <AdminInquiriesTab
                 isLoading={isLoading.inquiries}
                 inquiries={inquiries}
                 onRefresh={fetchInquiries}
               />
             )}
             {activeTab === 'documents' && (
-              <DocumentsTab />
+              <AdminDocumentsTab />
             )}
           </motion.div>
         </AnimatePresence>

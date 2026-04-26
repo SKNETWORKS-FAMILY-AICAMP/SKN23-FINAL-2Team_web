@@ -1,5 +1,5 @@
 """
-File    : backend/auth_utils.py
+File    : backend/core/auth_utils.py
 Author  : 김민정
 Create  : 2026-04-21
 Description : JWT 인증 유틸리티 (Access/Refresh Token 및 암호화)

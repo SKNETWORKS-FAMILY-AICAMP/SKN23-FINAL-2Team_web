@@ -1,5 +1,5 @@
 /*
-File    : src/app/components/profile/auth/MyInquiriesTab.tsx
+File    : src/app/components/profile/user/UserInquiriesTab.tsx
 Author  : 김민정
 Create  : 2026-04-23
 Description : 마이페이지 - 내 문의 내역 탭 컴포넌트
@@ -19,7 +19,7 @@ interface MyInquiriesTabProps {
   myTickets: any[];
 }
 
-export const MyInquiriesTab: React.FC<MyInquiriesTabProps> = ({
+export const UserInquiriesTab: React.FC<MyInquiriesTabProps> = ({
   isLoadingInquiries,
   myTickets
 }) => {

@@ -1,5 +1,5 @@
 /*
-File    : src/app/components/profile/admin/ManagementTab.tsx
+File    : src/app/components/profile/admin/AdminManagementTab.tsx
 Author  : 김민정
 Create  : 2026-04-24
 Description : 기업 관리 페이지
@@ -22,7 +22,7 @@ interface Props {
   onRefresh: () => void;
 }
 
-export const ManagementTab = ({ isLoading, orgs, onSearch, onRefresh }: Props) => {
+export const AdminManagementTab = ({ isLoading, orgs, onSearch, onRefresh }: Props) => {
   const [searchName, setSearchName] = useState('');
   const [filterPlan, setFilterPlan] = useState('all');
   const [isPlanFilterOpen, setIsPlanFilterOpen] = useState(false);

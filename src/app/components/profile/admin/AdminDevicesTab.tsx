@@ -1,5 +1,5 @@
 /*
-File    : src/app/components/profile/admin/DevicesTab.tsx
+File    : src/app/components/profile/admin/AdminDevicesTab.tsx
 Author  : 김민정
 Create  : 2026-04-24
 Description : 전체 서버 및 기기 상태 관리 페이지
@@ -34,7 +34,7 @@ interface Props {
   onRefresh: () => void;
 }
 
-export const DevicesTab = ({ isLoading, devices, orgs, onSearch, onRefresh }: Props) => {
+export const AdminDevicesTab = ({ isLoading, devices, orgs, onSearch, onRefresh }: Props) => {
   const [searchOrgTerm, setSearchOrgTerm] = useState('');
   const [selectedOrgId, setSelectedOrgId] = useState('all');
   const [isSearchFocused, setIsSearchFocused] = useState(false);

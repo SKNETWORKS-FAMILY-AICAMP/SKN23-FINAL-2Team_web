@@ -1,5 +1,5 @@
 """
-File    : backend/routers/auth_api.py
+File    : backend/routers/auth_router.py
 Author  : 김민정
 Create  : 2026-04-23
 Description : 인증(Login/Register/Verify/Reset) 관련 API 라우터 (Redis 기반)
@@ -13,9 +13,11 @@ from fastapi import APIRouter, Depends, HTTPException, Body, UploadFile, File, F
 from sqlalchemy.orm import Session
 from jose import jwt
 
-from .. import models, schemas, auth_utils as auth
-from ..database import get_db
-from ..email_service import EmailService
+from ..models import models, schemas
+from ..core import auth_utils as auth
+from ..core import database
+from ..core.database import get_db
+from ..services.email_service import EmailService
 from ..services.s3_service import S3Service
 from ..services.auth_service import AuthService
 

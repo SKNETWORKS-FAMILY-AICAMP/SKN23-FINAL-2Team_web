@@ -1,5 +1,5 @@
 """
-File    : backend/models.py
+File    : backend/models/models.py
 Author  : 김민정
 Create  : 2026-04-21
 Description : 데이터베이스 테이블 정의

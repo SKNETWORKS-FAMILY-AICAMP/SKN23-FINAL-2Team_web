@@ -1,5 +1,5 @@
 /*
-File    : src/app/components/profile/UsageTab.tsx
+File    : src/app/components/profile/user/UserUsageTab.tsx
 Author  : 김민정
 Create  : 2026-04-23
 Description : 마이페이지 - 서비스 사용량 통계 탭 컴포넌트
@@ -26,7 +26,7 @@ interface UsageTabProps {
   setSelectedMetric: (metric: 'all' | 'calls' | 'tokens') => void;
 }
 
-export const UsageTab: React.FC<UsageTabProps> = ({
+export const UserUsageTab: React.FC<UsageTabProps> = ({
   isLoadingUsage,
   usageStats: originalUsageStats,
   usageDateRange,

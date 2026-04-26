@@ -54,7 +54,7 @@ export const LandingNav: React.FC<LandingNavProps> = ({ isAuthenticated, user, l
                 <div className="relative group/nav">
                   <button
                     onClick={() => navigate((user?.role === 'admin' || user?.role === 'superuser') ? '/admin' : '/profile')}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-1.5 bg-zinc-900 text-white text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/nav:opacity-100 -translate-y-2 group-hover/nav:translate-y-0 transition-all duration-300 pointer-events-none whitespace-nowrap z-[110] border border-white/10"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-1.5 bg-zinc-900 text-white text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/nav:opacity-100 -translate-y-2 group-hover/nav:translate-y-0 transition-all duration-300 whitespace-nowrap z-[110] border border-white/10"
                   >
                     <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-zinc-900 rotate-45 border-l border-t border-white/10"></div>
                     {(user?.role === 'admin' || user?.role === 'superuser') ? '관리자 페이지' : '마이페이지'}
@@ -73,7 +73,7 @@ export const LandingNav: React.FC<LandingNavProps> = ({ isAuthenticated, user, l
                 <div className="relative group/logout">
                   <button
                     onClick={logout}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-1.5 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/logout:opacity-100 -translate-y-2 group-hover/logout:translate-y-0 transition-all duration-300 pointer-events-none whitespace-nowrap z-[110]"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-1.5 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/logout:opacity-100 -translate-y-2 group-hover/logout:translate-y-0 transition-all duration-300 whitespace-nowrap z-[110]"
                   >
                     <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-600 rotate-45"></div>
                     Logout

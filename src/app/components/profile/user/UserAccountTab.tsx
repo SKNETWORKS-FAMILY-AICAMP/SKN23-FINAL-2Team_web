@@ -1,5 +1,5 @@
 /*
-File    : src/app/components/profile/AccountTab.tsx
+File    : src/app/components/profile/user/UserAccountTab.tsx
 Author  : 김민정
 Create  : 2026-04-23
 Description : 마이페이지 - 계정 설정 탭 컴포넌트
@@ -19,7 +19,7 @@ interface AccountTabProps {
   certFile: File | null;
 }
 
-export const AccountTab: React.FC<AccountTabProps> = ({
+export const UserAccountTab: React.FC<AccountTabProps> = ({
   user,
   setShowPasswordModal,
   setShowDeleteModal,

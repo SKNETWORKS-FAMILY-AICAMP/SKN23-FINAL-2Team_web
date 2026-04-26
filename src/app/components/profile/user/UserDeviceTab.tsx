@@ -1,5 +1,5 @@
 /*
-File    : src/app/components/profile/DeviceTab.tsx
+File    : src/app/components/profile/user/UserDeviceTab.tsx
 Author  : 김민정
 Create  : 2026-04-23
 Description : 마이페이지 - 기기 등록 및 관리 탭 컴포넌트
@@ -18,7 +18,7 @@ interface DeviceTabProps {
   devices: any[];
 }
 
-export const DeviceTab: React.FC<DeviceTabProps> = ({
+export const UserDeviceTab: React.FC<DeviceTabProps> = ({
   isLoadingDevices,
   devices
 }) => {

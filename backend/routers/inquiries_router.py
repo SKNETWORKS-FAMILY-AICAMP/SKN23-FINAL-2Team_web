@@ -1,5 +1,5 @@
 """
-File    : backend/routers/inquiries_api.py
+File    : backend/routers/inquiries_router.py
 Author  : 김민정
 Create  : 2026-04-23
 Description : 고객 지원(Inquiries) 및 파일 업로드 라우터
@@ -14,9 +14,9 @@ import os
 import uuid
 import shutil
 
-from .. import models
-from ..database import get_db
-from ..dependencies import get_current_user
+from ..models import models
+from ..core.database import get_db
+from ..core.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/v1/support", tags=["support"])
 

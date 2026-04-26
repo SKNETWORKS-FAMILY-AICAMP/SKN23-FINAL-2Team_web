@@ -1,21 +1,21 @@
 """
-File    : backend/routers/usage_api.py
+File    : backend/routers/usage_router.py
 Author  : 김민정
 Create  : 2026-04-23
 Description : 사용량(Usage) 통계 조회 API 라우터
 
 Modification History:
     - 2026-04-23 (김민정) : 모듈화 작업으로 인한 파일 분리 생성
-    - 2026-04-26 (김민정) : qna 파일명 변경
+    - 2026-04-26 (김민정) : qna -> inquiries로 파일명 변경
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
 
-from .. import models
-from ..database import get_db
-from ..dependencies import get_current_user
+from ..models import models
+from ..core.database import get_db
+from ..core.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/v1/usage", tags=["usage"])
 
