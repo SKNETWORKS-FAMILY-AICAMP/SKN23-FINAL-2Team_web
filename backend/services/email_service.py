@@ -1,5 +1,5 @@
 """
-File    : backend/email_service.py
+File    : backend/services/email_service.py
 Author  : Antigravity
 Create  : 2026-04-23
 Description : Resend API를 이용한 자동 이메일 발송 서비스 (회원가입, 결제, Q&A, 승인 알림 등)

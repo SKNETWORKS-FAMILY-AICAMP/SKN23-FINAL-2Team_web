@@ -1,17 +1,20 @@
 /*
-File    : src/app/components/profile/UsageTab.tsx
+File    : src/app/components/profile/user/UserUsageTab.tsx
 Author  : 김민정
 Create  : 2026-04-23
 Description : 마이페이지 - 서비스 사용량 통계 탭 컴포넌트
 
 Modification History:
     - 2026-04-23 (김민정) : 모듈화 작업으로 인한 파일 분리 생성
+    - 2026-04-26 (김민정) : 달력 UI 디자인 개선
  */
 import React from 'react';
-import { Activity, Calendar as CalendarIcon, RefreshCw, ChevronDown } from 'lucide-react';
+import { Activity, Calendar as CalendarIcon, RefreshCw, ChevronDown, Zap, BarChart3, Search } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { getDummyUsageStats } from '../../../../../devtools/dummyUsageData';
+import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover';
+import { Calendar as ShadCalendar } from '@/app/components/ui/calendar';
 
 interface UsageTabProps {
   isLoadingUsage: boolean;
@@ -23,7 +26,7 @@ interface UsageTabProps {
   setSelectedMetric: (metric: 'all' | 'calls' | 'tokens') => void;
 }
 
-export const UsageTab: React.FC<UsageTabProps> = ({
+export const UserUsageTab: React.FC<UsageTabProps> = ({
   isLoadingUsage,
   usageStats: originalUsageStats,
   usageDateRange,
@@ -63,38 +66,81 @@ export const UsageTab: React.FC<UsageTabProps> = ({
           <p className="text-sm text-zinc-500 mt-1">지능화 엔진 호출 및 토크 소모량 현황입니다.</p>
         </div>
 
-        {/* Date Filter */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-zinc-900 border border-white/10 p-1 rounded-xl">
+        {/* Date Filter (Admin-Style Premium UI) */}
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex gap-2 p-1.5 bg-zinc-900/50 rounded-2xl border border-white/5 shadow-inner">
             {[
-              { label: '7일', val: 7 },
-              { label: '30일', val: 30 },
-              { label: '이번 달', val: 'month' }
+              { label: '7 Days', val: 7 },
+              { label: '30 Days', val: 30 },
+              { label: 'This Month', val: 'month' }
             ].map((r: any) => (
               <button
                 key={r.label}
                 onClick={() => setQuickRange(r.val)}
-                className="px-4 py-1.5 text-xs font-bold rounded-lg hover:bg-white/5 transition-all text-zinc-400 hover:text-white"
+                className="px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 text-zinc-500 hover:text-zinc-200 hover:bg-white/5"
               >
                 {r.label}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2 bg-zinc-900 border border-white/10 px-3 py-1.5 rounded-xl">
-            <CalendarIcon className="w-3.5 h-3.5 text-zinc-500" />
-            <input
-              type="date"
-              value={usageDateRange.start}
-              onChange={(e) => handleCustomDateChange('start', e.target.value)}
-              className="bg-transparent text-xs text-zinc-300 focus:outline-none"
-            />
-            <span className="text-zinc-600 text-xs text-bold">~</span>
-            <input
-              type="date"
-              value={usageDateRange.end}
-              onChange={(e) => handleCustomDateChange('end', e.target.value)}
-              className="bg-transparent text-xs text-zinc-300 focus:outline-none"
-            />
+
+          <div className="flex items-center gap-3">
+             <Popover>
+              <PopoverTrigger asChild>
+                <button className="bg-zinc-900/50 border border-white/10 hover:border-blue-500/50 rounded-xl px-4 py-2.5 text-[10px] font-black text-white transition-all uppercase tracking-widest flex items-center gap-3 min-w-[120px] shadow-lg outline-none hover:bg-white/5">
+                  <CalendarIcon className="w-3 h-3 text-blue-500" />
+                  {usageDateRange.start.replace(/-/g, '.')}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-[#0c0c0c] border-white/10 rounded-[28px] shadow-2xl z-[100]" align="start">
+                <div className="p-4 border-b border-white/5 text-center">
+                   <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Select Start Date</span>
+                </div>
+                <ShadCalendar
+                  mode="single"
+                  captionLayout="dropdown-buttons"
+                  fromYear={2024}
+                  toYear={new Date().getFullYear()}
+                  selected={new Date(usageDateRange.start)}
+                  onSelect={(date) => date && handleCustomDateChange('start', format(date, 'yyyy-MM-dd'))}
+                  initialFocus
+                  className="bg-transparent text-white"
+                  modifiersStyles={{
+                    selected: { backgroundColor: '#3b82f6', color: 'white', fontWeight: 'bold' }
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <span className="text-zinc-600 font-black italic text-xs">to</span>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="bg-zinc-900/50 border border-white/10 hover:border-blue-500/50 rounded-xl px-4 py-2.5 text-[10px] font-black text-white transition-all uppercase tracking-widest flex items-center gap-3 min-w-[120px] shadow-lg outline-none hover:bg-white/5">
+                  <CalendarIcon className="w-3 h-3 text-blue-500" />
+                  {usageDateRange.end.replace(/-/g, '.')}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-[#0c0c0c] border-white/10 rounded-[28px] shadow-2xl z-[100]" align="end">
+                <div className="p-4 border-b border-white/5 text-center">
+                   <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Select End Date</span>
+                </div>
+                <ShadCalendar
+                  mode="single"
+                  captionLayout="dropdown-buttons"
+                  fromYear={2024}
+                  toYear={new Date().getFullYear()}
+                  selected={new Date(usageDateRange.end)}
+                  onSelect={(date) => date && handleCustomDateChange('end', format(date, 'yyyy-MM-dd'))}
+                  disabled={(date) => date < new Date(usageDateRange.start) || date > new Date()}
+                  initialFocus
+                  className="bg-transparent text-white"
+                  modifiersStyles={{
+                    selected: { backgroundColor: '#3b82f6', color: 'white', fontWeight: 'bold' }
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </div>

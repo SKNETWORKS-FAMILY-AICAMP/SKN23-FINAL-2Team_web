@@ -1,5 +1,5 @@
 """
-File    : backend/routers/keys.py
+File    : backend/routers/keys_router.py
 Author  : 김민정
 Create  : 2026-04-23
 Description : API Key 생성 및 관리 라우터
@@ -11,9 +11,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import uuid
 
-from .. import models, schemas
-from ..database import get_db
-from ..dependencies import get_current_user, ensure_subscribed
+from ..models import models, schemas
+from ..core.database import get_db
+from ..core.dependencies import get_current_user, ensure_subscribed
 
 router = APIRouter(prefix="/api/v1/keys", tags=["keys"])
 

@@ -1,11 +1,12 @@
 /*
-File    : src/app/components/profile/admin/InquiriesTab.tsx
+File    : src/app/components/profile/admin/AdminInquiriesTab.tsx
 Author  : 김민정
 Create  : 2026-04-24
 Description : Q&A 관리 페이지
 
 Modification History:
     - 2026-04-24 (김민정) : 답변 등록 및 알림 발송 로직(handleAnswerSubmit) 내장형 모듈화
+    - 2026-04-26 (김민정) : 고객 문의 답변 등록 로직 연동
 */
 import React, { useState } from 'react';
 import { MessageSquare, Send, CheckCircle2, Clock } from 'lucide-react';
@@ -31,10 +32,15 @@ interface Props {
   onRefresh: () => void;
 }
 
-export const InquiriesTab = ({ isLoading, inquiries, onRefresh }: Props) => {
+export const AdminInquiriesTab = ({ isLoading, inquiries, onRefresh }: Props) => {
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [answerText, setAnswerText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSelectInquiry = (inquiry: Inquiry) => {
+    setSelectedInquiry(inquiry);
+    setAnswerText(inquiry.answer || '');
+  };
 
   const handleAnswerSubmit = async () => {
     if (!selectedInquiry || !answerText.trim()) return;
@@ -66,7 +72,7 @@ export const InquiriesTab = ({ isLoading, inquiries, onRefresh }: Props) => {
         {inquiries.map((inquiry) => (
           <div
             key={inquiry.id}
-            onClick={() => setSelectedInquiry(inquiry)}
+            onClick={() => handleSelectInquiry(inquiry)}
             className={`p-6 rounded-2xl border transition-all cursor-pointer ${selectedInquiry?.id === inquiry.id
                 ? 'bg-blue-600/10 border-blue-500/50 shadow-lg shadow-blue-600/10'
                 : 'bg-zinc-900/40 border-white/5 hover:border-white/10'
@@ -101,33 +107,32 @@ export const InquiriesTab = ({ isLoading, inquiries, onRefresh }: Props) => {
                 <MessageSquare className="w-3 h-3" /> System Answer
               </label>
               <textarea
-                value={answerText || selectedInquiry.answer || ''}
+                value={answerText}
                 onChange={(e) => setAnswerText(e.target.value)}
-                readOnly={selectedInquiry.status === 'answered'}
                 placeholder="답변 내용을 입력하세요..."
-                className="flex-1 bg-zinc-800/50 border border-white/5 rounded-2xl p-6 text-sm text-white resize-none focus:ring-2 focus:ring-blue-600 transition-all outline-none"
+                className="flex-1 min-h-[200px] bg-zinc-800/50 border border-white/5 rounded-2xl p-6 text-sm text-white resize-none focus:ring-2 focus:ring-blue-600 transition-all outline-none"
               />
-              {selectedInquiry.status !== 'answered' && (
-                <button
-                  onClick={handleAnswerSubmit}
-                  disabled={isSubmitting || !answerText.trim()}
-                  className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2"
-                >
-                  <Send className="w-4 h-4" />
-                  {isSubmitting ? '전송 중...' : '답변 등록 및 알림 발송'}
-                </button>
-              )}
-              {selectedInquiry.status === 'answered' && (
-                <div className="py-4 bg-emerald-500/10 text-emerald-500 rounded-xl font-bold flex items-center justify-center gap-2 border border-emerald-500/20">
-                  <CheckCircle2 className="w-4 h-4" /> 답변 완료된 문의입니다.
-                </div>
-              )}
+              
+              <button
+                onClick={handleAnswerSubmit}
+                disabled={isSubmitting || !answerText.trim()}
+                className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+                  selectedInquiry.status === 'answered' 
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white' 
+                    : 'bg-blue-600 hover:bg-blue-500 text-white'
+                } disabled:bg-zinc-800 disabled:text-zinc-600`}
+              >
+                {selectedInquiry.status === 'answered' ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                {isSubmitting ? '처리 중...' : (selectedInquiry.status === 'answered' ? '답변 수정하기' : '답변 등록 및 알림 발송')}
+              </button>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-zinc-600">
-            <Clock className="w-12 h-12 mb-4 opacity-20" />
-            <p className="text-sm font-medium">관리할 문의를 선택해주세요.</p>
+          <div className="flex-1 flex flex-col items-center justify-center text-zinc-500 py-12 lg:py-0">
+            <div className="w-20 h-20 bg-zinc-800/30 rounded-full flex items-center justify-center mb-6 border border-white/5 shadow-inner">
+              <MessageSquare className="w-8 h-8 opacity-20" />
+            </div>
+            <p className="text-sm font-bold tracking-tight text-zinc-400 mb-1">관리할 문의를 리스트에서 선택해주세요.</p>
           </div>
         )}
       </div>

@@ -9,7 +9,7 @@ Modification History:
 """
 import json
 import secrets
-from ..database import redis_client
+from ..core.database import redis_client
 
 class AuthService:
     @staticmethod

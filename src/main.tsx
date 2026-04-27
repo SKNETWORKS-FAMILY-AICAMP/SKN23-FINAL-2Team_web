@@ -8,14 +8,15 @@ Modification History:
     - 2026-04-21 (김민정) : PaymentPage/ProfilePage/AuthContext 경로 등록
     - 2026-04-22 (김민정) : FAQPage/QnAPage 경로 등록
     - 2026-04-23 (김민정) : PaymentSuccessPage/PaymentFailPage/AdminPage 경로 등록
+    - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경
  */
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import App from "./app/App";
 import PaymentPage from "@/app/pages/PaymentPage";
-import ProfilePage from "@/app/pages/ProfilePage";
+import ProfilePage from "@/app/pages/UserPage";
 import FAQPage from "@/app/pages/FAQPage";
-import QnAPage from "@/app/pages/QnAPage";
+import InquiriesPage from "@/app/pages/InquiriesPage";
 import PaymentSuccessPage from "@/app/pages/PaymentSuccessPage";
 import PaymentFailPage from "@/app/pages/PaymentFailPage";
 import AdminPage from "@/app/pages/AdminPage";
@@ -35,7 +36,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/faq" element={<FAQPage />} />
-        <Route path="/qna" element={<QnAPage />} />
+        <Route path="/inquiries" element={<InquiriesPage />} />
       </Routes>
       <AuthModal />
       <Toaster />

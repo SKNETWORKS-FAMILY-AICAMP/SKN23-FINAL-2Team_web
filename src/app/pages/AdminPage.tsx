@@ -3,6 +3,8 @@ File    : src/app/pages/AdminPage.tsx
 Author  : 김민정
 Create  : 2026-04-24
 Description : 시스템 관리자 컨트롤 타워
+Modification History:
+    - 2026-04-26 (김민정) : 문서 관리 탭 추가
 */
 
 "use client";
@@ -16,23 +18,20 @@ import {
 } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
-
-// 모듈화된 파일들 import
 import { adminApi } from '@/app/api/admin';
 import { authStorage } from '@/app/utils/storage';
 import { useAuth } from '@/app/context/AuthContext';
-import { ApprovalsTab } from '@/app/components/profile/admin/ApprovalsTab';
-import { ManagementTab } from '@/app/components/profile/admin/ManagementTab';
-import { UsageTab } from '@/app/components/profile/admin/UsageTab';
-import { DevicesTab } from '@/app/components/profile/admin/DevicesTab';
-import { InquiriesTab } from '@/app/components/profile/admin/InquiriesTab';
-import { DocumentsTab } from '@/app/components/profile/admin/DocumentsTab';
+import { AdminApprovalsTab } from '@/app/components/profile/admin/AdminApprovalsTab';
+import { AdminManagementTab } from '@/app/components/profile/admin/AdminManagementTab';
+import { AdminUsageTab } from '@/app/components/profile/admin/AdminUsageTab';
+import { AdminDevicesTab } from '@/app/components/profile/admin/AdminDevicesTab';
+import { AdminInquiriesTab } from '@/app/components/profile/admin/AdminInquiriesTab';
+import { AdminDocumentsTab } from '@/app/components/profile/admin/AdminDocumentsTab';
 
 export default function AdminPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
 
-  // --- 상태 관리 ---
   const [activeTab, setActiveTab] = useState('approvals');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -51,7 +50,7 @@ export default function AdminPage() {
     inquiries: false
   });
 
-  // --- 데이터 페칭 함수들 ---
+
   const fetchPendingApprovals = async () => {
     setIsLoading(prev => ({ ...prev, approvals: true }));
     try {
@@ -107,7 +106,7 @@ export default function AdminPage() {
       const res = await adminApi.getDashboardStats(authStorage.getAccessToken()!);
       const data = await res.json();
       setDashboardStats(data);
-    } catch (e) {}
+    } catch (e) { }
   };
 
   useEffect(() => {
@@ -120,7 +119,7 @@ export default function AdminPage() {
         new Date().toISOString().split('T')[0]
       );
       else if (activeTab === 'devices') fetchDevices();
-      else if (activeTab === 'inquiries') fetchInquiries();
+      else if (activeTab === 'tickets') fetchInquiries();
     }
   }, [activeTab, isAuthenticated, user]);
 
@@ -149,53 +148,56 @@ export default function AdminPage() {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-300 group ${
-                activeTab === item.id 
-                  ? 'bg-red-500/10 text-red-500 border border-red-500/20' 
-                  : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-300'
-              }`}
+              className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-300 group ${activeTab === item.id
+                ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-300'
+                }`}
             >
               <item.icon className={`w-5 h-5 transition-transform duration-500 ${activeTab === item.id ? 'scale-110' : 'group-hover:scale-110'}`} />
               {isSidebarOpen && <span className="font-bold text-[13px] tracking-tight">{item.label}</span>}
             </button>
           ))}
         </nav>
-
-        <div className="p-6 mt-auto border-t border-white/5">
-          <button onClick={() => { logout(); navigate('/'); }} className="w-full flex items-center gap-4 px-4 py-4 text-zinc-500 hover:text-white transition-all group">
-            <LogOut className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            {isSidebarOpen && <span className="font-bold text-sm">로그아웃</span>}
-          </button>
-        </div>
       </aside>
 
       <main className="flex-1 overflow-y-auto p-8 lg:p-12 text-zinc-100">
         <header className="flex justify-between items-center mb-12">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="px-2 py-1 bg-red-500/10 text-red-500 border border-red-500/20 rounded text-[9px] font-black uppercase tracking-widest">Live System</div>
+              <div className="px-2 py-1 bg-red-500/10 text-red-500 border border-red-500/20 rounded text-[9px] font-black uppercase tracking-widest">Admin</div>
               <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Control Center</h2>
             </div>
-            <p className="text-zinc-500 text-xs font-medium tracking-wide">EMAIL: {user?.email} · ROLE: {user?.role}</p>
+            <p className="text-zinc-500 text-xs font-medium tracking-wide">EMAIL: {user?.email}</p>
           </div>
-          
+
           <div className="flex items-center gap-4">
-             {dashboardStats && (
-               <div className="hidden xl:flex gap-8 px-8 py-4 bg-zinc-900/40 border border-white/5 rounded-2xl mr-8">
-                 <div>
-                   <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Total Calls</p>
-                   <p className="text-xl font-black text-white">{dashboardStats.total_calls.toLocaleString()}</p>
-                 </div>
-                 <div className="w-[1px] h-10 bg-white/5"></div>
-                 <div>
-                   <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Total Orgs</p>
-                   <p className="text-xl font-black text-white">{dashboardStats.total_orgs}</p>
-                 </div>
-               </div>
-             )}
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-4 bg-zinc-900/80 rounded-2xl border border-white/5 hover:bg-zinc-800 transition-all">
-              {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+            {/* 목록 토글 버튼 */}
+            <div className="relative group/toggle">
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-1.5 bg-zinc-800 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/toggle:opacity-100 -translate-y-2 group-hover/toggle:translate-y-0 transition-all duration-300 pointer-events-none whitespace-nowrap z-[110] border border-white/10 shadow-2xl">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-zinc-800 rotate-45 border-l border-t border-white/10"></div>
+                {isSidebarOpen ? '목록 닫기' : '목록 열기'}
+              </div>
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="p-4 bg-zinc-900/80 rounded-2xl border border-white/5 hover:bg-zinc-800 transition-all relative"
+              >
+                {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
+
+            {/* 헤더 로그아웃 버튼 */}
+            <div className="relative group/logout">
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-1.5 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/logout:opacity-100 -translate-y-2 group-hover/logout:translate-y-0 transition-all duration-300 pointer-events-none whitespace-nowrap z-[110] shadow-2xl shadow-red-600/30">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-600 rotate-45"></div>
+                Logout
+              </div>
+              <button
+                onClick={() => { logout(); navigate('/'); }}
+                className="p-4 bg-red-500/10 rounded-2xl border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all relative group shadow-inner"
+              >
+                <LogOut className="w-5 h-5 transition-transform group-hover:scale-110" />
+              </button>
+            </div>
           </div>
         </header>
 
@@ -209,14 +211,14 @@ export default function AdminPage() {
             className="min-h-[600px]"
           >
             {activeTab === 'approvals' && (
-              <ApprovalsTab
+              <AdminApprovalsTab
                 isLoading={isLoading.approvals}
                 users={pendingUsers}
                 onRefresh={fetchPendingApprovals}
               />
             )}
             {activeTab === 'management' && (
-              <ManagementTab
+              <AdminManagementTab
                 isLoading={isLoading.orgs}
                 orgs={allOrganizations}
                 onSearch={fetchAllOrganizations}
@@ -224,7 +226,7 @@ export default function AdminPage() {
               />
             )}
             {activeTab === 'usage' && (
-              <UsageTab
+              <AdminUsageTab
                 isLoading={isLoading.usage}
                 stats={usageStats?.daily_stats || []}
                 orgs={allOrganizations}
@@ -232,7 +234,7 @@ export default function AdminPage() {
               />
             )}
             {activeTab === 'devices' && (
-              <DevicesTab
+              <AdminDevicesTab
                 isLoading={isLoading.devices}
                 devices={devices}
                 orgs={allOrganizations}
@@ -240,15 +242,15 @@ export default function AdminPage() {
                 onRefresh={fetchDevices}
               />
             )}
-            {activeTab === 'inquiries' && (
-              <InquiriesTab
+            {activeTab === 'tickets' && (
+              <AdminInquiriesTab
                 isLoading={isLoading.inquiries}
                 inquiries={inquiries}
                 onRefresh={fetchInquiries}
               />
             )}
             {activeTab === 'documents' && (
-              <DocumentsTab />
+              <AdminDocumentsTab />
             )}
           </motion.div>
         </AnimatePresence>

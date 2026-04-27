@@ -1,20 +1,23 @@
 """
-File    : backend/routers/auth_api.py
+File    : backend/routers/auth_router.py
 Author  : 김민정
 Create  : 2026-04-23
 Description : 인증(Login/Register/Verify/Reset) 관련 API 라우터 (Redis 기반)
 
 Modification History:
     - 2026-04-23 (김민정) : 모듈화 및 Redis 기반 이메일 인증 시스템 구현
+    - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경
 """
 import traceback
 from fastapi import APIRouter, Depends, HTTPException, Body, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from jose import jwt
 
-from .. import models, schemas, auth_utils as auth
-from ..database import get_db
-from ..email_service import EmailService
+from ..models import models, schemas
+from ..core import auth_utils as auth
+from ..core import database
+from ..core.database import get_db
+from ..services.email_service import EmailService
 from ..services.s3_service import S3Service
 from ..services.auth_service import AuthService
 
@@ -92,7 +95,8 @@ async def verify_email(data: schemas.EmailVerification, db: Session = Depends(ge
                 "role": "user",
                 "orgId": str(new_org.id),
                 "verification_status": new_org.verification_status,
-                "plan": new_org.plan
+                "plan": new_org.plan,
+                "max_seats": new_org.max_seats
             }
         }
     except Exception as e:
@@ -101,30 +105,64 @@ async def verify_email(data: schemas.EmailVerification, db: Session = Depends(ge
 
 @router.post("/login", response_model=schemas.LoginResponse)
 def login(login_data: schemas.OrgLogin, db: Session = Depends(get_db)):
-    # 1. 시스템 관리자 확인
-    admin = db.query(models.SystemAdmin).filter(models.SystemAdmin.email == login_data.email).first()
-    if admin and auth.verify_password(login_data.password, admin.password_hash):
+    """
+    로그인 통합 엔드포인트:
+    1. system_admins 테이블을 먼저 조회 (관리자 우선순위)
+    2. 관리자가 아니면 organizations 테이블 조회 (사용자)
+    """
+    
+    # 1. 시스템 관리자(Admin) 확인
+    # DB의 system_admins 테이블에 없는 role 컬럼 조회를 피하기 위해 개별 필드만 선택합니다.
+    from sqlalchemy import select
+    admin_stmt = select(
+        models.SystemAdmin.id, 
+        models.SystemAdmin.email, 
+        models.SystemAdmin.password_hash
+    ).where(models.SystemAdmin.email == login_data.email)
+    
+    admin_result = db.execute(admin_stmt).first()
+    
+    # 관리자 정보가 있고 비밀번호가 일치하면 관리자용 토큰 반환
+    if admin_result and auth.verify_password(login_data.password, admin_result.password_hash):
         return {
             "success": True,
-            "token": auth.create_access_token(data={"sub": admin.email}),
-            "refresh_token": auth.create_refresh_token(data={"sub": admin.email}),
-            "user": {"email": admin.email, "companyName": "Admin", "role": "admin", "orgId": "admin", "verification_status": "verified", "plan": "enterprise"}
+            "token": auth.create_access_token(data={"sub": admin_result.email}),
+            "refresh_token": auth.create_refresh_token(data={"sub": admin_result.email}),
+            "user": {
+                "email": admin_result.email, 
+                "companyName": "Admin System", 
+                "role": "admin", 
+                "orgId": "admin", 
+                "verification_status": "verified", 
+                "plan": "enterprise",
+                "max_seats": 0
+            }
         }
 
-    # 2. 일반 사용자 확인
+    # 2. 일반 사용자(Organization) 확인
     org = db.query(models.Organization).filter(models.Organization.admin_email == login_data.email).first()
-    if not org or not auth.verify_password(login_data.password, org.password_hash):
-        raise HTTPException(status_code=401, detail="정보가 일치하지 않습니다.")
     
-    return {
-        "success": True,
-        "token": auth.create_access_token(data={"sub": org.admin_email}),
-        "refresh_token": auth.create_refresh_token(data={"sub": org.admin_email}),
-        "user": {
-            "email": org.admin_email, "companyName": org.company_name, "role": "user", 
-            "orgId": str(org.id), "verification_status": org.verification_status, "plan": org.plan
+    if org and auth.verify_password(login_data.password, org.password_hash):
+        if not org.is_active:
+            raise HTTPException(status_code=403, detail="비활성화된 계정입니다. 관리자에게 문의하세요.")
+            
+        return {
+            "success": True,
+            "token": auth.create_access_token(data={"sub": org.admin_email}),
+            "refresh_token": auth.create_refresh_token(data={"sub": org.admin_email}),
+            "user": {
+                "email": org.admin_email,
+                "companyName": org.company_name,
+                "role": "user",
+                "orgId": str(org.id),
+                "verification_status": org.verification_status,
+                "plan": org.plan,
+                "max_seats": org.max_seats
+            }
         }
-    }
+
+    # 둘 다 해당하지 않는 경우
+    raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 일치하지 않습니다.")
 
 @router.post("/request-password-reset")
 async def request_password_reset(data: schemas.PasswordResetRequest, db: Session = Depends(get_db)):

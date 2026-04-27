@@ -1,5 +1,5 @@
 """
-File    : backend/dependencies.py
+File    : backend/core/dependencies.py
 Author  : 김민정
 Create  : 2026-04-23
 Description : FastAPI 의존성 주입 및 공용 보안 함수 (get_current_user 등)
@@ -11,8 +11,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
-from . import auth_utils, models
+from ..models import models
 from .database import get_db
+from ..core import auth_utils
 
 security = HTTPBearer()
 

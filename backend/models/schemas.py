@@ -1,5 +1,5 @@
 """
-File    : backend/schemas.py
+File    : backend/models/schemas.py
 Author  : 김민정
 Create  : 2026-04-21
 Description : Pydantic 스키마 정의 (요청/응답 모델)
@@ -32,6 +32,7 @@ class OrgResponse(BaseModel):
     orgId: Optional[str] = None
     verification_status: Optional[str] = "pending"
     plan: Optional[str] = "none"
+    max_seats: Optional[int] = 0
 
     class Config:
         from_attributes = True

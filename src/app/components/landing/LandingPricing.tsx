@@ -119,13 +119,18 @@ export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated,
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: idx * 0.1 }}
-              className={`relative flex flex-col p-10 rounded-2xl transition-all duration-300 group ${plan.highlight
-                ? 'bg-zinc-900/40 backdrop-blur-xl border border-[#0071e3] scale-105 shadow-[0_0_40px_rgba(0,113,227,0.2)] z-10'
-                : 'bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-white/20'
+              whileHover={{ 
+                y: -12,
+                scale: plan.highlight ? 1.07 : 1.03,
+                transition: { type: "spring", stiffness: 400, damping: 17 }
+              }}
+              className={`relative flex flex-col p-10 rounded-[32px] transition-all duration-500 group cursor-default ${plan.highlight
+                ? 'bg-zinc-900/60 backdrop-blur-2xl border border-[#0071e3] scale-105 shadow-[0_0_50px_rgba(0,113,227,0.25)] z-10 hover:shadow-[0_0_80px_rgba(0,113,227,0.4)]'
+                : 'bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-white/20 hover:bg-white/[0.05] hover:shadow-[0_30px_60px_rgba(0,0,0,0.5)]'
                 }`}
             >
               {plan.badge && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0071e3] text-white px-4 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0071e3] text-white px-5 py-1.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase shadow-[0_0_20px_rgba(0,113,227,0.5)] transition-transform group-hover:scale-110">
                   {plan.badge}
                 </div>
               )}

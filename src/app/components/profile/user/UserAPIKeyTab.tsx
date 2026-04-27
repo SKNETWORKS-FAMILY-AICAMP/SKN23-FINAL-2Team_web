@@ -1,5 +1,5 @@
 /*
-File    : src/app/components/profile/APIKeyTab.tsx
+File    : src/app/components/profile/user/UserAPIKeyTab.tsx
 Author  : 김민정
 Create  : 2026-04-23
 Description : 마이페이지 - API 키 관리 탭 컴포넌트
@@ -20,7 +20,7 @@ interface APIKeyTabProps {
   setActiveTab: (tab: any) => void;
 }
 
-export const APIKeyTab: React.FC<APIKeyTabProps> = ({
+export const UserAPIKeyTab: React.FC<APIKeyTabProps> = ({
   user,
   apiKeys,
   isLoadingKeys,

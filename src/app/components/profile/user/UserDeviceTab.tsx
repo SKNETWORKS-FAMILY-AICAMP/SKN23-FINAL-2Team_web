@@ -1,5 +1,5 @@
 /*
-File    : src/app/components/profile/DeviceTab.tsx
+File    : src/app/components/profile/user/UserDeviceTab.tsx
 Author  : 김민정
 Create  : 2026-04-23
 Description : 마이페이지 - 기기 등록 및 관리 탭 컴포넌트
@@ -18,15 +18,12 @@ interface DeviceTabProps {
   devices: any[];
 }
 
-export const DeviceTab: React.FC<DeviceTabProps> = ({
+export const UserDeviceTab: React.FC<DeviceTabProps> = ({
   isLoadingDevices,
   devices
 }) => {
   const { user } = useAuth();
-  
-  // 현재 플랜에 따른 최대 대수 (예: 기본 5대, Pro/Enterprise는 무제한)
-  const isUnlimited = user?.plan?.toLowerCase() === 'pro' || user?.plan?.toLowerCase() === 'enterprise';
-  const maxDevices = isUnlimited ? '무제한' : 5;
+  const maxDevices = user?.max_seats ?? 0;
   const currentCount = devices.length;
 
   const handleToggleStatus = async (deviceId: string, currentStatus: boolean) => {
@@ -59,7 +56,9 @@ export const DeviceTab: React.FC<DeviceTabProps> = ({
         <div className="text-right">
           <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">현재 등록 현황</div>
           <div className="text-xl font-black text-white">
-            <span className={currentCount >= 5 && !isUnlimited ? "text-red-400" : "text-[#0071e3]"}>{currentCount}</span>
+            <span className={maxDevices > 0 && currentCount >= maxDevices ? "text-red-400" : "text-[#0071e3]"}>
+            {currentCount}
+            </span>
             <span className="text-zinc-600 font-normal text-sm"> / {maxDevices}대</span>
           </div>
         </div>

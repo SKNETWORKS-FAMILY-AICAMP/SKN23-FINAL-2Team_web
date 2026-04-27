@@ -8,6 +8,7 @@ Modification History:
     - 2026-04-20 (김민정) : 결제 페이지 UI 초기 구현
     - 2026-04-21 (김민정) : 실제 결제 완료 DB 연동 및 모달/토스트 적용
     - 2026-04-22 (김민정) : 토스 페이먼츠 연동
+    - 2026-04-26 (김민정) : 결제 테스트 환경 설정 및 UI 개선
 */
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
@@ -37,12 +38,12 @@ export default function PaymentPage() {
   const plans = {
     Basic: {
       name: 'Basic(평생 소장)',
-      price: 300000,
+      price: 1,
       features: ['평생 5개의 API 키 지원', '4개 전 도메인 지원 (건축, 전기, 소방, 배관)', '14일 무료 체험 가능', '기본 법규 DB 업데이트 포함']
     },
     Pro: {
       name: 'Pro(구독형)',
-      price: 100000,
+      price: 1,
       features: ['Basic의 모든 혜택 포함', '5개 초과 API 키 무제한 등록 및 관리', '시방서 무제한 저장 공간 (DB 구축)', '우선 순위 기술 지원', '팀 협업 기능 제공']
     }
   };
@@ -68,12 +69,12 @@ export default function PaymentPage() {
       const tossPayments = await loadTossPayments(clientKey);
       const amount = plans[selectedPlan as keyof typeof plans].price;
       const orderId = `order_${new Date().getTime()}`;
-      
+
       const isSwitch = currentPlan !== 'None';
-      const actionLabel = isSwitch 
-        ? (plans[selectedPlan as keyof typeof plans].price > (plans[currentPlan as keyof typeof plans]?.price || 0) ? '업그레이드' : '변경') 
+      const actionLabel = isSwitch
+        ? (plans[selectedPlan as keyof typeof plans].price > (plans[currentPlan as keyof typeof plans]?.price || 0) ? '업그레이드' : '변경')
         : '구독';
-      
+
       const orderName = `Cadence AI ${selectedPlan} Plan ${actionLabel}`;
 
       await tossPayments.requestPayment('카드', {
@@ -170,8 +171,8 @@ export default function PaymentPage() {
                     key={id}
                     onClick={() => setSelectedPlan(id)}
                     className={`relative p-6 rounded-3xl text-left transition-all border-2 ${selectedPlan === id
-                        ? 'bg-[#0071e3]/10 border-[#0071e3] shadow-lg shadow-[#0071e3]/10'
-                        : 'bg-zinc-900/50 border-white/5 hover:border-white/20'
+                      ? 'bg-[#0071e3]/10 border-[#0071e3] shadow-lg shadow-[#0071e3]/10'
+                      : 'bg-zinc-900/50 border-white/5 hover:border-white/20'
                       }`}
                   >
                     {selectedPlan === id && (
@@ -238,8 +239,8 @@ export default function PaymentPage() {
                   onClick={handlePayment}
                   disabled={isProcessing}
                   className={`w-full py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-2 transition-all ${isProcessing
-                      ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-                      : 'bg-white text-black hover:bg-[#0071e3] hover:text-white shadow-xl shadow-white/5'
+                    ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                    : 'bg-white text-black hover:bg-[#0071e3] hover:text-white shadow-xl shadow-white/5'
                     }`}
                 >
                   {isProcessing ? (
