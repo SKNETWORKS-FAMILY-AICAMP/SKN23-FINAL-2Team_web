@@ -9,7 +9,7 @@ Modification History:
     - 2026-04-27 : 라이트 테마 전환
 */
 import React, { useState } from 'react';
-import { Users, ShieldCheck, Search, CheckCircle, XCircle, FileText, X, ChevronLeft, Clock } from 'lucide-react';
+import { Users, ShieldCheck, Search, CheckCircle, XCircle, FileText, X, ChevronLeft, Clock, Building2, AlertCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { adminApi } from '@/app/api/admin';
 import { getAdminToken } from '@/app/context/AdminAuthContext';
@@ -23,17 +23,62 @@ interface Props {
 
 export const AdminApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
-  const [confirmModal, setConfirmModal] = useState({ show: false, type: '', orgId: '', companyName: '' });
+  const [confirmModal, setConfirmModal] = useState({ show: false, type: '', orgId: '', companyName: '', pin: '' });
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // 사업자등록 진위확인 상태
+  const [bizNo, setBizNo] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [bizResult, setBizResult] = useState<any>(null); // null=미조회, {valid, status} = 결과
+
+  const handleVerifyBusiness = async () => {
+    if (!bizNo.replace(/-/g, '').trim() || bizNo.replace(/-/g, '').trim().length !== 10) {
+      toast.error('사업자등록번호 10자리를 정확히 입력해주세요.');
+      return;
+    }
+    setIsVerifying(true);
+    setBizResult(null);
+    try {
+      const res = await adminApi.verifyBusiness(getAdminToken()!, bizNo);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setBizResult(data);
+      } else {
+        toast.error(data.detail || '조회에 실패했습니다.');
+        setBizResult({ error: data.detail || '조회 실패' });
+      }
+    } catch {
+      toast.error('서버 연결에 실패했습니다.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const handleApproveReject = async () => {
     try {
       setIsProcessing(true);
-      const { type, orgId } = confirmModal;
+      const { type, orgId, pin } = confirmModal;
+
+      if (type === 'approve') {
+        if (!pin) {
+          toast.error("관리자 PIN 번호를 입력해주세요.");
+          setIsProcessing(false);
+          return;
+        }
+        const pinRes = await adminApi.verifyPin(pin);
+        if (!pinRes.ok) {
+          toast.error("PIN 번호가 올바르지 않습니다.");
+          setIsProcessing(false);
+          return;
+        }
+      }
+
       const res = await adminApi.executeAction(getAdminToken()!, type as 'approve' | 'reject', orgId);
       if (res.ok) {
-        toast.success(type === 'approve' ? '✅ 가입이 승인되었습니다.' : '❌ 가입이 거절되었습니다.');
-        setConfirmModal({ ...confirmModal, show: false });
+        if (type === 'reject') {
+          toast.success('❌ 가입이 거절되었습니다.');
+        }
+        setConfirmModal({ ...confirmModal, show: false, pin: '' });
         onRefresh();
       } else {
         toast.error('처리 중 오류가 발생했습니다.');
@@ -101,13 +146,13 @@ export const AdminApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
                   <Search className="w-3.5 h-3.5" /> 서류 확인
                 </button>
                 <button
-                  onClick={() => setConfirmModal({ show: true, type: 'approve', orgId: org.id, companyName: org.company_name })}
+                  onClick={() => setConfirmModal({ show: true, type: 'approve', orgId: org.id, companyName: org.company_name, pin: '' })}
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-all border border-emerald-200"
                 >
                   <CheckCircle className="w-3.5 h-3.5" /> 승인
                 </button>
                 <button
-                  onClick={() => setConfirmModal({ show: true, type: 'reject', orgId: org.id, companyName: org.company_name })}
+                  onClick={() => setConfirmModal({ show: true, type: 'reject', orgId: org.id, companyName: org.company_name, pin: '' })}
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-bold hover:bg-red-100 transition-all border border-red-200"
                 >
                   <XCircle className="w-3.5 h-3.5" /> 거절
@@ -121,22 +166,116 @@ export const AdminApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
       {/* 승인/거절 확인 모달 */}
       {confirmModal.show && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-sm w-full shadow-2xl p-8 relative">
-            <div className={`w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center ${confirmModal.type === 'approve' ? 'bg-emerald-50' : 'bg-red-50'}`}>
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full shadow-2xl p-8 relative">
+            {/* 헤더 아이콘 */}
+            <div className={`w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center ${confirmModal.type === 'approve' ? 'bg-emerald-50' : 'bg-red-50'}`}>
               {confirmModal.type === 'approve'
                 ? <CheckCircle className="w-7 h-7 text-emerald-500" />
                 : <XCircle className="w-7 h-7 text-red-500" />}
             </div>
             <h3 className="text-lg font-black text-slate-900 text-center mb-1">{confirmModal.companyName}</h3>
-            <p className="text-sm text-slate-500 text-center mb-7">
-              위 기업의 가입 신청을<br />
+            <p className="text-sm text-slate-500 text-center mb-5">
+              위 기업의 가입 신청을{' '}
               <strong className={confirmModal.type === 'approve' ? 'text-emerald-600' : 'text-red-600'}>
                 {confirmModal.type === 'approve' ? '승인' : '거절'}
               </strong> 처리하시겠습니까?
             </p>
+
+            {/* 승인 시: 사업자 진위확인 + PIN */}
+            {confirmModal.type === 'approve' && (
+              <div className="space-y-4 mb-5">
+                {/* 사업자등록번호 진위확인 */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Building2 className="w-4 h-4 text-[#1e40af]" />
+                    <span className="text-sm font-bold text-slate-700">사업자등록번호 진위확인</span>
+                    <span className="text-[10px] text-slate-400 font-medium">(국세청 API)</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="000-00-00000"
+                      value={bizNo}
+                      onChange={(e) => { setBizNo(e.target.value); setBizResult(null); }}
+                      maxLength={12}
+                      className="flex-1 h-10 bg-white border border-slate-200 rounded-lg px-3 text-sm font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
+                    <button
+                      onClick={handleVerifyBusiness}
+                      disabled={isVerifying}
+                      className="px-4 h-10 bg-[#1e40af] text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center gap-1.5 min-w-[70px] justify-center"
+                    >
+                      {isVerifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                      {isVerifying ? '조회중' : '조회'}
+                    </button>
+                  </div>
+
+                  {/* 조회 결과 표시 */}
+                  {bizResult && bizResult.success && bizResult.status && (
+                    <div className={`mt-3 p-3 rounded-lg border ${
+                      bizResult.status.b_stt_cd === '01'
+                        ? 'bg-emerald-50 border-emerald-200'
+                        : 'bg-red-50 border-red-200'
+                    }`}>
+                      <div className="flex items-start gap-2">
+                        {bizResult.status.b_stt_cd === '01'
+                          ? <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                          : <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-black ${
+                              bizResult.status.b_stt_cd === '01' ? 'text-emerald-700' : 'text-red-700'
+                            }`}>
+                              {bizResult.status.b_stt || '상태 불명'}
+                            </span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                              bizResult.status.b_stt_cd === '01'
+                                ? 'bg-emerald-100 text-emerald-600'
+                                : 'bg-red-100 text-red-600'
+                            }`}>
+                              {bizResult.status.b_stt_cd === '01' ? '정상' : '이상'}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 space-y-0.5">
+                            {bizResult.status.tax_type && (
+                              <div>과세유형: <span className="font-medium text-slate-700">{bizResult.status.tax_type}</span></div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {(bizResult?.error || (bizResult && !bizResult.success)) && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                      <span className="text-xs text-red-600 truncate">
+                        {bizResult.detail || bizResult.error || '조회에 실패했습니다.'}
+                      </span>
+                    </div>
+                  )}
+                  {!bizResult && (
+                    <p className="text-[11px] text-slate-400 mt-2">* 조회는 선택사항이지만 승인 전 확인을 권장합니다.</p>
+                  )}
+                </div>
+
+                {/* PIN 입력 */}
+                <input
+                  type="password"
+                  placeholder="관리자 PIN 번호 입력"
+                  value={confirmModal.pin}
+                  onChange={(e) => setConfirmModal({ ...confirmModal, pin: e.target.value })}
+                  className="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl px-4 text-center tracking-[0.3em] font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all placeholder:tracking-normal placeholder:font-normal"
+                />
+              </div>
+            )}
+
             <div className="flex gap-2">
               <button
-                onClick={() => setConfirmModal({ ...confirmModal, show: false })}
+                onClick={() => {
+                  setConfirmModal({ ...confirmModal, show: false, pin: '' });
+                  setBizNo('');
+                  setBizResult(null);
+                }}
                 className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-semibold transition-all"
               >
                 취소
@@ -146,7 +285,7 @@ export const AdminApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
                 disabled={isProcessing}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50 ${confirmModal.type === 'approve' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'}`}
               >
-                {isProcessing ? '처리 중...' : '확인'}
+                {isProcessing ? '처리 중...' : confirmModal.type === 'approve' ? '승인 확정' : '거절 확정'}
               </button>
             </div>
           </div>

@@ -8,7 +8,7 @@ Modification History:
     - 2026-04-24 (김민정) : 모듈화
     - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경
 */
-const BASE_URL = 'http://localhost:8001/api/v1';
+const BASE_URL = 'http://localhost:8000/api/v1';
 
 export const authApi = {
   login: (payload: object) => 

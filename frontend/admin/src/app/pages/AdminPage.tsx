@@ -204,9 +204,8 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => { adminLogout(); navigate('/login'); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold transition-all border border-transparent hover:border-red-100"
+            className="px-3 py-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold transition-all border border-transparent hover:border-red-100"
           >
-            <LogOut className="w-3.5 h-3.5" />
             로그아웃
           </button>
         </div>

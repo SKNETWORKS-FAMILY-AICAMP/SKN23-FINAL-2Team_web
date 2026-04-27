@@ -84,7 +84,7 @@ export default function PaymentPage() {
         successUrl: `${window.location.origin}/payment/success`,
         failUrl: `${window.location.origin}/payment/fail`,
         customerEmail: user?.email || '',
-        customerName: user?.companyName || '고객님',
+        customerName: user?.companyName ? `${user.companyName}님` : '고객님',
       });
     } catch (error: any) {
       if (error.code === 'USER_CANCEL') {

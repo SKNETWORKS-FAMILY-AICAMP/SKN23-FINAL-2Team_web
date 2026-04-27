@@ -14,45 +14,44 @@ import { useNavigate } from 'react-router-dom';
 const plans = [
   {
     name: "Basic",
-    price: "300,000",
-    period: "(평생 소장)",
-    type: "One-time",
-    desc: "학습 및 개인 프로젝트용",
+    price: "600,000",
+    period: "/ 년",
+    type: "Yearly",
+    desc: "학습 및 개인 프로젝트용 (기본 5개 시트)",
     features: [
-      "평생 5개의 API 키 지원",
+      "기본 5명의 사용자 (시트당 6만원 추가)",
       "4개 전 도메인 지원 (건축, 전기, 소방, 배관)",
-      "14일 무료 체험 가능",
-      "기본 법규 DB 업데이트 포함"
+      "기본 법규 DB 업데이트 포함",
+      "이메일 기술 지원"
     ],
     highlight: false
   },
   {
     name: "Pro",
-    price: "100,000",
-    period: "/ 월",
-    type: "Subscription",
-    desc: "전문 건축가 및 소규모 팀을 위한 최적의 선택",
+    price: "1,200,000",
+    period: "/ 년",
+    type: "Yearly",
+    desc: "전문 건축가 및 소규모 팀을 위한 최적의 선택 (기본 10개 시트)",
     features: [
-      "Basic의 모든 혜택 포함",
-      "5개 초과 API 키 무제한 등록",
+      "기본 10명의 사용자 (시트당 12만원 추가)",
+      "무제한 API 키 생성을 통한 외부 연동",
       "시방서 무제한 저장 공간 (DB 구축)",
-      "우선 순위 기술 지원",
-      "팀 협업 기능 제공"
+      "우선 순위 기술 지원 및 팀 협업 기능"
     ],
     highlight: true,
     badge: "Best for Teams"
   },
   {
     name: "Enterprise",
-    price: "별도 문의",
-    period: "",
-    type: "Custom",
-    desc: "대형 설계 법인 및 건설사 맞춤형 솔루션",
+    price: "3,600,000",
+    period: "/ 년",
+    type: "Yearly",
+    desc: "대형 설계 법인 및 건설사 맞춤형 솔루션 (기본 30개 시트)",
     features: [
+      "기본 30명의 사용자 (시트당 10만원 추가)",
+      "연간 5,000,000 Token 제공 한도 보장",
       "온프레미스 설치 및 보안망 지원",
-      "기업 전용 sLLM 튜닝 및 학습",
-      "24/7 전담 엔지니어 지원",
-      "API 통합 커스텀 개발"
+      "기업 전용 sLLM 튜닝 및 학습 지원"
     ],
     highlight: false
   }

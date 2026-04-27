@@ -108,20 +108,19 @@ export const PinLoginForm: React.FC<PinLoginFormProps> = ({ onSuccess }) => {
         ))}
       </div>
 
-      <button
-        type="submit"
-        disabled={isLoading || pins.join('').length < 4}
-        className="w-full bg-[#1e40af] text-white py-3.5 rounded-xl font-bold text-sm
-                   hover:bg-[#1d3a9e] transition-all disabled:opacity-40 disabled:cursor-not-allowed
-                   flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20"
-      >
+      {/* 하단 안내 및 로딩 상태 */}
+      <div className="h-12 w-full flex items-center justify-center -mt-2">
         {isLoading ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
+          <div className="flex items-center gap-2 text-[#1e40af] font-bold text-sm">
+            <Loader2 className="w-5 h-5 animate-spin" />
             인증 중...
-          </>
-        ) : '입장하기'}
-      </button>
+          </div>
+        ) : (
+          <p className="text-xs font-medium text-slate-400">
+            4자리를 모두 입력하면 자동으로 인증됩니다
+          </p>
+        )}
+      </div>
     </form>
   );
 };

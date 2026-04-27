@@ -91,7 +91,7 @@ def approve_organization(org_id: str, db: Session = Depends(get_db), current_adm
         raise HTTPException(status_code=404, detail="Organization not found")
     
     org.verification_status = "verified"
-    org.verified_by = current_admin.id
+    org.verified_by = current_admin.id if current_admin.id != "00000000-0000-0000-0000-000000000000" else None
     org.verified_at = datetime.datetime.now()
     db.commit()
     
@@ -403,3 +403,80 @@ def delete_document(doc_id: str, db: Session = Depends(get_db), current_admin: m
     db.commit()
     
     return {"success": True, "message": "문서 삭제 완료"}
+
+@router.post("/verify-business")
+async def verify_business(
+    payload: dict = Body(...),
+    current_admin: models.SystemAdmin = Depends(get_current_admin)
+):
+    """국세청 사업자등록 진위확인 및 상태조회 프록시"""
+    import httpx
+    import urllib.parse
+    import logging
+
+    logger = logging.getLogger("uvicorn.error")
+
+    nts_api_key = os.getenv("NTS_API_KEY", "")
+    if not nts_api_key or nts_api_key == "YOUR_NTS_SERVICE_KEY_HERE":
+        raise HTTPException(status_code=500, detail="국세청 API 키가 .env 파일에 설정되지 않았습니다.")
+
+    b_no = payload.get("b_no", "").replace("-", "").strip()
+    if not b_no or len(b_no) != 10:
+        raise HTTPException(status_code=400, detail="올바른 사업자등록번호(10자리)를 입력해주세요.")
+
+    # 공공데이터포털의 키는 이미 인코딩된 경우가 많으므로 중복 인코딩 방지 로직
+    # 이미 %가 포함되어 있다면 인코딩된 것으로 간주
+    if "%" in nts_api_key:
+        decoded_key = urllib.parse.unquote(nts_api_key)
+        encoded_key = nts_api_key # 그대로 유지
+    else:
+        encoded_key = urllib.parse.quote(nts_api_key)
+
+    # 상태조회 (status) - 사업자번호만으로 상태 확인
+    status_url = f"https://api.odcloud.kr/api/nts-businessman/v1/status?serviceKey={encoded_key}"
+    status_body = {"b_no": [b_no]}
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            logger.info(f"NTS API Request: {b_no}")
+            status_res = await client.post(
+                status_url,
+                json=status_body,
+                headers={"Content-Type": "application/json", "Accept": "application/json"}
+            )
+            
+            # HTTP 상태 코드 확인
+            if status_res.status_code != 200:
+                logger.error(f"NTS API Error Output: {status_res.text}")
+                return {
+                    "success": False,
+                    "detail": f"국세청 API 오류 (HTTP {status_res.status_code})",
+                    "raw": status_res.text
+                }
+
+            status_data = status_res.json()
+            logger.info(f"NTS API Response: {status_data}")
+
+        # 데이터 존재 여부 확인
+        data_list = status_data.get("data", [])
+        if not data_list:
+            return {
+                "success": False,
+                "detail": "사업자 정보를 찾을 수 없습니다. (데이터 없음)"
+            }
+
+        result_status = data_list[0]
+        # b_stt_cd: 01(계속), 02(휴업), 03(폐업)
+        
+        return {
+            "success": True,
+            "b_no": b_no,
+            "status": result_status,
+            "status_code": status_data.get("status_code", "")
+        }
+    except httpx.TimeoutException:
+        logger.error("NTS API Timeout")
+        raise HTTPException(status_code=504, detail="국세청 API 응답 시간이 초과되었습니다.")
+    except Exception as e:
+        logger.error(f"NTS API Exception: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"조회 중 오류 발생: {str(e)}")

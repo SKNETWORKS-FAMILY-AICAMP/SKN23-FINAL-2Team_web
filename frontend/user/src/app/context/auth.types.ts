@@ -16,6 +16,7 @@ export interface User {
   verification_status?: string;
   plan?: string;
   max_seats: number;
+  business_reg_s3_url?: string;
 }
 
 

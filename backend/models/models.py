@@ -52,7 +52,6 @@ class Organization(Base):
     password_hash = Column(Text)
     plan = Column(String(20), default="basic")
     max_seats = Column(Integer)
-    business_reg_number = Column(String(50))
     business_reg_s3_url = Column(Text)
     verification_status = Column(String(20), default="pending")
     verified_by = Column(String, nullable=True)
@@ -304,7 +303,10 @@ class SupportInquiry(Base):
     __tablename__ = "support_inquiries"
 
     id = Column(Integer, Identity(always=True), primary_key=True)
-    org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=True, index=True)
+    is_anonymous = Column(Boolean, nullable=False, default=False)
+    anonymous_password = Column(String(20), nullable=True)
+    device_uuid = Column(String(255), nullable=True, index=True)
     inquiry_type = Column(String(50), nullable=False)
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)

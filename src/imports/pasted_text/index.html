@@ -1,38 +1,49 @@
 <!DOCTYPE html>
 
-<html class="dark" lang="ko"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>AutoCAD sLLM Agent - Titanium Precision Interface</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=Space+Grotesk:wght@300;500;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<style>
+<html class="dark" lang="ko">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>AutoCAD sLLM Agent - Titanium Precision Interface</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=Space+Grotesk:wght@300;500;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <style>
         body {
             background-color: #0e0e0e;
             color: #e2e2e2;
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
         }
+
         .glass {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
+
         .hero-gradient {
             background: radial-gradient(circle at 50% 50%, rgba(0, 113, 227, 0.12) 0%, rgba(14, 14, 14, 0) 70%);
         }
+
         .blue-glow {
             box-shadow: 0 0 40px rgba(0, 113, 227, 0.2);
         }
+
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
         }
-        
+
         /* Sticky Canvas Architecture */
         .scroll-container {
             height: 1000vh;
         }
+
         .sticky-section {
             position: sticky;
             top: 0;
@@ -54,15 +65,18 @@
             align-items: center;
             justify-content: center;
         }
+
         .domain-layer.active {
             opacity: 1;
             pointer-events: auto;
             transform: translateY(0);
         }
+
         .domain-layer.inactive-up {
             opacity: 0;
             transform: translateY(-50px);
         }
+
         .domain-layer.inactive-down {
             opacity: 0;
             transform: translateY(50px);
@@ -70,9 +84,17 @@
 
         /* Animation Keyframes */
         @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
         }
+
         .animate-float {
             animation: float 6s ease-in-out infinite;
         }
@@ -81,383 +103,468 @@
         ::-webkit-scrollbar {
             width: 4px;
         }
+
         ::-webkit-scrollbar-track {
             background: #0e0e0e;
         }
+
         ::-webkit-scrollbar-thumb {
             background: #353535;
             border-radius: 10px;
         }
     </style>
-<script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                    "on-primary-fixed-variant": "#00458f",
-                    "on-tertiary-container": "#fffaf9",
-                    "on-primary": "#002f66",
-                    "surface-container-lowest": "#0e0e0e",
-                    "on-primary-fixed": "#001b3f",
-                    "error": "#ffb4ab",
-                    "surface-container": "#1f1f1f",
-                    "surface-dim": "#131313",
-                    "surface-bright": "#393939",
-                    "on-surface-variant": "#c1c6d6",
-                    "tertiary-fixed": "#ffdad5",
-                    "background": "#0e0e0e",
-                    "secondary-fixed": "#6cff82",
-                    "secondary-container": "#09bf49",
-                    "secondary-fixed-dim": "#47e266",
-                    "on-error": "#690005",
-                    "tertiary-container": "#dd2c26",
-                    "primary-fixed-dim": "#abc7ff",
-                    "surface": "#131313",
-                    "surface-container-highest": "#353535",
-                    "on-tertiary": "#690004",
-                    "tertiary-fixed-dim": "#ffb4aa",
-                    "on-surface": "#e2e2e2",
-                    "surface-container-high": "#2a2a2a",
-                    "inverse-on-surface": "#303030",
-                    "error-container": "#93000a",
-                    "on-error-container": "#ffdad6",
-                    "secondary": "#47e266",
-                    "on-tertiary-fixed-variant": "#930007",
-                    "on-background": "#e2e2e2",
-                    "on-secondary-fixed": "#002106",
-                    "tertiary": "#ffb4aa",
-                    "outline-variant": "#414753",
-                    "outline": "#8b919f",
-                    "on-secondary": "#003910",
-                    "primary-fixed": "#d7e2ff",
-                    "primary": "#abc7ff",
-                    "surface-container-low": "#1b1b1b",
-                    "on-secondary-fixed-variant": "#00531a",
-                    "surface-variant": "#353535",
-                    "on-secondary-container": "#004615",
-                    "on-primary-container": "#fcfbff",
-                    "on-tertiary-fixed": "#410001",
-                    "inverse-primary": "#005cbb",
-                    "inverse-surface": "#e2e2e2",
-                    "primary-container": "#0071e3",
-                    "surface-tint": "#abc7ff"
-            },
-            "borderRadius": {
-                    "DEFAULT": "0.25rem",
-                    "lg": "0.5rem",
-                    "xl": "1.25rem",
-                    "full": "9999px"
-            },
-            "fontFamily": {
-                    "headline": ["Inter"],
-                    "body": ["Inter"],
-                    "label": ["Space Grotesk"]
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#00458f",
+                        "on-tertiary-container": "#fffaf9",
+                        "on-primary": "#002f66",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-primary-fixed": "#001b3f",
+                        "error": "#ffb4ab",
+                        "surface-container": "#1f1f1f",
+                        "surface-dim": "#131313",
+                        "surface-bright": "#393939",
+                        "on-surface-variant": "#c1c6d6",
+                        "tertiary-fixed": "#ffdad5",
+                        "background": "#0e0e0e",
+                        "secondary-fixed": "#6cff82",
+                        "secondary-container": "#09bf49",
+                        "secondary-fixed-dim": "#47e266",
+                        "on-error": "#690005",
+                        "tertiary-container": "#dd2c26",
+                        "primary-fixed-dim": "#abc7ff",
+                        "surface": "#131313",
+                        "surface-container-highest": "#353535",
+                        "on-tertiary": "#690004",
+                        "tertiary-fixed-dim": "#ffb4aa",
+                        "on-surface": "#e2e2e2",
+                        "surface-container-high": "#2a2a2a",
+                        "inverse-on-surface": "#303030",
+                        "error-container": "#93000a",
+                        "on-error-container": "#ffdad6",
+                        "secondary": "#47e266",
+                        "on-tertiary-fixed-variant": "#930007",
+                        "on-background": "#e2e2e2",
+                        "on-secondary-fixed": "#002106",
+                        "tertiary": "#ffb4aa",
+                        "outline-variant": "#414753",
+                        "outline": "#8b919f",
+                        "on-secondary": "#003910",
+                        "primary-fixed": "#d7e2ff",
+                        "primary": "#abc7ff",
+                        "surface-container-low": "#1b1b1b",
+                        "on-secondary-fixed-variant": "#00531a",
+                        "surface-variant": "#353535",
+                        "on-secondary-container": "#004615",
+                        "on-primary-container": "#fcfbff",
+                        "on-tertiary-fixed": "#410001",
+                        "inverse-primary": "#005cbb",
+                        "inverse-surface": "#e2e2e2",
+                        "primary-container": "#0071e3",
+                        "surface-tint": "#abc7ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.25rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
             }
-          },
         }
-      }
     </script>
 </head>
+
 <body class="bg-background">
-<!-- TopNavBar -->
-<nav class="fixed top-0 w-full z-[100] border-b border-white/5 bg-zinc-950/60 backdrop-blur-xl">
-<div class="flex justify-between items-center w-full px-8 py-4 max-w-screen-2xl mx-auto">
-<div class="text-xl font-bold tracking-tighter text-zinc-100 font-headline flex items-center gap-2">
-<span class="w-2 h-8 bg-primary-container"></span>
+    <!-- TopNavBar -->
+    <nav class="fixed top-0 w-full z-[100] border-b border-white/5 bg-zinc-950/60 backdrop-blur-xl">
+        <div class="flex justify-between items-center w-full px-8 py-4 max-w-screen-2xl mx-auto">
+            <div class="text-xl font-bold tracking-tighter text-zinc-100 font-headline flex items-center gap-2">
+                <span class="w-2 h-8 bg-primary-container"></span>
                 AutoCAD sLLM Agent
             </div>
-<div class="hidden md:flex gap-10">
-<a class="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest" href="#features">Features</a>
-<a class="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest" href="#showcase">Showcase</a>
-<a class="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest" href="#how-it-works">How It Works</a>
-<a class="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest" href="#pricing">Pricing</a>
-</div>
-<button class="bg-primary-container text-white px-6 py-2 rounded-lg font-semibold hover:brightness-110 transition-all text-sm">
+            <div class="hidden md:flex gap-10">
+                <a class="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest"
+                    href="#features">Features</a>
+                <a class="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest"
+                    href="#showcase">Showcase</a>
+                <a class="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest"
+                    href="#how-it-works">How It Works</a>
+                <a class="text-zinc-400 font-medium hover:text-zinc-100 transition-colors text-sm uppercase tracking-widest"
+                    href="#pricing">Pricing</a>
+            </div>
+            <button
+                class="bg-primary-container text-white px-6 py-2 rounded-lg font-semibold hover:brightness-110 transition-all text-sm">
                 시작하기
             </button>
-</div>
-</nav>
-<!-- MAIN SCROLL CONTAINER -->
-<main class="scroll-container">
-<!-- 1. HERO SECTION (Sticky Stage) -->
-<section class="sticky-section z-10 hero-gradient" id="hero-stage">
-<div class="absolute inset-0 opacity-20 pointer-events-none">
-<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full border-[0.5px] border-primary-container/20 rotate-12 scale-150 transition-transform duration-1000" id="hero-bg-1"></div>
-</div>
-<div class="relative z-20 text-center max-w-5xl px-6 transition-all duration-700" id="hero-content">
-<div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass mb-8">
-<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
-<span class="text-[10px] font-label uppercase tracking-[0.3em] text-zinc-400">Titanium Precision Engine v1.0</span>
-</div>
-<h1 class="text-6xl md:text-8xl font-extrabold tracking-tighter text-white mb-8 leading-[0.9]">
-                    PRECISION <br/>
-<span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-container">WITHOUT LIMITS</span>
-</h1>
-<p class="text-lg md:text-xl text-zinc-400 mb-12 max-w-2xl mx-auto leading-relaxed">
-                    도면의 모든 선이 법규와 완벽하게 일치합니다.<br/>
+        </div>
+    </nav>
+    <!-- MAIN SCROLL CONTAINER -->
+    <main class="scroll-container">
+        <!-- 1. HERO SECTION (Sticky Stage) -->
+        <section class="sticky-section z-10 hero-gradient" id="hero-stage">
+            <div class="absolute inset-0 opacity-20 pointer-events-none">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full border-[0.5px] border-primary-container/20 rotate-12 scale-150 transition-transform duration-1000"
+                    id="hero-bg-1"></div>
+            </div>
+            <div class="relative z-20 text-center max-w-5xl px-6 transition-all duration-700" id="hero-content">
+                <h1 class="text-6xl md:text-8xl font-extrabold tracking-tighter text-white mb-8 leading-[0.9]">
+                    PRECISION <br />
+                    <span
+                        class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-container">WITHOUT
+                        LIMITS</span>
+                </h1>
+                <p class="text-lg md:text-xl text-zinc-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+                    도면의 모든 선이 법규와 완벽하게 일치합니다.<br />
                     에이전트가 탐지하고, 당신이 승인하면, 즉시 수정됩니다.
                 </p>
-<div class="flex flex-col md:flex-row items-center justify-center gap-4">
-<button class="w-full md:w-auto bg-primary-container text-white px-10 py-4 rounded-lg text-lg font-bold shadow-2xl shadow-primary-container/20 hover:scale-105 transition-all">
+                <div class="flex flex-col md:flex-row items-center justify-center gap-4">
+                    <button
+                        class="w-full md:w-auto bg-primary-container text-white px-10 py-4 rounded-lg text-lg font-bold shadow-2xl shadow-primary-container/20 hover:scale-105 transition-all">
                         체험판 다운로드
                     </button>
-<button class="w-full md:w-auto glass px-10 py-4 rounded-lg text-lg font-bold flex items-center justify-center gap-2 hover:bg-white/5 transition-all">
+                    <button
+                        class="w-full md:w-auto glass px-10 py-4 rounded-lg text-lg font-bold flex items-center justify-center gap-2 hover:bg-white/5 transition-all">
                         데모 영상
                         <span class="material-symbols-outlined text-sm">play_arrow</span>
-</button>
-</div>
-</div>
-<div class="absolute bottom-10 left-1/2 -translate-x-1/2 text-center opacity-40 animate-float" id="scroll-indicator">
-<span class="text-[9px] uppercase tracking-[0.4em] block mb-2">SCROLL TO ANALYZE</span>
-<span class="material-symbols-outlined">expand_more</span>
-</div>
-</section>
-<!-- 2. DOMAIN SHOWCASE CANVAS (Sticky Stage) -->
-<section class="sticky-section z-20 bg-surface-container-lowest" id="showcase">
-<div class="max-w-7xl w-full mx-auto px-8 relative h-full flex items-center">
-<!-- Left Side: Content Triggers -->
-<div class="w-full md:w-5/12 relative z-30 h-[60vh]">
-<!-- Architecture Layer -->
-<div class="domain-layer active" id="layer-architecture">
-<div class="space-y-6">
-<div class="flex items-center gap-3 text-primary">
-<span class="material-symbols-outlined text-4xl">architecture</span>
-<span class="text-xs font-bold uppercase tracking-widest">01 / Architecture</span>
-</div>
-<h2 class="text-5xl font-black text-white leading-tight">건축 설계 지능화</h2>
-<p class="text-lg text-zinc-400">일조권, 사선 제한, 용적률 등 복잡한 건축법규를 실시간 대조합니다. 설계 변경 시 즉각적인 위반 여부를 판단합니다.</p>
-<div class="glass p-6 rounded-xl border-l-4 border-error/50 space-y-3">
-<div class="flex justify-between items-center text-xs">
-<span class="text-error font-bold flex items-center gap-1"><span class="material-symbols-outlined text-sm">warning</span> VIOLATION DETECTED</span>
-<span class="text-zinc-500">Law Art. 53-2</span>
-</div>
-<div class="bg-black/40 p-3 rounded font-mono text-xs text-zinc-300">Layer: WALL-EXT | Dist: 1.2m &lt; (Min: 1.5m)</div>
-<div class="text-secondary text-sm font-bold flex items-center gap-1"><span class="material-symbols-outlined text-sm">auto_fix_high</span> 자동 수정: 외벽 0.3m 후퇴 제안</div>
-</div>
-</div>
-</div>
-<!-- Electrical Layer -->
-<div class="domain-layer inactive-down" id="layer-electrical">
-<div class="space-y-6">
-<div class="flex items-center gap-3 text-secondary">
-<span class="material-symbols-outlined text-4xl">bolt</span>
-<span class="text-xs font-bold uppercase tracking-widest">02 / Electrical</span>
-</div>
-<h2 class="text-5xl font-black text-white leading-tight">전기 설비 최적화</h2>
-<p class="text-lg text-zinc-400">KEC(한국전기설비규정)를 완벽 반영하여 부하 계산에 따른 전선 굵기 및 차단기 용량의 적정성을 실시간 검토합니다.</p>
-<div class="glass p-6 rounded-xl border-l-4 border-secondary/50 space-y-3">
-<div class="flex justify-between items-center text-xs">
-<span class="text-secondary font-bold flex items-center gap-1"><span class="material-symbols-outlined text-sm">verified</span> KEC COMPLIANT</span>
-</div>
-<p class="text-sm text-zinc-400">분기회로 차단기 용량 40A 상향 조정 및 케이블 스펙 업데이트 자동 반영 완료.</p>
-</div>
-</div>
-</div>
-<!-- Fire Safety Layer -->
-<div class="domain-layer inactive-down" id="layer-fire">
-<div class="space-y-6">
-<div class="flex items-center gap-3 text-error">
-<span class="material-symbols-outlined text-4xl">fire_extinguisher</span>
-<span class="text-xs font-bold uppercase tracking-widest">03 / Fire Safety</span>
-</div>
-<h2 class="text-5xl font-black text-white leading-tight">소방 방재 시뮬레이션</h2>
-<p class="text-lg text-zinc-400">화재 시 피난 경로의 유효 폭과 감지기 배치 간격을 소방법에 따라 정밀 분석합니다. 누락된 소방 설비를 즉시 탐지합니다.</p>
-<div class="glass p-6 rounded-xl space-y-2">
-<div class="flex items-center gap-2 text-sm">
-<span class="w-2 h-2 rounded-full bg-error"></span>
-<span class="text-white">보행 거리 초과 탐지: 32m (기준: 30m)</span>
-</div>
-<div class="flex items-center gap-2 text-sm">
-<span class="w-2 h-2 rounded-full bg-secondary"></span>
-<span class="text-white">방화 셔터 연동 테스트 통과</span>
-</div>
-</div>
-</div>
-</div>
-<!-- Piping Layer -->
-<div class="domain-layer inactive-down" id="layer-piping">
-<div class="space-y-6">
-<div class="flex items-center gap-3 text-blue-400">
-<span class="material-symbols-outlined text-4xl">water_drop</span>
-<span class="text-xs font-bold uppercase tracking-widest">04 / Piping &amp; Plumbing</span>
-</div>
-<h2 class="text-5xl font-black text-white leading-tight">기계 설비 배관 자동화</h2>
-<p class="text-lg text-zinc-400">배관의 간섭을 자동으로 회피하고 유량 계산에 최적화된 관경을 추천합니다. 유지관리 공간 확보 여부를 검토합니다.</p>
-<div class="glass p-6 rounded-xl border-l-4 border-blue-400/50 space-y-3">
-<div class="flex justify-between items-center text-xs">
-<span class="text-blue-400 font-bold flex items-center gap-1"><span class="material-symbols-outlined text-sm">check_circle</span> CLASH RESOLVED</span>
-</div>
-<p class="text-sm text-zinc-400">HVAC 덕트와 급수 배관 간섭 자동 해결 (Offset 150mm 적용)</p>
-</div>
-</div>
-</div>
-</div>
-<!-- Right Side: Visual Canvas -->
-<div class="hidden md:block w-7/12 h-[70vh] relative pl-12">
-<div class="w-full h-full rounded-2xl glass relative overflow-hidden flex items-center justify-center">
-<div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent z-10"></div>
-<img alt="Engineering visualization" class="w-full h-full object-cover opacity-50 scale-110 transition-transform duration-1000" id="dynamic-visual" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDo9jAqcimtREYwB8xsKgoRlRzfZk46i6Uy4XEaxBN1zoqnaaxiEANV1iNiuAvnAiAQKv0U7SJ-8C5ZESe2zH47RXQR8UfZBXccAiQ8GSjQmCFUJOUI-hTmekYvIh8Y5VYF3q_dcQ5CiWSgXL5t4N9lGXu0MLaYLnqWFV2lQOEMleL2pdSZnizRJbqj9ocfcByaVk9x9Fn_mu9qV4HhbPL7MBBNpRwGoSLtFcCV3pd9UBkQsW1jHCuc-k_dHuOHpPwBhFQzY-mp308"/>
-<!-- Floating Data Points -->
-<div class="absolute top-10 right-10 z-20 space-y-4">
-<div class="glass px-4 py-2 rounded shadow-xl text-[10px] font-mono border-white/20 animate-float" style="animation-delay: 1s">
+                    </button>
+                </div>
+            </div>
+            <div class="absolute bottom-10 left-1/2 -translate-x-1/2 text-center opacity-40 animate-float"
+                id="scroll-indicator">
+                <span class="text-[9px] uppercase tracking-[0.4em] block mb-2">SCROLL TO ANALYZE</span>
+                <span class="material-symbols-outlined">expand_more</span>
+            </div>
+        </section>
+        <!-- 2. DOMAIN SHOWCASE CANVAS (Sticky Stage) -->
+        <section class="sticky-section z-20 bg-surface-container-lowest" id="showcase">
+            <div class="max-w-7xl w-full mx-auto px-8 relative h-full flex items-center">
+                <!-- Left Side: Content Triggers -->
+                <div class="w-full md:w-5/12 relative z-30 h-[60vh]">
+                    <!-- Architecture Layer -->
+                    <div class="domain-layer active" id="layer-architecture">
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-3 text-primary">
+                                <span class="material-symbols-outlined text-4xl">architecture</span>
+                                <span class="text-xs font-bold uppercase tracking-widest">01 / Architecture</span>
+                            </div>
+                            <h2 class="text-5xl font-black text-white leading-tight">건축 설계 지능화</h2>
+                            <p class="text-lg text-zinc-400">일조권, 사선 제한, 용적률 등 복잡한 건축법규를 실시간 대조합니다. 설계 변경 시 즉각적인 위반 여부를
+                                판단합니다.</p>
+                            <div class="glass p-6 rounded-xl border-l-4 border-error/50 space-y-3">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-error font-bold flex items-center gap-1"><span
+                                            class="material-symbols-outlined text-sm">warning</span> VIOLATION
+                                        DETECTED</span>
+                                    <span class="text-zinc-500">Law Art. 53-2</span>
+                                </div>
+                                <div class="bg-black/40 p-3 rounded font-mono text-xs text-zinc-300">Layer: WALL-EXT |
+                                    Dist: 1.2m &lt; (Min: 1.5m)</div>
+                                <div class="text-secondary text-sm font-bold flex items-center gap-1"><span
+                                        class="material-symbols-outlined text-sm">auto_fix_high</span> 자동 수정: 외벽 0.3m 후퇴
+                                    제안</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Electrical Layer -->
+                    <div class="domain-layer inactive-down" id="layer-electrical">
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-3 text-secondary">
+                                <span class="material-symbols-outlined text-4xl">bolt</span>
+                                <span class="text-xs font-bold uppercase tracking-widest">02 / Electrical</span>
+                            </div>
+                            <h2 class="text-5xl font-black text-white leading-tight">전기 설비 최적화</h2>
+                            <p class="text-lg text-zinc-400">KEC(한국전기설비규정)를 완벽 반영하여 부하 계산에 따른 전선 굵기 및 차단기 용량의 적정성을 실시간
+                                검토합니다.</p>
+                            <div class="glass p-6 rounded-xl border-l-4 border-secondary/50 space-y-3">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-secondary font-bold flex items-center gap-1"><span
+                                            class="material-symbols-outlined text-sm">verified</span> KEC
+                                        COMPLIANT</span>
+                                </div>
+                                <p class="text-sm text-zinc-400">분기회로 차단기 용량 40A 상향 조정 및 케이블 스펙 업데이트 자동 반영 완료.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Fire Safety Layer -->
+                    <div class="domain-layer inactive-down" id="layer-fire">
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-3 text-error">
+                                <span class="material-symbols-outlined text-4xl">fire_extinguisher</span>
+                                <span class="text-xs font-bold uppercase tracking-widest">03 / Fire Safety</span>
+                            </div>
+                            <h2 class="text-5xl font-black text-white leading-tight">소방 방재 시뮬레이션</h2>
+                            <p class="text-lg text-zinc-400">화재 시 피난 경로의 유효 폭과 감지기 배치 간격을 소방법에 따라 정밀 분석합니다. 누락된 소방 설비를
+                                즉시 탐지합니다.</p>
+                            <div class="glass p-6 rounded-xl space-y-2">
+                                <div class="flex items-center gap-2 text-sm">
+                                    <span class="w-2 h-2 rounded-full bg-error"></span>
+                                    <span class="text-white">보행 거리 초과 탐지: 32m (기준: 30m)</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-sm">
+                                    <span class="w-2 h-2 rounded-full bg-secondary"></span>
+                                    <span class="text-white">방화 셔터 연동 테스트 통과</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Piping Layer -->
+                    <div class="domain-layer inactive-down" id="layer-piping">
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-3 text-blue-400">
+                                <span class="material-symbols-outlined text-4xl">water_drop</span>
+                                <span class="text-xs font-bold uppercase tracking-widest">04 / Piping &amp;
+                                    Plumbing</span>
+                            </div>
+                            <h2 class="text-5xl font-black text-white leading-tight">기계 설비 배관 자동화</h2>
+                            <p class="text-lg text-zinc-400">배관의 간섭을 자동으로 회피하고 유량 계산에 최적화된 관경을 추천합니다. 유지관리 공간 확보 여부를
+                                검토합니다.</p>
+                            <div class="glass p-6 rounded-xl border-l-4 border-blue-400/50 space-y-3">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-blue-400 font-bold flex items-center gap-1"><span
+                                            class="material-symbols-outlined text-sm">check_circle</span> CLASH
+                                        RESOLVED</span>
+                                </div>
+                                <p class="text-sm text-zinc-400">HVAC 덕트와 급수 배관 간섭 자동 해결 (Offset 150mm 적용)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Right Side: Visual Canvas -->
+                <div class="hidden md:block w-7/12 h-[70vh] relative pl-12">
+                    <div
+                        class="w-full h-full rounded-2xl glass relative overflow-hidden flex items-center justify-center">
+                        <div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent z-10"></div>
+                        <img alt="Engineering visualization"
+                            class="w-full h-full object-cover opacity-50 scale-110 transition-transform duration-1000"
+                            id="dynamic-visual"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDo9jAqcimtREYwB8xsKgoRlRzfZk46i6Uy4XEaxBN1zoqnaaxiEANV1iNiuAvnAiAQKv0U7SJ-8C5ZESe2zH47RXQR8UfZBXccAiQ8GSjQmCFUJOUI-hTmekYvIh8Y5VYF3q_dcQ5CiWSgXL5t4N9lGXu0MLaYLnqWFV2lQOEMleL2pdSZnizRJbqj9ocfcByaVk9x9Fn_mu9qV4HhbPL7MBBNpRwGoSLtFcCV3pd9UBkQsW1jHCuc-k_dHuOHpPwBhFQzY-mp308" />
+                        <!-- Floating Data Points -->
+                        <div class="absolute top-10 right-10 z-20 space-y-4">
+                            <div class="glass px-4 py-2 rounded shadow-xl text-[10px] font-mono border-white/20 animate-float"
+                                style="animation-delay: 1s">
                                 X: 142.921 | Y: -44.022
                             </div>
-<div class="glass px-4 py-2 rounded shadow-xl text-[10px] font-mono border-white/20 animate-float" style="animation-delay: 2s">
+                            <div class="glass px-4 py-2 rounded shadow-xl text-[10px] font-mono border-white/20 animate-float"
+                                style="animation-delay: 2s">
                                 SCALE: 1:100.00
                             </div>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- 3. HOW IT WORKS (Sticky/Static Integration) -->
-<section class="relative z-30 bg-surface-container py-32" id="how-it-works">
-<div class="max-w-7xl mx-auto px-8">
-<div class="flex flex-col md:flex-row gap-20 items-center">
-<div class="w-full md:w-1/2 space-y-12">
-<h2 class="text-4xl md:text-5xl font-black text-white tracking-tight">How It Works</h2>
-<div class="space-y-8">
-<div class="flex gap-6 group">
-<div class="w-12 h-12 rounded-full border border-primary/30 flex items-center justify-center text-primary font-bold shrink-0 group-hover:bg-primary group-hover:text-white transition-all">01</div>
-<div>
-<h4 class="text-xl font-bold text-white mb-2">도면 데이터 로드</h4>
-<p class="text-zinc-400">AutoCAD 플러그인을 통해 현재 도면의 객체 데이터와 레이어 정보를 sLLM 엔진으로 실시간 전송합니다.</p>
-</div>
-</div>
-<div class="flex gap-6 group">
-<div class="w-12 h-12 rounded-full border border-primary/30 flex items-center justify-center text-primary font-bold shrink-0 group-hover:bg-primary group-hover:text-white transition-all">02</div>
-<div>
-<h4 class="text-xl font-bold text-white mb-2">지능형 법규 분석</h4>
-<p class="text-zinc-400">학습된 전문 지식 데이터베이스와 실시간 법령 API를 대조하여 설계상의 오류 및 위반 사항을 초 단위로 식별합니다.</p>
-</div>
-</div>
-<div class="flex gap-6 group">
-<div class="w-12 h-12 rounded-full border border-primary/30 flex items-center justify-center text-primary font-bold shrink-0 group-hover:bg-primary group-hover:text-white transition-all">03</div>
-<div>
-<h4 class="text-xl font-bold text-white mb-2">원클릭 자동 보정</h4>
-<p class="text-zinc-400">발견된 문제를 해결하기 위한 최적의 대안을 제안하며, 승인 시 도면 내 객체들을 표준에 맞게 즉시 재배치합니다.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="w-full md:w-1/2">
-<div class="aspect-video glass rounded-2xl border-primary-container/30 overflow-hidden relative">
-<div class="absolute inset-0 flex items-center justify-center">
-<span class="material-symbols-outlined text-8xl text-primary/20">terminal</span>
-</div>
-<div class="absolute bottom-4 left-4 right-4 bg-black/60 p-4 rounded-lg font-mono text-[10px] text-primary">
-                                &gt; [SYSTEM] Analyzing 1,240 entities...<br/>
-                                &gt; [ALERT] Minimum clearance violation at Sect-B<br/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- 3. HOW IT WORKS (Sticky/Static Integration) -->
+        <section class="relative z-30 bg-surface-container py-32" id="how-it-works">
+            <div class="max-w-7xl mx-auto px-8">
+                <div class="flex flex-col md:flex-row gap-20 items-center">
+                    <div class="w-full md:w-1/2 space-y-12">
+                        <h2 class="text-4xl md:text-5xl font-black text-white tracking-tight">How It Works</h2>
+                        <div class="space-y-8">
+                            <div class="flex gap-6 group">
+                                <div
+                                    class="w-12 h-12 rounded-full border border-primary/30 flex items-center justify-center text-primary font-bold shrink-0 group-hover:bg-primary group-hover:text-white transition-all">
+                                    01</div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-white mb-2">도면 데이터 로드</h4>
+                                    <p class="text-zinc-400">AutoCAD 플러그인을 통해 현재 도면의 객체 데이터와 레이어 정보를 sLLM 엔진으로 실시간
+                                        전송합니다.</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-6 group">
+                                <div
+                                    class="w-12 h-12 rounded-full border border-primary/30 flex items-center justify-center text-primary font-bold shrink-0 group-hover:bg-primary group-hover:text-white transition-all">
+                                    02</div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-white mb-2">지능형 법규 분석</h4>
+                                    <p class="text-zinc-400">학습된 전문 지식 데이터베이스와 실시간 법령 API를 대조하여 설계상의 오류 및 위반 사항을 초 단위로
+                                        식별합니다.</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-6 group">
+                                <div
+                                    class="w-12 h-12 rounded-full border border-primary/30 flex items-center justify-center text-primary font-bold shrink-0 group-hover:bg-primary group-hover:text-white transition-all">
+                                    03</div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-white mb-2">원클릭 자동 보정</h4>
+                                    <p class="text-zinc-400">발견된 문제를 해결하기 위한 최적의 대안을 제안하며, 승인 시 도면 내 객체들을 표준에 맞게 즉시
+                                        재배치합니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-1/2">
+                        <div
+                            class="aspect-video glass rounded-2xl border-primary-container/30 overflow-hidden relative">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-8xl text-primary/20">terminal</span>
+                            </div>
+                            <div
+                                class="absolute bottom-4 left-4 right-4 bg-black/60 p-4 rounded-lg font-mono text-[10px] text-primary">
+                                &gt; [SYSTEM] Analyzing 1,240 entities...<br />
+                                &gt; [ALERT] Minimum clearance violation at Sect-B<br />
                                 &gt; [PROPOSAL] Auto-shifting node 42 by 200mm... [Y/n]
                             </div>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- 4. PRICING SECTION (At the bottom) -->
-<section class="relative z-30 bg-surface py-32 border-t border-white/5" id="pricing">
-<div class="max-w-7xl mx-auto px-8">
-<div class="text-center mb-24">
-<h2 class="text-4xl md:text-5xl font-black text-white mb-6">Pricing Plans</h2>
-<p class="text-zinc-400 max-w-2xl mx-auto text-lg">
-                        평생 소장을 통한 영구적 사용부터 대규모 팀을 위한 유연한 구독 모델까지, <br class="hidden md:block"/>비즈니스 규모에 맞는 최적의 플랜을 선택하세요.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- 4. PRICING SECTION (At the bottom) -->
+        <section class="relative z-30 bg-surface py-32 border-t border-white/5" id="pricing">
+            <div class="max-w-7xl mx-auto px-8">
+                <div class="text-center mb-24">
+                    <h2 class="text-4xl md:text-5xl font-black text-white mb-6">Pricing Plans</h2>
+                    <p class="text-zinc-400 max-w-2xl mx-auto text-lg">
+                        평생 소장을 통한 영구적 사용부터 대규모 팀을 위한 유연한 구독 모델까지, <br class="hidden md:block" />비즈니스 규모에 맞는 최적의 플랜을
+                        선택하세요.
                     </p>
-<div class="w-16 h-1 bg-primary-container mx-auto mt-8"></div>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-<!-- Basic (Lifetime) -->
-<div class="glass p-10 rounded-2xl flex flex-col hover:border-white/20 transition-all group">
-<div class="flex justify-between items-start mb-4">
-<h3 class="text-xl font-bold">Basic</h3>
-<span class="text-[10px] bg-white/10 px-2 py-1 rounded text-zinc-400 font-bold tracking-widest uppercase">One-time</span>
-</div>
-<div class="text-4xl font-black mb-1">₩300,000</div>
-<div class="text-sm text-primary-container font-medium mb-8">(평생 소장)</div>
-<ul class="space-y-4 text-zinc-400 text-sm mb-12 flex-grow">
-<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>평생 5개의 API 키 지원</span></li>
-<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>4개 전 도메인 지원 (건축, 전기, 소방, 배관)</span></li>
-<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>14일 무료 체험 가능</span></li>
-<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>기본 법규 DB 업데이트 포함</span></li>
-</ul>
-<button class="w-full py-4 border border-white/10 rounded-lg hover:bg-white/5 transition-all uppercase tracking-widest text-xs font-bold">시작하기</button>
-</div>
-<!-- Pro (Subscription) -->
-<div class="glass p-10 rounded-2xl flex flex-col border-primary-container blue-glow scale-105 relative z-10 bg-zinc-900/40">
-<div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary-container text-white px-4 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">Best for Teams</div>
-<div class="flex justify-between items-start mb-4">
-<h3 class="text-xl font-bold">Pro</h3>
-<span class="text-[10px] bg-primary-container/20 px-2 py-1 rounded text-primary font-bold tracking-widest uppercase">Subscription</span>
-</div>
-<div class="text-4xl font-black mb-1">₩100,000</div>
-<div class="text-sm text-zinc-400 mb-8">/ 월</div>
-<ul class="space-y-4 text-zinc-200 text-sm mb-12 flex-grow">
-<li class="flex items-start gap-3"><span class="material-symbols-outlined text-secondary text-lg">verified</span> <span>Basic의 모든 혜택 포함</span></li>
-<li class="flex items-start gap-3"><span class="material-symbols-outlined text-secondary text-lg">verified</span> <span>5개 초과 API 키 무제한 등록 및 관리</span></li>
-<li class="flex items-start gap-3"><span class="material-symbols-outlined text-secondary text-lg">verified</span> <span>시방서 무제한 저장 공간 (DB 구축)</span></li>
-<li class="flex items-start gap-3"><span class="material-symbols-outlined text-secondary text-lg">verified</span> <span>우선 순위 기술 지원</span></li>
-<li class="flex items-start gap-3"><span class="material-symbols-outlined text-secondary text-lg">verified</span> <span>팀 협업 기능 제공</span></li>
-</ul>
-<button class="w-full py-4 bg-primary-container text-white rounded-lg hover:brightness-110 transition-all shadow-xl shadow-primary-container/20 uppercase tracking-widest text-xs font-bold">구독 시작</button>
-</div>
-<!-- Enterprise -->
-<div class="glass p-10 rounded-2xl flex flex-col hover:border-white/20 transition-all">
-<div class="flex justify-between items-start mb-4">
-<h3 class="text-xl font-bold">Enterprise</h3>
-<span class="text-[10px] bg-white/10 px-2 py-1 rounded text-zinc-400 font-bold tracking-widest uppercase">Custom</span>
-</div>
-<div class="text-4xl font-black mb-8">별도 문의</div>
-<ul class="space-y-4 text-zinc-400 text-sm mb-12 flex-grow">
-<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>온프레미스 설치 및 보안망 지원</span></li>
-<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>기업 전용 sLLM 튜닝 및 학습</span></li>
-<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>24/7 전담 엔지니어 지원</span></li>
-<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>API 통합 커스텀 개발</span></li>
-</ul>
-<button class="w-full py-4 border border-white/10 rounded-lg hover:bg-white/5 transition-all uppercase tracking-widest text-xs font-bold">Contact Sales</button>
-</div>
-</div>
-</div>
-</section>
-</main>
-<!-- Footer -->
-<footer class="bg-zinc-950 border-t border-white/5 py-24 px-8">
-<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-16">
-<div class="max-w-md space-y-6">
-<div class="text-xl font-black tracking-tight text-white flex items-center gap-2">
-<span class="w-2 h-8 bg-zinc-600"></span>
+                    <div class="w-16 h-1 bg-primary-container mx-auto mt-8"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Basic (Lifetime) -->
+                    <div class="glass p-10 rounded-2xl flex flex-col hover:border-white/20 transition-all group">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-xl font-bold">Basic</h3>
+                            <span
+                                class="text-[10px] bg-white/10 px-2 py-1 rounded text-zinc-400 font-bold tracking-widest uppercase">One-time</span>
+                        </div>
+                        <div class="text-4xl font-black mb-1">₩300,000</div>
+                        <div class="text-sm text-primary-container font-medium mb-8">(평생 소장)</div>
+                        <ul class="space-y-4 text-zinc-400 text-sm mb-12 flex-grow">
+                            <li class="flex items-start gap-3"><span
+                                    class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>평생
+                                    5개의 API 키 지원</span></li>
+                            <li class="flex items-start gap-3"><span
+                                    class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>4개
+                                    전 도메인 지원 (건축, 전기, 소방, 배관)</span></li>
+                            <li class="flex items-start gap-3"><span
+                                    class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>14일
+                                    무료 체험 가능</span></li>
+                            <li class="flex items-start gap-3"><span
+                                    class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>기본
+                                    법규 DB 업데이트 포함</span></li>
+                        </ul>
+                        <button
+                            class="w-full py-4 border border-white/10 rounded-lg hover:bg-white/5 transition-all uppercase tracking-widest text-xs font-bold">시작하기</button>
+                    </div>
+                    <!-- Pro (Subscription) -->
+                    <div
+                        class="glass p-10 rounded-2xl flex flex-col border-primary-container blue-glow scale-105 relative z-10 bg-zinc-900/40">
+                        <div
+                            class="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary-container text-white px-4 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">
+                            Best for Teams</div>
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-xl font-bold">Pro</h3>
+                            <span
+                                class="text-[10px] bg-primary-container/20 px-2 py-1 rounded text-primary font-bold tracking-widest uppercase">Subscription</span>
+                        </div>
+                        <div class="text-4xl font-black mb-1">₩100,000</div>
+                        <div class="text-sm text-zinc-400 mb-8">/ 월</div>
+                        <ul class="space-y-4 text-zinc-200 text-sm mb-12 flex-grow">
+                            <li class="flex items-start gap-3"><span
+                                    class="material-symbols-outlined text-secondary text-lg">verified</span>
+                                <span>Basic의 모든 혜택 포함</span>
+                            </li>
+                            <li class="flex items-start gap-3"><span
+                                    class="material-symbols-outlined text-secondary text-lg">verified</span> <span>5개 초과
+                                    API 키 무제한 등록 및 관리</span></li>
+                            <li class="flex items-start gap-3"><span
+                                    class="material-symbols-outlined text-secondary text-lg">verified</span> <span>시방서
+                                    무제한 저장 공간 (DB 구축)</span></li>
+                            <li class="flex items-start gap-3"><span
+                                    class="material-symbols-outlined text-secondary text-lg">verified</span> <span>우선 순위
+                                    기술 지원</span></li>
+                            <li class="flex items-start gap-3"><span
+                                    class="material-symbols-outlined text-secondary text-lg">verified</span> <span>팀 협업
+                                    기능 제공</span></li>
+                        </ul>
+                        <button
+                            class="w-full py-4 bg-primary-container text-white rounded-lg hover:brightness-110 transition-all shadow-xl shadow-primary-container/20 uppercase tracking-widest text-xs font-bold">구독
+                            시작</button>
+                    </div>
+                    <!-- Enterprise -->
+                    <div class="glass p-10 rounded-2xl flex flex-col hover:border-white/20 transition-all">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-xl font-bold">Enterprise</h3>
+                            <span
+                                class="text-[10px] bg-white/10 px-2 py-1 rounded text-zinc-400 font-bold tracking-widest uppercase">Custom</span>
+                        </div>
+                        <div class="text-4xl font-black mb-8">별도 문의</div>
+                        <ul class="space-y-4 text-zinc-400 text-sm mb-12 flex-grow">
+                            <li class="flex items-start gap-3"><span
+                                    class="material-symbols-outlined text-primary text-lg">check_circle</span>
+                                <span>온프레미스 설치 및 보안망 지원</span>
+                            </li>
+                            <li class="flex items-start gap-3"><span
+                                    class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>기업
+                                    전용 sLLM 튜닝 및 학습</span></li>
+                            <li class="flex items-start gap-3"><span
+                                    class="material-symbols-outlined text-primary text-lg">check_circle</span>
+                                <span>24/7 전담 엔지니어 지원</span>
+                            </li>
+                            <li class="flex items-start gap-3"><span
+                                    class="material-symbols-outlined text-primary text-lg">check_circle</span> <span>API
+                                    통합 커스텀 개발</span></li>
+                        </ul>
+                        <button
+                            class="w-full py-4 border border-white/10 rounded-lg hover:bg-white/5 transition-all uppercase tracking-widest text-xs font-bold">Contact
+                            Sales</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Footer -->
+    <footer class="bg-zinc-950 border-t border-white/5 py-24 px-8">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-16">
+            <div class="max-w-md space-y-6">
+                <div class="text-xl font-black tracking-tight text-white flex items-center gap-2">
+                    <span class="w-2 h-8 bg-zinc-600"></span>
                     AutoCAD sLLM Agent
                 </div>
-<p class="text-zinc-500 text-sm leading-relaxed">Architectural Intelligence Interface is redefining the standards of engineering design through titanium-grade precision AI. Every line matters.</p>
-<div class="text-[10px] uppercase tracking-widest text-zinc-600">© 2024 Architectural Intelligence Interface. Seoul, KR.</div>
-</div>
-<div class="grid grid-cols-2 md:grid-cols-3 gap-12">
-<div class="space-y-4">
-<h5 class="text-white text-sm font-bold uppercase tracking-widest">Solutions</h5>
-<nav class="flex flex-col gap-2">
-<a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Architecture</a>
-<a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Electrical</a>
-<a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Fire Safety</a>
-<a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Piping</a>
-</nav>
-</div>
-<div class="space-y-4">
-<h5 class="text-white text-sm font-bold uppercase tracking-widest">Company</h5>
-<nav class="flex flex-col gap-2">
-<a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Documentation</a>
-<a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Safety Standard</a>
-<a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Terms</a>
-</nav>
-</div>
-</div>
-</div>
-</footer>
-<script>
+                <p class="text-zinc-500 text-sm leading-relaxed">Architectural Intelligence Interface is redefining the
+                    standards of engineering design through titanium-grade precision AI. Every line matters.</p>
+                <div class="text-[10px] uppercase tracking-widest text-zinc-600">© 2024 Architectural Intelligence
+                    Interface. Seoul, KR.</div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-12">
+                <div class="space-y-4">
+                    <h5 class="text-white text-sm font-bold uppercase tracking-widest">Solutions</h5>
+                    <nav class="flex flex-col gap-2">
+                        <a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Architecture</a>
+                        <a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Electrical</a>
+                        <a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Fire Safety</a>
+                        <a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Piping</a>
+                    </nav>
+                </div>
+                <div class="space-y-4">
+                    <h5 class="text-white text-sm font-bold uppercase tracking-widest">Company</h5>
+                    <nav class="flex flex-col gap-2">
+                        <a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Documentation</a>
+                        <a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Safety
+                            Standard</a>
+                        <a class="text-zinc-600 text-xs hover:text-primary transition-colors" href="#">Terms</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script>
         // Scroll Logic for Sticky Animations
         const heroContent = document.getElementById('hero-content');
         const heroBg = document.getElementById('hero-bg-1');
         const visualImg = document.getElementById('dynamic-visual');
-        
+
         const layers = [
             document.getElementById('layer-architecture'),
             document.getElementById('layer-electrical'),
@@ -474,7 +581,7 @@
 
         window.addEventListener('scroll', () => {
             const scrollPercent = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
-            
+
             // Hero Fade Out
             if (scrollPercent < 0.15) {
                 const opacity = 1 - (scrollPercent * 6.66);
@@ -488,20 +595,20 @@
             // Showcase Layer Logic (0.2 to 0.7 range)
             const showcaseStart = 0.2;
             const showcaseEnd = 0.65;
-            
+
             if (scrollPercent >= showcaseStart && scrollPercent <= showcaseEnd) {
                 const range = showcaseEnd - showcaseStart;
                 const progress = (scrollPercent - showcaseStart) / range;
                 const step = 1 / layers.length;
-                
+
                 layers.forEach((layer, index) => {
                     const layerStart = index * step;
                     const layerEnd = (index + 1) * step;
-                    
+
                     if (progress >= layerStart && progress < layerEnd) {
                         layer.classList.add('active');
                         layer.classList.remove('inactive-up', 'inactive-down');
-                        if(visuals[index] && visualImg.src !== visuals[index]) visualImg.src = visuals[index];
+                        if (visuals[index] && visualImg.src !== visuals[index]) visualImg.src = visuals[index];
                     } else if (progress < layerStart) {
                         layer.classList.remove('active', 'inactive-up');
                         layer.classList.add('inactive-down');
@@ -513,4 +620,6 @@
             }
         });
     </script>
-</body></html>
+</body>
+
+</html>
