@@ -51,7 +51,7 @@ def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(securi
 
         # PIN 로그인으로 발급된 토큰
         if auth_type == "pin" and payload.get("sub") == "system_admin":
-            return models.SystemAdmin(id="pin_admin", email="system_admin")
+            return models.SystemAdmin(id="00000000-0000-0000-0000-000000000000", email="system_admin")
 
         # 기존 DB 기반 토큰
         email: str = payload.get("sub")

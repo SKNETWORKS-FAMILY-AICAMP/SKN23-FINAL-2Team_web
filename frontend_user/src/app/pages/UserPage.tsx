@@ -11,6 +11,7 @@ Modification History:
     - 2026-04-23 (김민정) : 컴포넌트 기능별 추출(Account, Billing, API, Usage, Device, QnA) 및 대규모 최적화
     - 2026-04-24 (김민정) : 마이페이지 내 결제 및 계정 관리 UI/UX 개선
     - 2026-04-26 (김민정) : device 더미 데이터 삭제 및 DB 연동
+    - 2026-04-27 (송주엽) : 라이트 테마 전환
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -38,22 +39,18 @@ export default function ProfilePage() {
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
 
-  // 권한 기반 라우팅 방어 로직 (비로그인자 튕기기 및 관리자 계정 자동 리다이렉트)
   useEffect(() => {
     if (!user && !isAuthenticated) {
-      // 0.5초 등 약간의 딜레이가 있을 수 있으나 단순하게 처리
     } else if (user?.role === 'admin' || user?.role === 'superuser') {
       navigate('/admin', { replace: true });
     }
   }, [user, navigate, isAuthenticated]);
 
-  // URL 쿼리 스트링에서 탭 정보를 가져와 초기 상태로 설정
   const searchParams = new URLSearchParams(location.search);
   const queryTab = searchParams.get('tab') as TabType;
   const initialTab = queryTab || (location.state?.tab as TabType) || 'account';
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
 
-  // 탭 변경 시 URL 갱신
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     navigate(`/profile?tab=${tab}`, { replace: true });
@@ -88,9 +85,7 @@ export default function ProfilePage() {
     }
   }, [activeTab, paymentInfo, isLoadingPayment]);
 
-  useEffect(() => {
-    fetchPayment();
-  }, [activeTab]);
+  useEffect(() => { fetchPayment(); }, [activeTab]);
 
   // --- 2. Usage Dashboard State ---
   const [usageStats, setUsageStats] = useState<any>(null);
@@ -110,9 +105,7 @@ export default function ProfilePage() {
           const url = `http://localhost:8001/api/v1/usage/stats?start_date=${usageDateRange.start}&end_date=${usageDateRange.end}`;
           const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
           const data = await response.json();
-          if (data && data.success) {
-            setUsageStats(data);
-          }
+          if (data && data.success) setUsageStats(data);
         } catch (error) {
           console.error("Usage Fetch Error", error);
         } finally {
@@ -126,18 +119,9 @@ export default function ProfilePage() {
   const handleCustomDateChange = (type: 'start' | 'end', value: string) => {
     if (!value || !isValid(parseISO(value))) return;
     const today = format(new Date(), 'yyyy-MM-dd');
-    if (type === 'start' && value > usageDateRange.end) {
-      toast.error('시작 날짜는 종료 날짜보다 늦을 수 없습니다.');
-      return;
-    }
-    if (type === 'end' && value < usageDateRange.start) {
-      toast.error('종료 날짜는 시작 날짜보다 빠를 수 없습니다.');
-      return;
-    }
-    if (value > today) {
-      toast.error('미래 날짜는 조회할 수 없습니다.');
-      return;
-    }
+    if (type === 'start' && value > usageDateRange.end) { toast.error('시작 날짜는 종료 날짜보다 늦을 수 없습니다.'); return; }
+    if (type === 'end' && value < usageDateRange.start) { toast.error('종료 날짜는 시작 날짜보다 빠를 수 없습니다.'); return; }
+    if (value > today) { toast.error('미래 날짜는 조회할 수 없습니다.'); return; }
     setUsageDateRange(prev => ({ ...prev, [type]: value }));
   };
 
@@ -161,16 +145,11 @@ export default function ProfilePage() {
         setIsLoadingKeys(true);
         try {
           const token = localStorage.getItem('access_token');
-          const response = await fetch('http://localhost:8001/api/v1/keys', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
+          const response = await fetch('http://localhost:8001/api/v1/keys', { headers: { 'Authorization': `Bearer ${token}` } });
           const data = await response.json();
           if (Array.isArray(data)) setApiKeys(data);
-        } catch (error) {
-          console.error("Keys Fetch Error", error);
-        } finally {
-          setIsLoadingKeys(false);
-        }
+        } catch (error) { console.error("Keys Fetch Error", error); }
+        finally { setIsLoadingKeys(false); }
       }
     };
     fetchApiKeys();
@@ -183,16 +162,11 @@ export default function ProfilePage() {
         setIsLoadingDevices(true);
         try {
           const token = localStorage.getItem('access_token');
-          const response = await fetch('http://localhost:8001/api/v1/devices/', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
+          const response = await fetch('http://localhost:8001/api/v1/devices/', { headers: { 'Authorization': `Bearer ${token}` } });
           const data = await response.json();
           if (Array.isArray(data)) setDevices(data);
-        } catch (error) {
-          console.error("Devices Fetch Error", error);
-        } finally {
-          setIsLoadingDevices(false);
-        }
+        } catch (error) { console.error("Devices Fetch Error", error); }
+        finally { setIsLoadingDevices(false); }
       }
     };
     fetchDevices();
@@ -220,16 +194,11 @@ export default function ProfilePage() {
         setIsLoadingInquiries(true);
         try {
           const token = localStorage.getItem('access_token');
-          const res = await fetch('http://localhost:8001/api/v1/support/tickets/me', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
+          const res = await fetch('http://localhost:8001/api/v1/support/tickets/me', { headers: { 'Authorization': `Bearer ${token}` } });
           const data = await res.json();
           if (data.success) setMyTickets(data.tickets);
-        } catch (e) {
-          console.error(e);
-        } finally {
-          setIsLoadingInquiries(false);
-        }
+        } catch (e) { console.error(e); }
+        finally { setIsLoadingInquiries(false); }
       };
       fetchMyTickets();
     }
@@ -243,10 +212,7 @@ export default function ProfilePage() {
     setShowConfirmModal(true);
   };
 
-  const handleLogout = useCallback(() => {
-    logout();
-    navigate('/');
-  }, [logout, navigate]);
+  const handleLogout = useCallback(() => { logout(); navigate('/'); }, [logout, navigate]);
 
   const handleDeleteAccountSubmit = () => {
     if (!user) return;
@@ -301,42 +267,30 @@ export default function ProfilePage() {
       try {
         const token = localStorage.getItem('access_token');
         const res = await fetch(`http://localhost:8001/api/v1/keys/${keyId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-        if (res.ok) {
-          toast.success('API 키가 즉시 폐기되었습니다.');
-          fetchKeys();
-        } else {
-          const data = await res.json();
-          toast.error(data.detail || '삭제 실패');
-        }
+        if (res.ok) { toast.success('API 키가 즉시 폐기되었습니다.'); fetchKeys(); }
+        else { const data = await res.json(); toast.error(data.detail || '삭제 실패'); }
       } catch (e) { toast.error('오류가 발생했습니다.'); }
     }, 'red');
   };
 
-
   const renderTabContent = () => {
-    // 승인 대기 중일 때 (account 탭 제외) 모든 탭에 제한 화면 표시
     if (user?.verification_status !== 'verified' && activeTab !== 'account') {
       return (
         <div className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
-          <div className="bg-zinc-900/50 border border-white/10 p-12 rounded-3xl text-center space-y-6">
-            <div className="bg-zinc-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
-              <ShieldCheck className="w-8 h-8 text-orange-400" />
+          <div className="bg-amber-50 border border-amber-200 p-12 rounded-2xl text-center space-y-6">
+            <div className="bg-amber-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
+              <ShieldCheck className="w-8 h-8 text-amber-500" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white">서비스 승인 대기 중</h3>
-              <p className="text-sm text-zinc-400 mt-2 leading-relaxed">
+              <h3 className="text-xl font-bold text-zinc-900">서비스 승인 대기 중</h3>
+              <p className="text-sm text-zinc-500 mt-2 leading-relaxed">
                 현재 사업자등록증 검토가 진행 중입니다.<br />
                 관리자의 승인이 완료된 후 모든 기능을 이용하실 수 있습니다.
               </p>
             </div>
-            <div className="pt-4 flex justify-center gap-4">
-              <button
-                onClick={() => setActiveTab('account')}
-                className="px-6 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-bold transition-all"
-              >
-                정보 확인하기
-              </button>
-            </div>
+            <button onClick={() => setActiveTab('account')} className="px-6 py-2 bg-zinc-900 text-white rounded-lg text-sm font-bold transition-all hover:bg-zinc-700">
+              정보 확인하기
+            </button>
           </div>
         </div>
       );
@@ -346,16 +300,7 @@ export default function ProfilePage() {
       case 'account':
         return <UserAccountTab user={user} setShowPasswordModal={setShowPasswordModal} setShowDeleteModal={setShowDeleteModal} setCertFile={setCertFile} certFile={certFile} />;
       case 'billing':
-        return (
-          <UserPaymentTab
-            isLoadingPayment={isLoadingPayment}
-            paymentInfo={paymentInfo}
-            isVerified={isVerified}
-            triggerConfirm={triggerConfirm}
-            navigate={navigate}
-            refetchPayment={() => fetchPayment(true)}
-          />
-        );
+        return <UserPaymentTab isLoadingPayment={isLoadingPayment} paymentInfo={paymentInfo} isVerified={isVerified} triggerConfirm={triggerConfirm} navigate={navigate} refetchPayment={() => fetchPayment(true)} />;
       case 'api':
         return <UserAPIKeyTab user={user} apiKeys={apiKeys} isLoadingKeys={isLoadingKeys} handleGenerateKey={handleGenerateKey} handleDeleteKey={handleDeleteKey} setActiveTab={setActiveTab} />;
       case 'usage':
@@ -380,21 +325,25 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0e0e0e] text-zinc-200">
-      <nav className="border-b border-white/5 bg-zinc-950/60 backdrop-blur-xl sticky top-0 z-50">
+    <div className="min-h-screen bg-slate-50 text-zinc-900">
+      <nav className="border-b border-zinc-200 bg-white/90 backdrop-blur-xl sticky top-0 z-50">
         {!isVerified && (
-          <div className="bg-[#0071e3] text-white py-2 text-center text-xs font-bold animate-pulse">
+          <div className="bg-[#0071e3] text-white py-2 text-center text-xs font-bold">
             현재 사업자 등록 승인 대기 상태입니다. 일부 기능 이용이 제한됩니다.
           </div>
         )}
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/')} className="p-2 hover:bg-white/5 rounded-full transition-colors text-zinc-400 hover:text-white"><ChevronLeft className="w-5 h-5" /></button>
-            <span className="font-bold text-lg text-white">마이페이지</span>
+            <button onClick={() => navigate('/')} className="p-2 hover:bg-zinc-100 rounded-full transition-colors text-zinc-500 hover:text-zinc-900">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="font-bold text-lg text-zinc-900">마이페이지</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm font-bold text-white">{user?.companyName || 'N/A'}</span>
-            <button onClick={handleLogout} className="flex items-center gap-2 text-xs font-bold text-red-400 hover:bg-red-400/10 px-3 py-1.5 rounded-lg transition-colors"><LogOut className="w-4 h-4" /> 로그아웃</button>
+            <span className="text-sm font-bold text-zinc-700">{user?.companyName || 'N/A'}</span>
+            <button onClick={handleLogout} className="flex items-center gap-2 text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+              <LogOut className="w-4 h-4" /> 로그아웃
+            </button>
           </div>
         </div>
       </nav>
@@ -405,100 +354,107 @@ export default function ProfilePage() {
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-[#0071e3]/10 text-[#abc7ff] shadow-[inset_2px_0_0_#0071e3]' : 'text-zinc-400 hover:bg-white/5'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-blue-50 text-[#0071e3] font-semibold border-l-2 border-[#0071e3] pl-3.5'
+                  : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+              }`}
             >
-              <tab.icon className="w-5 h-5" />{tab.label}
+              <tab.icon className="w-5 h-5 shrink-0" />{tab.label}
             </button>
           ))}
         </aside>
         <main className="flex-1 min-w-0">{renderTabContent()}</main>
       </div>
 
+      {/* Confirm Modal */}
       <AnimatePresence>
         {showConfirmModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowConfirmModal(false)} />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-sm bg-zinc-950 border border-zinc-800 rounded-3xl shadow-2xl p-8 space-y-6">
-              <div className="text-center space-y-2"><h3 className="text-xl font-bold text-white">{confirmConfig.title}</h3><p className="text-sm text-zinc-400 whitespace-pre-wrap">{confirmConfig.message}</p></div>
-              <div className="flex gap-3"><button onClick={() => setShowConfirmModal(false)} className="flex-1 py-3 bg-zinc-900 text-zinc-400 font-bold rounded-xl">취소</button><button onClick={() => { confirmConfig.onConfirm(); setShowConfirmModal(false); }} className={`flex-1 py-3 font-bold rounded-xl text-white ${confirmConfig.type === 'red' ? 'bg-red-500' : 'bg-[#0071e3]'}`}>확인</button></div>
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowConfirmModal(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-sm bg-white border border-zinc-200 rounded-2xl shadow-2xl p-8 space-y-6">
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-bold text-zinc-900">{confirmConfig.title}</h3>
+                <p className="text-sm text-zinc-500 whitespace-pre-wrap">{confirmConfig.message}</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setShowConfirmModal(false)} className="flex-1 py-3 bg-zinc-100 text-zinc-600 font-bold rounded-xl hover:bg-zinc-200 transition-colors">취소</button>
+                <button onClick={() => { confirmConfig.onConfirm(); setShowConfirmModal(false); }} className={`flex-1 py-3 font-bold rounded-xl text-white ${confirmConfig.type === 'red' ? 'bg-red-500 hover:bg-red-600' : 'bg-[#0071e3] hover:brightness-110'}`}>확인</button>
+              </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
+      {/* Password Modal */}
       <AnimatePresence>
         {showPasswordModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)} />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-2xl p-8 space-y-6">
-              <h3 className="text-xl font-bold text-white text-center">비밀번호 변경</h3>
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-md bg-white border border-zinc-200 rounded-2xl shadow-2xl p-8 space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-zinc-900">비밀번호 변경</h3>
+                <button onClick={() => setShowPasswordModal(false)} className="p-1.5 hover:bg-zinc-100 rounded-lg transition-colors text-zinc-500"><X className="w-4 h-4" /></button>
+              </div>
               <div className="space-y-4">
-                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-zinc-900 border border-white/10 p-3 rounded-xl text-sm focus:border-[#0071e3] outline-none" placeholder="새 비밀번호" />
-                <input type="password" value={newPasswordConfirm} onChange={(e) => setNewPasswordConfirm(e.target.value)} className="w-full bg-zinc-900 border border-white/10 p-3 rounded-xl text-sm focus:border-[#0071e3] outline-none" placeholder="비밀번호 확인" />
-                <button onClick={handlePasswordResetComplete} className="w-full py-3 bg-[#47e266] text-zinc-950 font-bold rounded-xl hover:brightness-110">변경 완료</button>
+                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 p-3 rounded-xl text-sm text-zinc-900 focus:border-[#0071e3] focus:ring-1 focus:ring-[#0071e3]/20 outline-none transition-all" placeholder="새 비밀번호" />
+                <input type="password" value={newPasswordConfirm} onChange={(e) => setNewPasswordConfirm(e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 p-3 rounded-xl text-sm text-zinc-900 focus:border-[#0071e3] focus:ring-1 focus:ring-[#0071e3]/20 outline-none transition-all" placeholder="비밀번호 확인" />
+                <button onClick={handlePasswordResetComplete} className="w-full py-3 bg-[#0071e3] text-white font-bold rounded-xl hover:brightness-110 transition-all">변경 완료</button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
+      {/* Delete Modal */}
       <AnimatePresence>
         {showDeleteModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-2xl p-8 space-y-6 text-center">
-              <Trash2 className="w-12 h-12 text-red-500 mx-auto bg-red-500/10 p-3 rounded-full" />
-              <h3 className="text-xl font-bold text-white">회원 탈퇴</h3>
-              <p className="text-sm text-zinc-400">데이터가 모두 삭제됩니다. 계속하시겠습니까?</p>
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-md bg-white border border-zinc-200 rounded-2xl shadow-2xl p-8 space-y-6 text-center">
+              <div className="bg-red-50 w-14 h-14 rounded-full flex items-center justify-center mx-auto">
+                <Trash2 className="w-7 h-7 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-zinc-900">회원 탈퇴</h3>
+              <p className="text-sm text-zinc-500">데이터가 모두 삭제됩니다. 계속하시겠습니까?</p>
               <div className="space-y-4">
-                <input type="email" value={deleteEmail} onChange={(e) => setDeleteEmail(e.target.value)} className="w-full bg-zinc-900 border border-white/10 p-3 rounded-xl text-sm outline-none" placeholder="이메일 확인" />
-                <input type="password" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} className="w-full bg-zinc-900 border border-white/10 p-3 rounded-xl text-sm outline-none" placeholder="비밀번호 확인" />
-                <button onClick={handleDeleteAccountSubmit} className="w-full py-3 bg-red-500 text-white font-bold rounded-xl">탈퇴 신청</button>
+                <input type="email" value={deleteEmail} onChange={(e) => setDeleteEmail(e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 p-3 rounded-xl text-sm text-zinc-900 outline-none focus:border-red-300 transition-all" placeholder="이메일 확인" />
+                <input type="password" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 p-3 rounded-xl text-sm text-zinc-900 outline-none focus:border-red-300 transition-all" placeholder="비밀번호 확인" />
+                <button onClick={handleDeleteAccountSubmit} className="w-full py-3 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-colors">탈퇴 신청</button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
+      {/* New API Key Modal */}
       <AnimatePresence>
         {newGeneratedKey && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-3xl shadow-2xl p-8 space-y-6">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-md bg-white border border-zinc-200 rounded-2xl shadow-2xl p-8 space-y-6">
               <div className="text-center space-y-2">
-                <div className="bg-[#47e266]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-[#47e266]" />
+                <div className="bg-emerald-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-8 h-8 text-emerald-500" />
                 </div>
-                <h3 className="text-xl font-bold text-white">API 키 발급 완료</h3>
-                <p className="text-sm text-red-400 font-bold">이 키는 보안을 위해 지금 한 번만 표시됩니다.<br />반드시 안전한 곳에 복사해 두시기 바랍니다.</p>
+                <h3 className="text-xl font-bold text-zinc-900">API 키 발급 완료</h3>
+                <p className="text-sm text-red-500 font-bold">이 키는 보안을 위해 지금 한 번만 표시됩니다.<br />반드시 안전한 곳에 복사해 두시기 바랍니다.</p>
               </div>
-              <div className="bg-black/50 p-4 rounded-xl border border-white/10 break-all text-center font-mono text-white text-sm select-all">
+              <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-xl break-all text-center font-mono text-zinc-800 text-sm select-all">
                 {newGeneratedKey}
               </div>
               <div className="flex flex-col gap-3">
                 <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(newGeneratedKey);
-                      toast.success('API 키가 클립보드에 복사되었습니다.');
-                    }}
-                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white font-bold text-sm rounded-xl border border-white/10 transition-colors"
-                  >
+                  <button onClick={() => { navigator.clipboard.writeText(newGeneratedKey); toast.success('API 키가 클립보드에 복사되었습니다.'); }} className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-sm rounded-xl border border-zinc-200 transition-colors">
                     키 복사하기
                   </button>
                   {devices?.length === 0 && (
-                    <button
-                      onClick={() => { /* 플러그인 다운로드 로직 수행 */ }}
-                      className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-sm rounded-xl border border-white/10 transition-colors"
-                    >
+                    <button onClick={() => { }} className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-sm rounded-xl border border-zinc-200 transition-colors">
                       플러그인 다운로드
                     </button>
                   )}
                 </div>
-                <button
-                  onClick={() => setNewGeneratedKey(null)}
-                  className="w-full py-3 bg-[#0071e3] hover:bg-[#0071e3]/90 text-white font-bold text-sm rounded-xl transition-colors"
-                >
+                <button onClick={() => setNewGeneratedKey(null)} className="w-full py-3 bg-[#0071e3] text-white font-bold text-sm rounded-xl hover:brightness-110 transition-all">
                   닫기
                 </button>
               </div>

@@ -6,6 +6,7 @@ Description : 랜딩 페이지 주요 기능 소개 컴포넌트
 
 Modification History:
     - 2026-04-23 (김민정) : 모듈화 작업으로 인한 파일 분리 생성
+    - 2026-04-27 (송주엽) : 라이트 테마 전환
  */
 import React from 'react';
 import { motion } from 'motion/react';
@@ -22,7 +23,7 @@ const features = [
     icon: ShieldCheck,
     title: "Zero-Risk Precision",
     description: "99.9% 의 높은 정확도로 설계의 사소한 오차까지 잡아냅니다.",
-    color: "from-purple-500 to-pink-500"
+    color: "from-violet-500 to-purple-400"
   },
   {
     icon: Zap,
@@ -34,24 +35,34 @@ const features = [
 
 export const LandingFeatures: React.FC = () => {
   return (
-    <section className="py-32 px-8 bg-[#0e0e0e]" id="features">
+    <section className="py-32 px-8 bg-slate-50 border-t border-zinc-100" id="features">
       <div className="max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-3 gap-12">
+        <motion.div
+          className="text-center mb-20"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="text-4xl md:text-5xl font-black text-zinc-900 mb-4">Core Features</h2>
+          <p className="text-zinc-500 text-lg max-w-xl mx-auto">도면 설계의 모든 단계를 AI가 실시간으로 지원합니다.</p>
+          <div className="w-12 h-1 bg-[#0071e3] mx-auto mt-6 rounded-full" />
+        </motion.div>
+
+        <div className="grid md:grid-cols-3 gap-8">
           {features.map((feature, idx) => (
             <motion.div
               key={idx}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: idx * 0.2 }}
-              className="group"
+              transition={{ delay: idx * 0.15 }}
+              className="bg-white rounded-2xl p-8 border border-zinc-200 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group"
             >
-              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} p-[1px] mb-8 group-hover:scale-110 transition-transform duration-500`}>
-                <div className="w-full h-full rounded-2xl bg-black flex items-center justify-center">
-                  <feature.icon className="w-6 h-6 text-white" />
-                </div>
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                <feature.icon className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-4">{feature.title}</h3>
+              <h3 className="text-xl font-bold text-zinc-900 mb-3">{feature.title}</h3>
               <p className="text-zinc-500 leading-relaxed">{feature.description}</p>
             </motion.div>
           ))}

@@ -181,19 +181,19 @@
 
   /* Custom Scrollbar */
   ::-webkit-scrollbar {
-    width: 4px;
+    width: 5px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #0e0e0e;
+    background: #f1f5f9;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #353535;
+    background: #cbd5e1;
     border-radius: 10px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #454545;
+    background: #94a3b8;
   }
 }

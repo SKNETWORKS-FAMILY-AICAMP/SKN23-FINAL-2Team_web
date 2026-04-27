@@ -2,18 +2,17 @@
 File    : src/app/components/profile/admin/AdminApprovalsTab.tsx
 Author  : 김민정
 Create  : 2026-04-24
-Description : 가입 신청 승인 대기열
-
+Description : 가입 신청 승인 대기열 (라이트 테마)
 Modification History:
-    - 2026-04-24 (김민정) : 승인/거절 버튼 UI 및 사업자등록증 미리보기 UI 
+    - 2026-04-24 (김민정) : 승인/거절 버튼 UI 및 사업자등록증 미리보기 UI
     - 2026-04-26 (김민정) : 가입 승인 로직 및 프리사인드 URL 연동 확인
+    - 2026-04-27 : 라이트 테마 전환
 */
 import React, { useState } from 'react';
-import { Users, ShieldCheck, Search, CheckCircle, XCircle, FileText, X, ChevronLeft } from 'lucide-react';
+import { Users, ShieldCheck, Search, CheckCircle, XCircle, FileText, X, ChevronLeft, Clock } from 'lucide-react';
 import { format } from 'date-fns';
-import { motion, AnimatePresence } from 'framer-motion';
 import { adminApi } from '@/app/api/admin';
-import { authStorage } from '@/app/utils/storage';
+import { getAdminToken } from '@/app/context/AdminAuthContext';
 import { toast } from 'sonner';
 
 interface Props {
@@ -25,184 +24,167 @@ interface Props {
 export const AdminApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({ show: false, type: '', orgId: '', companyName: '' });
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleApproveReject = async () => {
     try {
+      setIsProcessing(true);
       const { type, orgId } = confirmModal;
-      const res = await adminApi.executeAction(
-        authStorage.getAccessToken()!, 
-        type as 'approve' | 'reject', 
-        orgId
-      );
-      
+      const res = await adminApi.executeAction(getAdminToken()!, type as 'approve' | 'reject', orgId);
       if (res.ok) {
-        toast.success(type === 'approve' ? '가입이 승인되었습니다.' : '가입이 거절되었습니다.');
+        toast.success(type === 'approve' ? '✅ 가입이 승인되었습니다.' : '❌ 가입이 거절되었습니다.');
         setConfirmModal({ ...confirmModal, show: false });
-        onRefresh(); // 부모에게 리스트 갱신 요청
+        onRefresh();
       } else {
         toast.error('처리 중 오류가 발생했습니다.');
       }
-    } catch (e) {
-      toast.error('관리자 API 서버 연결 실패');
+    } catch {
+      toast.error('서버 연결 실패');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   if (isLoading) return (
-    <div className="text-center py-24 text-zinc-500 animate-pulse font-black uppercase tracking-[0.4em] flex flex-col items-center gap-6">
-       <ShieldCheck className="w-12 h-12 text-blue-500/50" />
-       Scanning Pending Nodes...
-    </div>
-  );
-
-  if (users.length === 0) return (
-    <div className="text-center py-24 text-zinc-600 border border-dashed border-white/10 rounded-[48px] bg-zinc-900/10 flex flex-col items-center shadow-inner">
-      <div className="w-20 h-20 bg-zinc-800/30 rounded-full flex items-center justify-center mb-8 border border-white/5">
-        <Users className="w-8 h-8 text-zinc-700" />
-      </div>
-      <p className="font-black text-xs uppercase tracking-[0.3em] text-zinc-400">Zero Pending Registrations.</p>
+    <div className="text-center py-24 text-slate-400 animate-pulse flex flex-col items-center gap-3">
+      <Clock className="w-8 h-8 text-slate-300" />
+      <p className="text-sm font-semibold">승인 대기 목록을 불러오는 중...</p>
     </div>
   );
 
   return (
     <>
-      <div className="space-y-6">
-        {users.map((org) => (
-          <div 
-            key={org.id} 
-            className="bg-[#0b0b0b] border border-white/5 p-6 lg:p-8 rounded-[40px] flex flex-col xl:flex-row xl:items-center justify-between gap-6 xl:gap-0 group hover:border-white/10 transition-all shadow-2xl relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-[80px] -z-10 group-hover:bg-blue-600/10 transition-all"></div>
-            
-            <div className="flex flex-col sm:flex-row gap-6 lg:gap-8 sm:items-center italic">
-              <div className="w-16 h-16 shrink-0 rounded-[22px] bg-zinc-900 border border-white/5 flex items-center justify-center group-hover:bg-blue-600/10 transition-all duration-500 shadow-inner">
-                <ShieldCheck className="w-7 h-7 text-yellow-500/50 group-hover:text-yellow-500 transition-colors" />
-              </div>
-              <div className="space-y-3 sm:space-y-2">
-                <h4 className="font-black text-white text-xl tracking-tighter uppercase mb-0.5">{org.company_name}</h4>
-                <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6 text-[10px] sm:text-[11px] lg:text-[13px] text-zinc-400 font-black uppercase tracking-[0.2em] break-all">
-                  <span className="flex items-center gap-2 italic"><FileText className="w-3 h-3 text-zinc-600" /> 담당자 이메일: {org.admin_email}</span>
-                  <span className="opacity-60">가입 일자: {org.created_at ? format(new Date(org.created_at), 'yyyy.MM.dd HH:mm') : 'N/A'}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 lg:gap-4">
-              <button 
-                onClick={() => setSelectedImg(org.business_reg_s3_url)} 
-                className="flex-1 md:flex-initial flex items-center justify-center gap-3 px-4 sm:px-8 py-4 rounded-2xl bg-zinc-800/80 text-zinc-300 text-[10px] sm:text-[11px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all border border-white/5 shadow-lg active:scale-95 whitespace-nowrap"
-              >
-                <Search className="w-4 h-4" /> 서류 확인
-              </button>
-              
-              <button 
-                onClick={() => setConfirmModal({ show: true, type: 'approve', orgId: org.id, companyName: org.company_name })} 
-                className="flex-1 md:flex-initial flex items-center justify-center gap-3 px-4 sm:px-8 py-4 rounded-2xl bg-emerald-500/10 text-emerald-500 text-[10px] sm:text-[11px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20 shadow-lg shadow-emerald-500/10 active:scale-95 whitespace-nowrap"
-              >
-                <CheckCircle className="w-4 h-4" /> 승인
-              </button>
-              
-              <button 
-                onClick={() => setConfirmModal({ show: true, type: 'reject', orgId: org.id, companyName: org.company_name })} 
-                className="flex-1 md:flex-initial flex items-center justify-center gap-3 px-4 sm:px-8 py-4 rounded-2xl bg-red-500/10 text-red-500 text-[10px] sm:text-[11px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all border border-red-500/20 shadow-lg shadow-red-500/10 active:scale-95 whitespace-nowrap"
-              >
-                <XCircle className="w-4 h-4" /> 거절
-              </button>
-            </div>
-          </div>
-        ))}
+      {/* 섹션 헤더 */}
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-slate-900">가입 승인 대기열</h2>
+        <p className="text-sm text-slate-500 mt-0.5">신규 기업 가입 신청을 검토하고 승인 또는 거절 처리합니다.</p>
       </div>
 
-      {/* 내장형 승인/거절 확인 모달 */}
-      <AnimatePresence>
-        {confirmModal.show && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[201] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="bg-[#111111] border border-white/10 p-10 rounded-[48px] max-w-md w-full shadow-[0_0_100px_rgba(0,0,0,0.8)] relative overflow-hidden"
-            >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-50"></div>
-              <div className={`w-20 h-20 rounded-[28px] mx-auto mb-8 flex items-center justify-center ${confirmModal.type === 'approve' ? 'bg-blue-500/10 text-blue-500' : 'bg-red-500/10 text-red-500'}`}>
-                <ShieldCheck className="w-10 h-10" />
-              </div>
-              <h3 className="text-2xl font-black text-center text-white mb-2 leading-tight uppercase tracking-tight italic">{confirmModal.companyName}</h3>
-              <p className="text-zinc-500 text-center text-xs font-black tracking-widest uppercase mb-10 opacity-70">위 기업의 가입 요청을 <br />{confirmModal.type === 'approve' ? '승인' : '거절'} 처리하시겠습니까?</p>
-              <div className="flex flex-col gap-3">
-                <button 
-                  onClick={handleApproveReject} 
-                  className={`w-full py-5 rounded-3xl font-black text-[11px] uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] ${confirmModal.type === 'approve' ? 'bg-blue-600 shadow-xl shadow-blue-600/20 text-white' : 'bg-red-600 shadow-xl shadow-red-600/20 text-white'}`}
-                >
-                  Confirm {confirmModal.type}
-                </button>
-                <button 
-                  onClick={() => setConfirmModal({ ...confirmModal, show: false, type: '' })} 
-                  className="w-full py-5 bg-white/5 hover:bg-white/10 text-zinc-400 rounded-3xl font-black text-[11px] uppercase tracking-widest transition-all"
-                >
-                  Back to Queue
-                </button>
-              </div>
-            </motion.div>
+      {!Array.isArray(users) || users.length === 0 ? (
+        <div className="text-center py-24 border border-dashed border-slate-200 rounded-2xl bg-white flex flex-col items-center">
+          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
+            <Users className="w-7 h-7 text-slate-300" />
           </div>
-        )}
-      </AnimatePresence>
-
-      {/* 내장형 서류 미리보기 모달 (유지) */}
-      <AnimatePresence>
-        {selectedImg && (
-          <div className="fixed inset-0 bg-black/98 z-[200] flex items-center justify-center p-8 backdrop-blur-3xl" onClick={() => setSelectedImg(null)}>
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative max-w-6xl w-full h-[90vh] bg-zinc-900 rounded-[40px] border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col" 
-              onClick={e => e.stopPropagation()}
+          <p className="font-semibold text-sm text-slate-400">승인 대기 중인 기업이 없습니다</p>
+          <p className="text-xs text-slate-300 mt-1">새로운 가입 신청이 들어오면 이곳에 표시됩니다.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {users.map((org) => (
+            <div
+              key={org.id}
+              className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col xl:flex-row xl:items-center justify-between gap-5 hover:border-slate-300 hover:shadow-sm transition-all"
             >
-              <div className="px-10 py-6 border-b border-white/5 flex justify-between items-center bg-black/20">
-                 <div className="flex items-center gap-4">
-                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                    <h5 className="text-white font-black uppercase text-[11px] tracking-[0.4em]">Integrated Document Viewer</h5>
-                 </div>
-                 <div className="flex items-center gap-6">
-                    <a 
-                      href={selectedImg} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2"
-                    >
-                      Open in New Tab <ChevronLeft className="w-3 h-3 rotate-180" />
-                    </a>
-                    <button onClick={() => setSelectedImg(null)} className="p-3 bg-white/5 hover:bg-red-500 text-zinc-400 hover:text-white rounded-full transition-all border border-white/5">
-                      <X className="w-5 h-5" />
-                    </button>
-                 </div>
-              </div>
-
-              <div className="flex-1 bg-black/40 overflow-hidden relative group">
-                {selectedImg.toLowerCase().includes('.pdf') ? (
-                  <iframe 
-                    src={`${selectedImg}#toolbar=0`} 
-                    className="w-full h-full border-none"
-                    title="Business Registration Certificate"
-                  />
-                ) : (
-                  <div className="w-full h-full overflow-auto custom-scrollbar flex items-center justify-center p-12">
-                     <img 
-                      src={selectedImg} 
-                      alt="Registration Certificate" 
-                      className="max-w-full max-h-full object-contain rounded-xl shadow-2xl transition-transform duration-700 group-hover:scale-[1.02]" 
-                     />
+              {/* 기업 정보 */}
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck className="w-6 h-6 text-amber-500" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-base">{org.company_name}</h4>
+                  <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-slate-500">
+                    <span className="flex items-center gap-1">
+                      <FileText className="w-3 h-3" />{org.admin_email}
+                    </span>
+                    <span className="text-slate-300">|</span>
+                    <span>신청일: {org.created_at ? format(new Date(org.created_at), 'yyyy.MM.dd HH:mm') : 'N/A'}</span>
                   </div>
-                )}
+                </div>
               </div>
-              
-              <div className="px-10 py-5 bg-black/40 border-t border-white/5 text-center">
-                 <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.5em] italic">Encryption Protocol Active · Cadence AI Verified Document</p>
+
+              {/* 액션 버튼 */}
+              <div className="flex flex-wrap items-center gap-2 xl:flex-shrink-0">
+                <button
+                  onClick={() => setSelectedImg(org.business_reg_s3_url)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 transition-all border border-slate-200"
+                >
+                  <Search className="w-3.5 h-3.5" /> 서류 확인
+                </button>
+                <button
+                  onClick={() => setConfirmModal({ show: true, type: 'approve', orgId: org.id, companyName: org.company_name })}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-all border border-emerald-200"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" /> 승인
+                </button>
+                <button
+                  onClick={() => setConfirmModal({ show: true, type: 'reject', orgId: org.id, companyName: org.company_name })}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-bold hover:bg-red-100 transition-all border border-red-200"
+                >
+                  <XCircle className="w-3.5 h-3.5" /> 거절
+                </button>
               </div>
-            </motion.div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 승인/거절 확인 모달 */}
+      {confirmModal.show && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-sm w-full shadow-2xl p-8 relative">
+            <div className={`w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center ${confirmModal.type === 'approve' ? 'bg-emerald-50' : 'bg-red-50'}`}>
+              {confirmModal.type === 'approve'
+                ? <CheckCircle className="w-7 h-7 text-emerald-500" />
+                : <XCircle className="w-7 h-7 text-red-500" />}
+            </div>
+            <h3 className="text-lg font-black text-slate-900 text-center mb-1">{confirmModal.companyName}</h3>
+            <p className="text-sm text-slate-500 text-center mb-7">
+              위 기업의 가입 신청을<br />
+              <strong className={confirmModal.type === 'approve' ? 'text-emerald-600' : 'text-red-600'}>
+                {confirmModal.type === 'approve' ? '승인' : '거절'}
+              </strong> 처리하시겠습니까?
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmModal({ ...confirmModal, show: false })}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-semibold transition-all"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleApproveReject}
+                disabled={isProcessing}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50 ${confirmModal.type === 'approve' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'}`}
+              >
+                {isProcessing ? '처리 중...' : '확인'}
+              </button>
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
+
+      {/* 서류 미리보기 모달 */}
+      {selectedImg && (
+        <div className="fixed inset-0 bg-black/60 z-[201] flex items-center justify-center p-8 backdrop-blur-sm" onClick={() => setSelectedImg(null)}>
+          <div
+            className="relative max-w-4xl w-full h-[85vh] bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h5 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#1e40af]" />사업자등록증 확인
+              </h5>
+              <div className="flex items-center gap-3">
+                <a href={selectedImg} target="_blank" rel="noreferrer" className="text-xs text-[#1e40af] hover:underline flex items-center gap-1">
+                  새 탭에서 열기 <ChevronLeft className="w-3 h-3 rotate-180" />
+                </a>
+                <button onClick={() => setSelectedImg(null)} className="p-1.5 bg-slate-200 hover:bg-red-100 text-slate-500 hover:text-red-600 rounded-lg transition-all">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden bg-slate-100">
+              {selectedImg.toLowerCase().includes('.pdf') ? (
+                <iframe src={`${selectedImg}#toolbar=0`} className="w-full h-full border-none" title="사업자등록증" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center p-8">
+                  <img src={selectedImg} alt="사업자등록증" className="max-w-full max-h-full object-contain rounded-xl shadow-lg" />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
