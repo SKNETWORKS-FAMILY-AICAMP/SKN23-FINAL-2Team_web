@@ -68,7 +68,7 @@ export const UserUsageTab: React.FC<UsageTabProps> = ({
 
         {/* Date Filter (Admin-Style Premium UI) */}
         <div className="flex flex-wrap items-center gap-6">
-          <div className="flex gap-2 p-1.5 bg-zinc-900/50 rounded-2xl border border-white/5 shadow-inner">
+          <div className="flex gap-2 p-1.5 bg-zinc-100 rounded-2xl border border-zinc-200 shadow-inner">
             {[
               { label: '7 Days', val: 7 },
               { label: '30 Days', val: 30 },
@@ -77,7 +77,7 @@ export const UserUsageTab: React.FC<UsageTabProps> = ({
               <button
                 key={r.label}
                 onClick={() => setQuickRange(r.val)}
-                className="px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 text-zinc-500 hover:text-zinc-200 hover:bg-white/5"
+                className="px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 text-zinc-500 hover:text-zinc-900 hover:bg-white"
               >
                 {r.label}
               </button>
@@ -87,14 +87,14 @@ export const UserUsageTab: React.FC<UsageTabProps> = ({
           <div className="flex items-center gap-3">
              <Popover>
               <PopoverTrigger asChild>
-                <button className="bg-zinc-900/50 border border-white/10 hover:border-blue-500/50 rounded-xl px-4 py-2.5 text-[10px] font-black text-white transition-all uppercase tracking-widest flex items-center gap-3 min-w-[120px] shadow-lg outline-none hover:bg-white/5">
-                  <CalendarIcon className="w-3 h-3 text-blue-500" />
+                <button className="bg-white border border-zinc-200 hover:border-[#0071e3]/50 rounded-xl px-4 py-2.5 text-[10px] font-black text-zinc-700 transition-all uppercase tracking-widest flex items-center gap-3 min-w-[120px] shadow-sm outline-none hover:bg-zinc-50">
+                  <CalendarIcon className="w-3 h-3 text-[#0071e3]" />
                   {usageDateRange.start.replace(/-/g, '.')}
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-[#0c0c0c] border-white/10 rounded-[28px] shadow-2xl z-[100]" align="start">
-                <div className="p-4 border-b border-white/5 text-center">
-                   <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Select Start Date</span>
+              <PopoverContent className="w-auto p-0 bg-white border-zinc-200 rounded-[28px] shadow-2xl z-[100]" align="start">
+                <div className="p-4 border-b border-zinc-100 text-center">
+                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Select Start Date</span>
                 </div>
                 <ShadCalendar
                   mode="single"
@@ -104,9 +104,9 @@ export const UserUsageTab: React.FC<UsageTabProps> = ({
                   selected={new Date(usageDateRange.start)}
                   onSelect={(date) => date && handleCustomDateChange('start', format(date, 'yyyy-MM-dd'))}
                   initialFocus
-                  className="bg-transparent text-white"
+                  className="bg-white text-zinc-900"
                   modifiersStyles={{
-                    selected: { backgroundColor: '#3b82f6', color: 'white', fontWeight: 'bold' }
+                    selected: { backgroundColor: '#0071e3', color: 'white', fontWeight: 'bold' }
                   }}
                 />
               </PopoverContent>
@@ -116,14 +116,14 @@ export const UserUsageTab: React.FC<UsageTabProps> = ({
 
             <Popover>
               <PopoverTrigger asChild>
-                <button className="bg-zinc-900/50 border border-white/10 hover:border-blue-500/50 rounded-xl px-4 py-2.5 text-[10px] font-black text-white transition-all uppercase tracking-widest flex items-center gap-3 min-w-[120px] shadow-lg outline-none hover:bg-white/5">
-                  <CalendarIcon className="w-3 h-3 text-blue-500" />
+                <button className="bg-white border border-zinc-200 hover:border-[#0071e3]/50 rounded-xl px-4 py-2.5 text-[10px] font-black text-zinc-700 transition-all uppercase tracking-widest flex items-center gap-3 min-w-[120px] shadow-sm outline-none hover:bg-zinc-50">
+                  <CalendarIcon className="w-3 h-3 text-[#0071e3]" />
                   {usageDateRange.end.replace(/-/g, '.')}
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-[#0c0c0c] border-white/10 rounded-[28px] shadow-2xl z-[100]" align="end">
-                <div className="p-4 border-b border-white/5 text-center">
-                   <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Select End Date</span>
+              <PopoverContent className="w-auto p-0 bg-white border-zinc-200 rounded-[28px] shadow-2xl z-[100]" align="end">
+                <div className="p-4 border-b border-zinc-100 text-center">
+                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Select End Date</span>
                 </div>
                 <ShadCalendar
                   mode="single"
@@ -134,9 +134,9 @@ export const UserUsageTab: React.FC<UsageTabProps> = ({
                   onSelect={(date) => date && handleCustomDateChange('end', format(date, 'yyyy-MM-dd'))}
                   disabled={(date) => date < new Date(usageDateRange.start) || date > new Date()}
                   initialFocus
-                  className="bg-transparent text-white"
+                  className="bg-white text-zinc-900"
                   modifiersStyles={{
-                    selected: { backgroundColor: '#3b82f6', color: 'white', fontWeight: 'bold' }
+                    selected: { backgroundColor: '#0071e3', color: 'white', fontWeight: 'bold' }
                   }}
                 />
               </PopoverContent>
@@ -146,33 +146,33 @@ export const UserUsageTab: React.FC<UsageTabProps> = ({
       </div>
 
       {isLoadingUsage ? (
-        <div className="h-[400px] bg-zinc-900/30 rounded-3xl border border-white/5 flex items-center justify-center">
+        <div className="h-[400px] bg-zinc-50 rounded-3xl border border-zinc-200 flex items-center justify-center">
           <RefreshCw className="w-8 h-8 text-zinc-600 animate-spin" />
         </div>
       ) : usageStats?.success ? (
         <div className="space-y-8">
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-zinc-900/50 border border-white/10 p-5 rounded-2xl">
+            <div className="bg-white border border-zinc-200 shadow-sm p-5 rounded-2xl">
               <div className="text-[10px] font-bold text-zinc-500 uppercase mb-1">Total API Calls</div>
-              <div className="text-2xl font-black text-white">{usageStats.total_calls.toLocaleString()}</div>
+              <div className="text-2xl font-black text-zinc-900">{usageStats.total_calls.toLocaleString()}</div>
             </div>
-            <div className="bg-zinc-900/50 border border-white/10 p-5 rounded-2xl">
+            <div className="bg-white border border-zinc-200 shadow-sm p-5 rounded-2xl">
               <div className="text-[10px] font-bold text-zinc-500 uppercase mb-1">Total Tokens</div>
-              <div className="text-2xl font-black text-[#abc7ff]">{usageStats.total_tokens.toLocaleString()}</div>
+              <div className="text-2xl font-black text-[#0071e3]">{usageStats.total_tokens.toLocaleString()}</div>
             </div>
           </div>
 
           {/* Graph Section */}
-          <div className="bg-zinc-900/50 border border-white/10 p-8 rounded-3xl">
+          <div className="bg-white border border-zinc-200 shadow-sm p-8 rounded-3xl">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="font-bold text-white flex items-center gap-2">
+              <h3 className="font-bold text-zinc-900 flex items-center gap-2">
                 <Activity className="w-4 h-4 text-[#0071e3]" /> 일간 사용량 추이
               </h3>
               <select
                 value={selectedMetric}
                 onChange={(e: any) => setSelectedMetric(e.target.value)}
-                className="bg-zinc-800 border border-white/10 text-xs rounded-lg px-3 py-1.5 font-bold outline-none"
+                className="bg-zinc-50 border border-zinc-200 text-zinc-700 text-xs rounded-lg px-3 py-1.5 font-bold outline-none"
               >
                 <option value="all">모든 지표 보기</option>
                 <option value="calls">호출 횟수만</option>
@@ -192,17 +192,17 @@ export const UserUsageTab: React.FC<UsageTabProps> = ({
                       <stop offset="95%" stopColor="#0071e3" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                   <XAxis
                     dataKey="date"
-                    stroke="#555"
+                    stroke="#9ca3af"
                     fontSize={10}
                     tickFormatter={(val) => val.split('-').slice(1).join('/')}
                   />
-                  <YAxis stroke="#555" fontSize={10} />
+                  <YAxis stroke="#9ca3af" fontSize={10} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid #333', borderRadius: '12px' }}
-                    itemStyle={{ fontSize: '12px' }}
+                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px' }}
+                    itemStyle={{ fontSize: '12px', color: '#374151' }}
                   />
                   {(selectedMetric === 'all' || selectedMetric === 'calls') && (
                     <Area type="monotone" dataKey="calls" stroke="#8884d8" strokeWidth={3} fillOpacity={1} fill="url(#colorCalls)" />
@@ -216,7 +216,7 @@ export const UserUsageTab: React.FC<UsageTabProps> = ({
           </div>
         </div>
       ) : (
-        <div className="text-center py-24 text-zinc-600 border border-dashed border-white/10 rounded-3xl">
+        <div className="text-center py-24 text-zinc-400 border border-dashed border-zinc-300 rounded-3xl">
           가용 통계 데이터가 없습니다.
         </div>
       )}

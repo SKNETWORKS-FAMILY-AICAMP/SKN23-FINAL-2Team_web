@@ -31,27 +31,27 @@ export const UserAccountTab: React.FC<AccountTabProps> = ({
       <h2 className="text-2xl font-bold mb-6">계정 설정</h2>
       <div className="grid gap-6 max-w-2xl">
         {/* 로그인 정보 */}
-        <div className="bg-zinc-900/50 border border-white/10 p-6 rounded-2xl flex items-center justify-between">
+        <div className="bg-white border border-zinc-200 shadow-sm p-6 rounded-2xl flex items-center justify-between">
           <div>
             <label className="text-sm text-zinc-500 font-bold block mb-1">로그인 이메일</label>
-            <div className="text-lg font-medium">{user?.email || 'N/A'}</div>
+            <div className="text-lg font-medium text-zinc-900">{user?.email || 'N/A'}</div>
           </div>
           <button
             onClick={() => setShowPasswordModal(true)}
-            className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm flex items-center gap-2"
+            className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 rounded-lg text-sm flex items-center gap-2 text-zinc-700 transition-colors"
           >
             <Lock className="w-4 h-4" /> 비밀번호 변경
           </button>
         </div>
 
         {/* 기업 정보 */}
-        <div className="bg-zinc-900/50 border border-white/10 p-6 rounded-2xl space-y-4">
+        <div className="bg-white border border-zinc-200 shadow-sm p-6 rounded-2xl space-y-4">
           <div>
             <label className="text-sm text-zinc-500 font-bold block mb-1">기업명</label>
-            <div className="text-lg font-medium">{user?.companyName || 'N/A'}</div>
+            <div className="text-lg font-medium text-zinc-900">{user?.companyName || 'N/A'}</div>
           </div>
 
-          <div className="pt-4 border-t border-white/10">
+          <div className="pt-4 border-t border-zinc-200">
             <label className="text-sm text-zinc-500 font-bold block mb-3">사업자등록증 관리</label>
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-4">
@@ -59,7 +59,7 @@ export const UserAccountTab: React.FC<AccountTabProps> = ({
                   type="file"
                   accept=".pdf"
                   onChange={(e) => setCertFile(e.target.files?.[0] || null)}
-                  className="bg-black/30 border border-white/10 rounded-lg text-sm text-zinc-400 file:bg-white/10 file:text-white file:px-4 file:py-2 file:mr-4 file:rounded-l-lg hover:file:bg-white/20 w-full max-w-sm"
+                  className="bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-600 file:bg-zinc-100 file:text-zinc-700 file:px-4 file:py-2 file:mr-4 file:rounded-l-lg hover:file:bg-zinc-200 w-full max-w-sm"
                 />
                 <button
                   disabled={!certFile}

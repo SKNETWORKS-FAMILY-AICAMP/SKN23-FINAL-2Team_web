@@ -167,9 +167,9 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
             </div>
           </DialogTrigger>
 
-          <DialogContent className="sm:max-w-[450px] bg-zinc-950 text-white border-zinc-800 overflow-hidden">
+          <DialogContent className="sm:max-w-[400px] bg-white text-zinc-900 border-zinc-200 overflow-y-auto max-h-[90vh]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-center">Cadence AI</DialogTitle>
+              <DialogTitle className="text-2xl font-black text-center text-zinc-900">Cadence AI</DialogTitle>
             </DialogHeader>
 
             <AnimatePresence mode="wait">
@@ -197,45 +197,28 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
               {/* 3. 메인 로그인/회원가입/비밀번호찾기 탭 */}
               {(activeTab === 'login' || activeTab === 'signup' || activeTab === 'forgot_password') && (
                 <motion.div key="main-tabs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  {activeTab !== 'forgot_password' && (
-                    <Tabs value={activeTab as string} onValueChange={(v) => setActiveTab(v as AuthStep)} className="w-full">
-                      <TabsList className="grid w-full grid-cols-2 mb-6 bg-zinc-900/50 p-1 h-12">
-                        <TabsTrigger 
-                          value="login" 
-                          className="flex items-center justify-center h-full text-zinc-400 font-bold data-[state=active]:bg-white data-[state=active]:text-black transition-all rounded-md"
-                        >
-                          로그인
-                        </TabsTrigger>
-                        <TabsTrigger 
-                          value="signup" 
-                          className="flex items-center justify-center h-full text-zinc-400 font-bold data-[state=active]:bg-white data-[state=active]:text-black transition-all rounded-md"
-                        >
-                          회원가입
-                        </TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="login">
-                        <LoginForm
-                          mode="login"
-                          onChange={handleChange}
-                          onSubmit={handleSubmit}
-                          onRequestReset={handleRequestReset}
-                          onSetTab={setActiveTab}
-                          isLoading={isLoading}
-                        />
-                      </TabsContent>
-
-                      <TabsContent value="signup">
-                        <SignupForm
-                          onChange={handleChange}
-                          onFileChange={handleFileChange}
-                          onSubmit={handleSubmit}
-                          isLoading={isLoading}
-                        />
-                      </TabsContent>
-                    </Tabs>
+                  {activeTab === 'login' && (
+                    <LoginForm
+                      mode="login"
+                      onChange={handleChange}
+                      onSubmit={handleSubmit}
+                      onRequestReset={handleRequestReset}
+                      onSetTab={setActiveTab}
+                      isLoading={isLoading}
+                    />
                   )}
 
-                  {/* 비밀번호 찾기 UI (탭이 없을 때 노출) */}
+                  {activeTab === 'signup' && (
+                    <SignupForm
+                      onChange={handleChange}
+                      onFileChange={handleFileChange}
+                      onSubmit={handleSubmit}
+                      onSetTab={setActiveTab}
+                      isLoading={isLoading}
+                    />
+                  )}
+
+                  {/* 비밀번호 찾기 UI */}
                   {activeTab === 'forgot_password' && (
                     <LoginForm
                       mode="forgot_password"

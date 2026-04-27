@@ -92,7 +92,7 @@ export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated,
   };
 
   return (
-    <section className="bg-[#131313] py-32 border-t border-white/5" id="pricing">
+    <section className="bg-white py-32 border-t border-black/5" id="pricing">
       <div className="max-w-7xl mx-auto px-8">
         {/* 헤더 섹션: 1번 코드의 애니메이션과 디자인 적용 */}
         <motion.div
@@ -102,8 +102,8 @@ export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated,
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-4xl md:text-5xl font-black text-white mb-6">Pricing Plans</h2>
-          <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
+          <h2 className="text-4xl md:text-5xl font-black text-zinc-900 mb-6">Pricing Plans</h2>
+          <p className="text-zinc-600 max-w-2xl mx-auto text-lg">
             평생 소장을 통한 영구적 사용부터 대규모 팀을 위한 유연한 구독 모델까지, <br className="hidden md:block" />
             비즈니스 규모에 맞는 최적의 플랜을 선택하세요.
           </p>
@@ -125,40 +125,40 @@ export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated,
                 transition: { type: "spring", stiffness: 400, damping: 17 }
               }}
               className={`relative flex flex-col p-10 rounded-[32px] transition-all duration-500 group cursor-default ${plan.highlight
-                ? 'bg-zinc-900/60 backdrop-blur-2xl border border-[#0071e3] scale-105 shadow-[0_0_50px_rgba(0,113,227,0.25)] z-10 hover:shadow-[0_0_80px_rgba(0,113,227,0.4)]'
-                : 'bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-white/20 hover:bg-white/[0.05] hover:shadow-[0_30px_60px_rgba(0,0,0,0.5)]'
+                ? 'bg-white border-2 border-[#0071e3] scale-105 shadow-[0_10px_40px_rgba(0,113,227,0.15)] z-10 hover:shadow-[0_20px_60px_rgba(0,113,227,0.2)]'
+                : 'bg-zinc-50 border border-zinc-200 hover:border-zinc-300 hover:bg-white hover:shadow-[0_20px_40px_rgba(0,0,0,0.05)]'
                 }`}
             >
               {plan.badge && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0071e3] text-white px-5 py-1.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase shadow-[0_0_20px_rgba(0,113,227,0.5)] transition-transform group-hover:scale-110">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0071e3] text-white px-5 py-1.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase shadow-[0_5px_15px_rgba(0,113,227,0.4)] transition-transform group-hover:scale-110">
                   {plan.badge}
                 </div>
               )}
 
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-                <span className={`text-[10px] px-2 py-1 rounded font-bold tracking-widest uppercase ${plan.highlight ? 'bg-[#0071e3]/20 text-[#abc7ff]' : 'bg-white/10 text-zinc-400'
+                <h3 className="text-xl font-bold text-zinc-900">{plan.name}</h3>
+                <span className={`text-[10px] px-2 py-1 rounded font-bold tracking-widest uppercase ${plan.highlight ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'bg-zinc-200 text-zinc-600'
                   }`}>
                   {plan.type}
                 </span>
               </div>
 
-              <div className="text-4xl font-black text-white mb-1">
+              <div className="text-4xl font-black text-zinc-900 mb-1">
                 {plan.price === '별도 문의' ? plan.price : `₩${plan.price}`}
               </div>
-              <div className={`text-sm mb-8 ${plan.highlight ? 'text-zinc-300' : 'text-[#abc7ff] font-medium'}`}>
+              <div className={`text-sm mb-8 ${plan.highlight ? 'text-zinc-500' : 'text-[#0071e3] font-medium'}`}>
                 {plan.period}
               </div>
 
               <ul className="space-y-4 text-sm mb-12 flex-grow">
                 {plan.features.map((feature, fidx) => (
-                  <li key={fidx} className="flex items-start gap-3 text-zinc-400">
+                  <li key={fidx} className="flex items-start gap-3 text-zinc-600">
                     {plan.highlight ? (
                       <ShieldCheck className="w-5 h-5 text-[#47e266] shrink-0" />
                     ) : (
-                      <CheckCircle className="w-5 h-5 text-[#abc7ff] shrink-0" />
+                      <CheckCircle className="w-5 h-5 text-[#0071e3] shrink-0" />
                     )}
-                    <span className={plan.highlight ? "text-zinc-200" : ""}>{feature}</span>
+                    <span className={plan.highlight ? "text-zinc-800 font-medium" : ""}>{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -166,8 +166,8 @@ export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated,
               <button
                 onClick={() => handleAction(plan.name)}
                 className={`w-full py-4 rounded-lg transition-all uppercase tracking-widest text-xs font-bold ${plan.highlight
-                  ? 'bg-[#0071e3] text-white hover:brightness-110 shadow-xl shadow-[#0071e3]/20'
-                  : 'border border-white/10 text-white hover:bg-white/5'
+                  ? 'bg-[#0071e3] text-white hover:brightness-110 shadow-lg shadow-[#0071e3]/20'
+                  : 'border border-zinc-300 text-zinc-700 hover:bg-zinc-100 hover:border-zinc-400'
                   }`}>
                 {plan.name === 'Enterprise' ? 'Contact Sales' : '시작하기'}
               </button>

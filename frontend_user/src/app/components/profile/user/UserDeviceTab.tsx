@@ -48,15 +48,15 @@ export const UserDeviceTab: React.FC<DeviceTabProps> = ({
 
   return (
     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
-      <div className="flex justify-between items-end pb-4 border-b border-white/5">
+      <div className="flex justify-between items-end pb-4 border-b border-zinc-200">
         <div>
           <h2 className="text-2xl font-bold">기기 관리</h2>
           <p className="text-sm text-zinc-500 mt-1">플러그인이 설치되고 활성화된 기기 목록입니다.</p>
         </div>
         <div className="text-right">
           <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">현재 등록 현황</div>
-          <div className="text-xl font-black text-white">
-            <span className={maxDevices > 0 && currentCount >= maxDevices ? "text-red-400" : "text-[#0071e3]"}>
+          <div className="text-xl font-black text-zinc-900">
+            <span className={maxDevices > 0 && currentCount >= maxDevices ? "text-red-500" : "text-[#0071e3]"}>
             {currentCount}
             </span>
             <span className="text-zinc-600 font-normal text-sm"> / {maxDevices}대</span>
@@ -68,23 +68,23 @@ export const UserDeviceTab: React.FC<DeviceTabProps> = ({
         {isLoadingDevices ? (
           <div className="text-center py-12 text-zinc-500 animate-pulse">기기 목록을 불러오는 중입니다...</div>
         ) : devices.length === 0 ? (
-          <div className="bg-zinc-900/30 border border-dashed border-white/10 p-12 rounded-3xl text-center">
-            <Monitor className="w-8 h-8 text-zinc-700 mx-auto mb-4" />
+          <div className="bg-zinc-50 border border-dashed border-zinc-300 p-12 rounded-3xl text-center">
+            <Monitor className="w-8 h-8 text-zinc-400 mx-auto mb-4" />
             <p className="text-zinc-500 text-sm">등록된 기기가 없습니다.</p>
           </div>
         ) : (
           devices.map((device) => (
-            <div 
-              key={device.id} 
-              className="bg-zinc-900/50 border border-white/10 p-6 rounded-2xl flex items-center justify-between"
+            <div
+              key={device.id}
+              className="bg-white border border-zinc-200 shadow-sm p-6 rounded-2xl flex items-center justify-between"
             >
               <div className="flex items-center gap-5">
-                <div className="bg-zinc-800 p-3 rounded-xl">
-                  <Monitor className="w-5 h-5 text-zinc-400" />
+                <div className="bg-zinc-100 p-3 rounded-xl">
+                  <Monitor className="w-5 h-5 text-zinc-500" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-white text-lg">{device.hostname}</span>
+                    <span className="font-bold text-zinc-900 text-lg">{device.hostname}</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
                       device.is_active ? 'bg-green-500/10 text-green-400' : 'bg-zinc-500/10 text-zinc-500'
                     }`}>
@@ -98,22 +98,22 @@ export const UserDeviceTab: React.FC<DeviceTabProps> = ({
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] text-zinc-500">
+                <div className="px-3 py-1 bg-zinc-50 border border-zinc-200 rounded-lg text-[10px] text-zinc-500">
                   Key Snippet: {device.api_key_snippet || '보안상 숨김'}
                 </div>
                 <div className="relative group flex items-center">
-                  <button 
+                  <button
                     onClick={() => handleToggleStatus(device.id, device.is_active)}
                     className={`p-2 rounded-xl transition-all border ${
-                      device.is_active 
-                        ? 'bg-zinc-800 border-red-500/10 text-red-400 hover:bg-red-500/20' 
-                        : 'bg-zinc-800 border-green-500/10 text-green-400 hover:bg-green-500/20'
+                      device.is_active
+                        ? 'bg-red-50 border-red-200 text-red-500 hover:bg-red-100'
+                        : 'bg-green-50 border-green-200 text-green-600 hover:bg-green-100'
                     }`}
                   >
                     <Power className="w-4 h-4" />
                   </button>
                   {/* Tailwind Custom Tooltip */}
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-zinc-800 border border-white/10 text-[10px] text-white font-bold rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap pointer-events-none z-10 shadow-xl">
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-zinc-800 border border-zinc-700 text-[10px] text-white font-bold rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap pointer-events-none z-10 shadow-xl">
                     {device.is_active ? '클릭 시 기기 사용 중지' : '클릭 시 기기 활성화'}
                   </div>
                 </div>
@@ -123,14 +123,14 @@ export const UserDeviceTab: React.FC<DeviceTabProps> = ({
         )}
       </div>
 
-      <div className="bg-zinc-900/50 border border-white/10 p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div className="bg-white border border-zinc-200 shadow-sm p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-start gap-4">
-          <div className="bg-[#0071e3]/20 p-2 rounded-lg mt-1">
-            <CheckCircle className="w-5 h-5 text-[#abc7ff]" />
+          <div className="bg-blue-50 p-2 rounded-lg mt-1">
+            <CheckCircle className="w-5 h-5 text-[#0071e3]" />
           </div>
           <div>
-            <h4 className="font-bold text-white text-sm">새 기기 등록 방법</h4>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+            <h4 className="font-bold text-zinc-900 text-sm">새 기기 등록 방법</h4>
+            <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
               AutoCAD 전용 플러그인을 다운로드하여 설치한 후, 플러그인 설정 메뉴에서 본인의 <br className="hidden md:block" />
               API Key를 입력하면 해당 기기가 자동으로 등록됩니다. (플랜 별 최대 접속 대수 유의)
             </p>

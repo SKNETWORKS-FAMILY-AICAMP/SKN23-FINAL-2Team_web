@@ -32,13 +32,13 @@ export const UserAPIKeyTab: React.FC<APIKeyTabProps> = ({
   if (user?.plan === 'none' || !user?.plan) {
     return (
       <div className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
-        <div className="bg-zinc-900/50 border border-white/10 p-12 rounded-3xl text-center space-y-6">
-          <div className="bg-zinc-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
-            <Zap className="w-8 h-8 text-yellow-400" />
+        <div className="bg-white border border-zinc-200 shadow-sm p-12 rounded-3xl text-center space-y-6">
+          <div className="bg-amber-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
+            <Zap className="w-8 h-8 text-amber-500" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-white">API Key 발급 제한</h3>
-            <p className="text-sm text-zinc-400 mt-2 leading-relaxed">
+            <h3 className="text-xl font-bold text-zinc-900">API Key 발급 제한</h3>
+            <p className="text-sm text-zinc-500 mt-2 leading-relaxed">
               요금제 구독이 완료된 후 API Key를 발급받으실 수 있습니다.<br />
               지금 바로 비즈니스 플랜에 가입하여 AI CAD 도구를 이용해 보세요.
             </p>
@@ -65,7 +65,7 @@ export const UserAPIKeyTab: React.FC<APIKeyTabProps> = ({
         </div>
         <button
           onClick={handleGenerateKey}
-          className="px-6 py-3 bg-white text-black hover:bg-zinc-200 rounded-xl text-sm font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"
+          className="px-6 py-3 bg-zinc-900 text-white hover:bg-zinc-700 rounded-xl text-sm font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" /> 새 키 발급하기
         </button>
@@ -75,8 +75,8 @@ export const UserAPIKeyTab: React.FC<APIKeyTabProps> = ({
         {isLoadingKeys ? (
           <div className="text-center py-12 text-zinc-500 animate-pulse">키 목록을 불러오는 중입니다...</div>
         ) : apiKeys.length === 0 ? (
-          <div className="bg-zinc-900/30 border border-dashed border-white/10 p-12 rounded-3xl text-center">
-            <Key className="w-8 h-8 text-zinc-700 mx-auto mb-4" />
+          <div className="bg-zinc-50 border border-dashed border-zinc-300 p-12 rounded-3xl text-center">
+            <Key className="w-8 h-8 text-zinc-400 mx-auto mb-4" />
             <p className="text-zinc-500 text-sm">발급된 API 키가 없습니다.</p>
           </div>
         ) : (
@@ -85,15 +85,15 @@ export const UserAPIKeyTab: React.FC<APIKeyTabProps> = ({
             return (
             <div
               key={key.id}
-              className={`group bg-zinc-900/50 border border-white/10 p-6 rounded-2xl flex items-center justify-between hover:border-white/20 transition-all ${!isLatest ? 'opacity-50' : ''}`}
+              className={`group bg-white border border-zinc-200 shadow-sm p-6 rounded-2xl flex items-center justify-between hover:border-zinc-300 transition-all ${!isLatest ? 'opacity-50' : ''}`}
             >
               <div className="flex items-center gap-5">
-                <div className="bg-zinc-800 p-3 rounded-xl group-hover:bg-white/10 transition-colors">
-                  <Key className="w-5 h-5 text-zinc-400" />
+                <div className="bg-zinc-100 p-3 rounded-xl group-hover:bg-zinc-200 transition-colors">
+                  <Key className="w-5 h-5 text-zinc-500" />
                 </div>
                 <div>
                   <div className="flex items-center gap-3">
-                    <code className="text-sm font-mono bg-black/40 px-3 py-1.5 rounded-lg border border-white/5">
+                    <code className="text-sm font-mono bg-zinc-50 px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-800">
                       {isLatest ? key.api_key : '********************************'}
                     </code>
                     {!isLatest && (
@@ -123,20 +123,20 @@ export const UserAPIKeyTab: React.FC<APIKeyTabProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-[#0071e3]/5 border border-[#0071e3]/10 p-6 rounded-2xl space-y-3">
-          <h4 className="font-bold text-[#abc7ff] flex items-center gap-2 text-sm">
+        <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl space-y-3">
+          <h4 className="font-bold text-[#0071e3] flex items-center gap-2 text-sm">
             <AlertTriangle className="w-4 h-4" /> API Key 보안 주의사항
           </h4>
-          <ul className="text-xs text-zinc-400 space-y-2 list-disc pl-4">
+          <ul className="text-xs text-zinc-600 space-y-2 list-disc pl-4">
             <li>API Key는 본인만 알고 있어야 하며, 외부로 공유하지 마세요.</li>
             <li>키가 노출된 것으로 의심될 경우 즉시 삭제하고 새 키를 발급받으세요.</li>
           </ul>
         </div>
         
-        <div className="bg-zinc-900/50 border border-white/10 p-6 rounded-2xl flex items-center justify-between gap-4 group hover:bg-zinc-900 transition-colors">
+        <div className="bg-white border border-zinc-200 shadow-sm p-6 rounded-2xl flex items-center justify-between gap-4 group hover:border-zinc-300 transition-colors">
           <div>
-            <h4 className="font-bold text-white text-sm">AutoCAD 플러그인 설치</h4>
-            <p className="text-xs text-zinc-400 mt-1">도면 분석을 위해 플러그인을 다운받고 키를 입력하세요.</p>
+            <h4 className="font-bold text-zinc-900 text-sm">AutoCAD 플러그인 설치</h4>
+            <p className="text-xs text-zinc-500 mt-1">도면 분석을 위해 플러그인을 다운받고 키를 입력하세요.</p>
           </div>
           <button 
             onClick={() => { /* window.open('/downloads/CadSllmAgent.zip') */ }}

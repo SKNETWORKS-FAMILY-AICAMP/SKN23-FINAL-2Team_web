@@ -3,16 +3,14 @@ File    : src/app/components/profile/admin/AdminManagementTab.tsx
 Author  : 김민정
 Create  : 2026-04-24
 Description : 기업 관리 페이지
-
 Modification History:
-    - 2026-04-24 (김민정) : 기업 관리 드롭다운 UI 고도화
-    - 2026-04-26 (김민정) : 기업 목록 내 결제 상세 정보 연동
+    - 2026-04-27 (송주엽) : 라이트 테마 전환, getAdminToken 사용으로 토큰 버그 수정
 */
 import React, { useState } from 'react';
-import { Building2, CreditCard, Search, Filter, History, X, Check, ShieldAlert, ChevronDown, Zap, ShieldCheck } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Building2, CreditCard, Search, Filter, History, X, Check, ChevronDown, Zap, ShieldCheck } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { adminApi } from '@/app/api/admin';
-import { authStorage } from '@/app/utils/storage';
+import { getAdminToken } from '@/app/context/AdminAuthContext';
 import { toast } from 'sonner';
 
 interface Props {
@@ -26,13 +24,11 @@ export const AdminManagementTab = ({ isLoading, orgs, onSearch, onRefresh }: Pro
   const [searchName, setSearchName] = useState('');
   const [filterPlan, setFilterPlan] = useState('all');
   const [isPlanFilterOpen, setIsPlanFilterOpen] = useState(false);
-
-  // 모달 관련 상태
   const [targetOrg, setTargetOrg] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const planOptions = [
-    { id: 'all', label: '모든 요금제 (All Plans)' },
+    { id: 'all', label: '모든 요금제' },
     { id: 'none', label: '미지정 (None)' },
     { id: 'basic', label: 'Basic Plan' },
     { id: 'pro', label: 'Pro Plan' },
@@ -41,16 +37,23 @@ export const AdminManagementTab = ({ isLoading, orgs, onSearch, onRefresh }: Pro
 
   const planTypes = [
     { id: 'none', name: 'None', desc: '요금제 미지정 상태', price: '0', color: 'zinc' },
-    { id: 'basic', name: 'Basic', desc: '중소규모 팀을 위한 기본형(평생 소장)', price: '300,000', color: 'emerald' },
-    { id: 'pro', name: 'Pro', desc: '전문적인 설계 검토가 필요한 팀(월간 구독)', price: '100,000', color: 'blue' },
-    { id: 'enterprise', name: 'Enterprise', desc: '대규모 조직을 위한 커스텀 솔루션(월간 구독)', price: '199,000', color: 'purple' }
+    { id: 'basic', name: 'Basic', desc: '중소규모 팀을 위한 기본형 (평생 소장)', price: '300,000', color: 'emerald' },
+    { id: 'pro', name: 'Pro', desc: '전문 설계 검토가 필요한 팀 (월간 구독)', price: '100,000', color: 'blue' },
+    { id: 'enterprise', name: 'Enterprise', desc: '대규모 조직을 위한 커스텀 솔루션', price: '199,000', color: 'purple' }
   ];
+
+  const planBadge: Record<string, string> = {
+    enterprise: 'bg-purple-50 text-purple-700 border-purple-200',
+    pro: 'bg-blue-50 text-blue-700 border-blue-200',
+    basic: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    none: 'bg-zinc-100 text-zinc-500 border-zinc-200',
+  };
 
   const handlePlanChange = async (newPlan: string) => {
     if (!targetOrg) return;
     setIsSubmitting(true);
     try {
-      const res = await adminApi.updatePlan(authStorage.getAccessToken()!, targetOrg.id, newPlan);
+      const res = await adminApi.updatePlan(getAdminToken()!, targetOrg.id, newPlan);
       if (res.ok) {
         toast.success(`${targetOrg.company_name}의 플랜이 변경되었습니다.`);
         setTargetOrg(null);
@@ -66,229 +69,213 @@ export const AdminManagementTab = ({ isLoading, orgs, onSearch, onRefresh }: Pro
   };
 
   return (
-    <div className="space-y-8">
-      {/* Search & Filter Header */}
-      <div className="flex flex-wrap gap-4 items-end bg-zinc-900/40 p-8 rounded-[32px] border border-white/5 shadow-2xl relative overflow-visible">
-        <div className="space-y-3 flex-1 min-w-[300px]">
-          <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2">
-            <Search className="w-3 h-3" /> Company Name
+    <div className="space-y-6">
+      {/* 섹션 헤더 */}
+      <div className="mb-2">
+        <h2 className="text-xl font-bold text-zinc-900">기업 관리</h2>
+        <p className="text-sm text-zinc-500 mt-0.5">등록된 기업의 요금제 및 구독 현황을 관리합니다.</p>
+      </div>
+
+      {/* 검색/필터 */}
+      <div className="bg-white border border-zinc-200 shadow-sm p-5 rounded-xl flex flex-wrap gap-4 items-end">
+        <div className="space-y-1.5 flex-1 min-w-[240px]">
+          <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wide flex items-center gap-1.5">
+            <Search className="w-3 h-3" /> 기업명 검색
           </label>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="기업명을 검색하세요..."
-              value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-              className="w-full bg-zinc-800/50 border border-white/5 rounded-2xl text-xs text-white px-6 py-4 focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="기업명을 입력하세요..."
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && onSearch(searchName, filterPlan)}
+            className="w-full bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-900 px-4 py-2.5 focus:ring-2 focus:ring-[#0071e3]/20 focus:border-[#0071e3] outline-none transition-all"
+          />
         </div>
 
-        <div className="space-y-3 min-w-[200px]">
-          <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2">
-            <Filter className="w-3 h-3" /> Billing Filter
+        <div className="space-y-1.5 min-w-[180px] relative">
+          <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wide flex items-center gap-1.5">
+            <Filter className="w-3 h-3" /> 요금제 필터
           </label>
-          <div className="relative group">
-            <button
-              onClick={() => setIsPlanFilterOpen(!isPlanFilterOpen)}
-              onBlur={() => setTimeout(() => setIsPlanFilterOpen(false), 200)}
-              className="flex items-center justify-between w-full bg-zinc-800/50 border border-white/5 rounded-2xl text-[11px] font-bold text-white px-6 py-4 focus:ring-2 focus:ring-blue-600 outline-none transition-all hover:bg-zinc-800"
-            >
-              <span>{planOptions.find(p => p.id === filterPlan)?.label}</span>
-              <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform ${isPlanFilterOpen ? 'rotate-180' : ''}`} />
-            </button>
-            <AnimatePresence>
-              {isPlanFilterOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute top-full left-0 w-full mt-2 bg-[#0c0c0c] border border-white/10 rounded-2xl overflow-hidden z-50 shadow-2xl"
-                >
-                  {planOptions.map((opt) => (
-                    <div
-                      key={opt.id}
-                      onClick={() => { setFilterPlan(opt.id); setIsPlanFilterOpen(false); onSearch(searchName, opt.id); }}
-                      className={`px-6 py-4 text-xs font-bold cursor-pointer transition-colors border-b border-white/5 last:border-0 ${filterPlan === opt.id ? 'bg-blue-600/20 text-blue-400' : 'text-white hover:bg-white/5'
-                        }`}
-                    >
-                      {opt.label}
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <button
+            onClick={() => setIsPlanFilterOpen(!isPlanFilterOpen)}
+            onBlur={() => setTimeout(() => setIsPlanFilterOpen(false), 200)}
+            className="flex items-center justify-between w-full bg-zinc-50 border border-zinc-200 rounded-lg text-sm font-medium text-zinc-900 px-4 py-2.5 focus:ring-2 focus:ring-[#0071e3]/20 outline-none transition-all hover:border-zinc-300"
+          >
+            <span>{planOptions.find(p => p.id === filterPlan)?.label}</span>
+            <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isPlanFilterOpen ? 'rotate-180' : ''}`} />
+          </button>
+          <AnimatePresence>
+            {isPlanFilterOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                className="absolute top-full left-0 w-full mt-1 bg-white border border-zinc-200 rounded-xl overflow-hidden z-50 shadow-lg"
+              >
+                {planOptions.map((opt) => (
+                  <div
+                    key={opt.id}
+                    onClick={() => { setFilterPlan(opt.id); setIsPlanFilterOpen(false); onSearch(searchName, opt.id); }}
+                    className={`px-4 py-2.5 text-sm font-medium cursor-pointer transition-colors border-b border-zinc-100 last:border-0 ${filterPlan === opt.id ? 'bg-blue-50 text-[#0071e3]' : 'text-zinc-700 hover:bg-zinc-50'}`}
+                  >
+                    {opt.label}
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <button
           onClick={() => onSearch(searchName, filterPlan)}
-          className="bg-white hover:bg-zinc-200 text-black px-10 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-white/5"
+          className="bg-zinc-900 hover:bg-zinc-700 text-white px-6 py-2.5 rounded-lg font-semibold text-sm transition-all"
         >
-          Apply Filter
+          검색
         </button>
       </div>
 
-      {/* Organization Cards */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {orgs.map((org) => (
-          <div key={org.id} className="bg-zinc-900/40 border border-white/5 p-8 rounded-[40px] group hover:border-blue-500/30 transition-all duration-500 relative overflow-hidden shadow-2xl flex flex-col">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600/5 blur-[80px] -z-10 group-hover:bg-blue-600/10 transition-all"></div>
-
-            <div className="flex justify-between items-start mb-8">
-              <div className="flex gap-5 items-center">
-                <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-white/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                  <Building2 className="w-6 h-6 text-blue-500" />
+      {/* 기업 카드 목록 */}
+      {isLoading ? (
+        <div className="text-center py-16 text-zinc-400 animate-pulse">기업 목록을 불러오는 중...</div>
+      ) : orgs.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-zinc-300 rounded-2xl bg-white">
+          <Building2 className="w-10 h-10 text-zinc-300 mx-auto mb-4" />
+          <p className="text-sm text-zinc-500">조건에 맞는 기업이 없습니다.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {orgs.map((org) => (
+            <div key={org.id} className="bg-white border border-zinc-200 shadow-sm p-6 rounded-2xl hover:border-zinc-300 transition-all flex flex-col">
+              {/* 헤더 */}
+              <div className="flex justify-between items-start mb-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+                    <Building2 className="w-5 h-5 text-[#0071e3]" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-zinc-900">{org.company_name}</h4>
+                    <p className="text-xs text-zinc-500 mt-0.5">{org.admin_email}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-xl font-black text-white italic tracking-tighter uppercase mb-1">{org.company_name}</h4>
-                  <p className="text-[12px] font-black text-zinc-500 uppercase tracking-widest">{org.admin_email}</p>
-                </div>
-              </div>
-              <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${org.plan === 'enterprise' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_20px_rgba(168,85,247,0.2)]' :
-                org.plan === 'pro' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                  org.plan === 'standard' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                    'bg-zinc-800 text-zinc-500 border-white/5'
-                }`}>
-                {org.plan?.toUpperCase() || 'NONE'}
-              </div>
-            </div>
-
-            <div className="bg-black/20 rounded-3xl p-6 border border-white/5 space-y-4 mb-8 flex-1">
-              {/* 1. 좌석 가동률 및 만료 정보 */}
-              <div className="flex justify-between items-center text-[13px] font-bold">
-                <span className="text-zinc-500 uppercase tracking-widest flex items-center gap-2"><Zap className="w-3 h-3 text-blue-500" /> 좌석 보유 현황</span>
-                <span className="text-blue-400">
-                  <span className="text-white">{org?.used_seats || 0}</span>
-                  <span className="text-zinc-600 mx-1">/</span>
-                  <span className="text-zinc-400">{org?.payment_info?.total_seats || 0}</span>
-                  <span className="ml-2 text-[10px] text-zinc-500 font-medium">(사용 중/전체)</span>
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${planBadge[org.plan?.toLowerCase()] || planBadge['none']}`}>
+                  {org.plan?.toUpperCase() || 'NONE'}
                 </span>
               </div>
-              <div className="w-full h-[1px] bg-white/5"></div>
-              <div className="flex justify-between items-center text-[13px] font-bold">
-                <span className="text-zinc-500 uppercase tracking-widest flex items-center gap-2"><History className="w-3 h-3 text-emerald-500" /> 구독 만료일</span>
-                <div className="flex flex-col items-end">
-                  <span className={org?.payment_info?.billing_period_end ? 'text-white' : 'text-zinc-600'}>
-                    {org?.payment_info?.billing_period_end ? org.payment_info.billing_period_end.split('T')[0] : '기록 없음'}
+
+              {/* 정보 그리드 */}
+              <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-4 space-y-3 mb-5 flex-1">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-zinc-500 flex items-center gap-1.5"><Zap className="w-3 h-3 text-[#0071e3]" /> 좌석 현황</span>
+                  <span className="font-semibold text-zinc-900">
+                    <span className="text-[#0071e3]">{org?.used_seats || 0}</span>
+                    <span className="text-zinc-400 mx-1">/</span>
+                    <span>{org?.payment_info?.total_seats || 0}</span>
+                    <span className="text-[10px] text-zinc-400 ml-1">대</span>
                   </span>
-                  {org?.payment_info?.billing_period_end && (
-                    <span className={`text-[9px] font-black uppercase tracking-widest ${new Date(org.payment_info.billing_period_end) < new Date() ? 'text-red-500' : 'text-emerald-500'
-                      }`}>
-                      {new Date(org.payment_info.billing_period_end) < new Date() ? '기간 만료' : '구독 중'}
+                </div>
+                <div className="h-px bg-zinc-200" />
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-zinc-500 flex items-center gap-1.5"><History className="w-3 h-3 text-emerald-500" /> 구독 만료일</span>
+                  <div className="text-right">
+                    <span className={org?.payment_info?.billing_period_end ? 'font-semibold text-zinc-900' : 'text-zinc-400'}>
+                      {org?.payment_info?.billing_period_end ? org.payment_info.billing_period_end.split('T')[0] : '기록 없음'}
                     </span>
-                  )}
+                    {org?.payment_info?.billing_period_end && (
+                      <div className={`text-[10px] font-bold mt-0.5 ${new Date(org.payment_info.billing_period_end) < new Date() ? 'text-red-500' : 'text-emerald-600'}`}>
+                        {new Date(org.payment_info.billing_period_end) < new Date() ? '만료됨' : '구독 중'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="h-px bg-zinc-200" />
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide">결제 수단</p>
+                    <p className="text-sm font-medium text-zinc-700 mt-0.5">{org?.payment_info?.payment_method || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide">최근 결제일</p>
+                    <p className="text-sm font-medium text-emerald-600 mt-0.5">{org?.payment_info?.last_payment_date ? org.payment_info.last_payment_date.split('T')[0] : 'N/A'}</p>
+                  </div>
                 </div>
               </div>
 
-              {/* 2. 상세 결제 데이터 (샘플 데이터 기반 확장) */}
-              <div className="pt-4 mt-4 border-t border-white/10 grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-[11px] font-black text-zinc-600 uppercase tracking-widest">결제 유형 / 수단</p>
-                  <p className="text-[13px] font-bold text-zinc-300">{org?.payment_info?.payment_method || 'N/A'}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] font-black text-zinc-600 uppercase tracking-widest">PG사</p>
-                  <p className="text-[13px] font-bold text-zinc-300">{org?.payment_info?.pg_provider || '정보 없음'}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] font-black text-zinc-600 uppercase tracking-widest">최근 결제일</p>
-                  <p className="text-[13px] font-bold text-emerald-400">{org?.payment_info?.last_payment_date ? org.payment_info.last_payment_date.split('T')[0] : '정보 없음'}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] font-black text-zinc-600 uppercase tracking-widest">추가된 좌석</p>
-                  <p className="text-[13px] font-bold text-zinc-300">+{org?.payment_info?.added_seats || 0} SEATS</p>
-                </div>
-                <div className="col-span-2 space-y-1">
-                  <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">거래 번호(ID)</p>
-                  <p className="text-[11px] font-bold text-zinc-300">{org?.payment_info?.pg_transaction_id || '내역 없음'}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* 변경 버튼 - 클릭 시 모달 오픈 */}
-            <div className="flex gap-3 mt-auto">
+              {/* 플랜 변경 버튼 */}
               <button
                 onClick={() => setTargetOrg(org)}
-                className="flex-1 bg-zinc-100 hover:bg-white text-black py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-white/5"
+                className="w-full bg-zinc-900 hover:bg-zinc-700 text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
               >
-                <Zap className="w-3.5 h-3.5" /> Change Billing Plan
+                <Zap className="w-3.5 h-3.5" /> 요금제 변경
               </button>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* 요금제 변경 모달 (프리미엄 디자인) */}
+      {/* 요금제 변경 모달 */}
       <AnimatePresence>
         {targetOrg && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-6" onClick={() => setTargetOrg(null)}>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6" onClick={() => setTargetOrg(null)}>
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.96, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-[#0c0c0c] border border-white/10 rounded-[48px] max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col"
+              exit={{ opacity: 0, scale: 0.96, y: 10 }}
+              className="bg-white border border-zinc-200 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden shadow-2xl flex flex-col"
               onClick={e => e.stopPropagation()}
             >
               {/* 모달 헤더 */}
-              <div className="px-12 py-10 border-b border-white/5 flex justify-between items-center bg-black/20">
+              <div className="px-8 py-5 border-b border-zinc-200 flex justify-between items-center">
                 <div>
-                  <h3 className="text-2xl font-black text-white tracking-widest uppercase italic flex items-center gap-3">
-                    <ShieldCheck className="w-8 h-8 text-blue-500" /> Plan Configuration
+                  <h3 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-[#0071e3]" /> 요금제 변경
                   </h3>
-                  <p className="text-[12px] font-black text-zinc-500 uppercase tracking-[0.3em] mt-2">Adjusting status for: <span className="text-white italic">{targetOrg.company_name}</span></p>
+                  <p className="text-sm text-zinc-500 mt-0.5">대상: <strong className="text-zinc-900">{targetOrg.company_name}</strong></p>
                 </div>
-                <button onClick={() => setTargetOrg(null)} className="p-4 bg-white/5 hover:bg-white/10 text-zinc-500 hover:text-white rounded-full transition-all border border-white/5">
-                  <X className="w-6 h-6" />
+                <button onClick={() => setTargetOrg(null)} className="p-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-500 rounded-lg transition-all">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* 모달 메인 - 요금제 리스트 */}
-              <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-black/40">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {planTypes.map((plan) => (
-                    <button
-                      key={plan.id}
-                      onClick={() => handlePlanChange(plan.id)}
-                      disabled={isSubmitting}
-                      className={`group relative text-left p-8 rounded-[36px] border transition-all duration-500 ${targetOrg.plan === plan.id
-                        ? `bg-zinc-100 border-white shadow-2xl`
-                        : 'bg-zinc-900/50 border-white/5 hover:border-white/20 hover:bg-zinc-900'
+              {/* 요금제 선택 그리드 */}
+              <div className="flex-1 overflow-y-auto p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {planTypes.map((plan) => {
+                    const isActive = targetOrg.plan?.toLowerCase() === plan.id;
+                    const colorMap: Record<string, string> = {
+                      emerald: 'border-emerald-300 bg-emerald-50',
+                      blue: 'border-blue-300 bg-blue-50',
+                      purple: 'border-purple-300 bg-purple-50',
+                      zinc: 'border-zinc-300 bg-zinc-50',
+                    };
+                    return (
+                      <button
+                        key={plan.id}
+                        onClick={() => handlePlanChange(plan.id)}
+                        disabled={isSubmitting || isActive}
+                        className={`relative text-left p-6 rounded-xl border-2 transition-all ${
+                          isActive
+                            ? `${colorMap[plan.color]} cursor-default`
+                            : 'border-zinc-200 bg-white hover:border-[#0071e3]/40 hover:bg-blue-50/30'
                         }`}
-                    >
-                      <div className={`text-[10px] font-black uppercase tracking-[0.4em] mb-4 transition-colors ${targetOrg.plan === plan.id ? 'text-zinc-500' : 'text-zinc-400 group-hover:text-zinc-300'}`}>
-                        {plan.id === 'none' ? 'Downgrade Option' : 'Subscription Tier'}
-                      </div>
-                      <h4 className={`text-2xl font-black italic tracking-tighter uppercase mb-2 transition-colors ${targetOrg.plan === plan.id ? 'text-black' : 'text-white'}`}>
-                        {plan.name}
-                      </h4>
-                      <p className={`text-[11px] font-medium leading-relaxed mb-8 transition-colors ${targetOrg.plan === plan.id ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                        {plan.desc}
-                      </p>
-                      <div className="flex items-end gap-2 mt-auto">
-                        <span className={`text-xl font-black italic ${targetOrg.plan === plan.id ? 'text-black' : 'text-white'}`}>₩{plan.price}</span>
-                        <span className={`text-[10px] font-black uppercase tracking-widest mb-1 ${targetOrg.plan === plan.id ? 'text-zinc-500' : 'text-zinc-400'}`}>/ Month</span>
-                      </div>
-
-                      {targetOrg.plan === plan.id && (
-                        <div className="absolute top-8 right-8">
-                          <Check className="w-6 h-6 text-black" />
+                      >
+                        {isActive && (
+                          <div className="absolute top-4 right-4">
+                            <Check className="w-5 h-5 text-zinc-600" />
+                          </div>
+                        )}
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2">
+                          {plan.id === 'none' ? '요금제 해제' : '구독 플랜'}
                         </div>
-                      )}
-
-                      <div className={`absolute top-0 right-0 w-32 h-32 blur-[80px] -z-10 opacity-30 group-hover:opacity-60 transition-all ${plan.color === 'emerald' ? 'bg-emerald-500' :
-                        plan.color === 'blue' ? 'bg-blue-600' :
-                          plan.color === 'purple' ? 'bg-purple-600' : 'bg-zinc-600'
-                        }`}></div>
-                    </button>
-                  ))}
+                        <h4 className="text-xl font-black text-zinc-900 mb-1">{plan.name}</h4>
+                        <p className="text-xs text-zinc-500 mb-4 leading-relaxed">{plan.desc}</p>
+                        <div className="text-lg font-black text-zinc-900">
+                          ₩{plan.price}
+                          <span className="text-xs font-normal text-zinc-400 ml-1">/ 월</span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-              </div>
-
-              {/* 모달 푸터 */}
-              <div className="px-12 py-8 bg-black/60 border-t border-white/5 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                <p>Security Identity Verification Active</p>
-                <p>Cadence AI Management Protocol</p>
               </div>
             </motion.div>
           </div>
