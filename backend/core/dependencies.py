@@ -43,3 +43,19 @@ def ensure_subscribed(current_org: models.Organization = Depends(ensure_verified
     if current_org.plan == "none":
         raise HTTPException(status_code=403, detail="요금제 구독 후 이용 가능합니다.")
     return current_org
+def get_current_user_optional(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)), db: Session = Depends(get_db)):
+    if not credentials:
+        return None
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, auth_utils.SECRET_KEY, algorithms=[auth_utils.ALGORITHM])
+        if payload.get("type") != "access":
+            return None
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+        
+        org = db.query(models.Organization).filter(models.Organization.admin_email == email).first()
+        return org
+    except JWTError:
+        return None

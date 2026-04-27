@@ -32,6 +32,7 @@ import { LandingNav } from '@/app/components/landing/LandingNav';
 import { LandingFeatures } from '@/app/components/landing/LandingFeatures';
 import { LandingWorkflow } from '@/app/components/landing/LandingWorkflow';
 import { LandingPricing } from '@/app/components/landing/LandingPricing';
+import { LandingFAQ } from '@/app/components/landing/LandingFAQ';
 import { LandingFooter } from '@/app/components/landing/LandingFooter';
 
 const domains = [
@@ -139,15 +140,7 @@ export default function App() {
             className="relative z-20 text-center max-w-5xl px-6"
             style={{ opacity: heroOpacity, scale: heroScale }}
           >
-            <motion.div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-8"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">Titanium Precision Engine v1.0</span>
-            </motion.div>
+
 
             <motion.h1
               className="text-6xl md:text-8xl font-extrabold tracking-tighter mb-8 leading-[0.9]"
@@ -155,8 +148,20 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <span className="text-white drop-shadow-lg">PRECISION</span> <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38bdf8] to-[#7dd3fc]">
+              <span
+                className="text-transparent bg-clip-text drop-shadow-lg"
+                style={{
+                  backgroundImage: 'linear-gradient(90deg, #ffffff, #e0f2fe, #bae6fd)',
+                }}
+              >PRECISION</span> <br />
+              <span
+                className="text-transparent bg-clip-text"
+                style={{
+                  backgroundImage: 'linear-gradient(90deg, #38bdf8, #818cf8, #c084fc, #fb7185, #38bdf8, #34d399, #38bdf8)',
+                  backgroundSize: '300% 100%',
+                  animation: 'gradientShift 5s linear infinite',
+                }}
+              >
                 WITHOUT LIMITS
               </span>
             </motion.h1>
@@ -180,7 +185,13 @@ export default function App() {
               >
                 <button
                   onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }))}
-                  className="bg-[#0071e3] text-white px-12 py-4 rounded-xl font-bold text-base shadow-2xl shadow-[#0071e3]/40 hover:scale-105 hover:brightness-110 transition-all backdrop-blur-sm"
+                  className="relative text-white px-12 py-4 rounded-xl font-bold text-base shadow-2xl hover:scale-105 transition-all overflow-hidden"
+                  style={{
+                    backgroundImage: 'linear-gradient(90deg, #38bdf8, #818cf8, #c084fc)',
+                    backgroundSize: '200% 100%',
+                    animation: 'gradientShift 4s linear infinite',
+                    boxShadow: '0 8px 32px rgba(56,189,248,0.35)',
+                  }}
                 >
                   시작하기
                 </button>
@@ -295,6 +306,7 @@ export default function App() {
         <LandingFeatures />
         <LandingWorkflow />
         <LandingPricing isAuthenticated={isAuthenticated} user={user} />
+        <LandingFAQ />
       </main>
 
       <LandingFooter />

@@ -40,7 +40,7 @@ export default function PaymentSuccessPage() {
         const token = localStorage.getItem('access_token');
         const pending_added_seats = localStorage.getItem('pending_added_seats') || '0';
 
-        const response = await fetch('http://localhost:8001/api/v1/payments/toss-confirm', {
+        const response = await fetch('http://localhost:8000/api/v1/payments/toss-confirm', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

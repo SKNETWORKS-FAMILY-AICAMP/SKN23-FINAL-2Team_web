@@ -17,6 +17,7 @@ from ..models import models, schemas
 from ..core import auth_utils as auth
 from ..core import database
 from ..core.database import get_db
+from ..core.dependencies import get_current_user
 from ..services.email_service import EmailService
 from ..services.s3_service import S3Service
 from ..services.auth_service import AuthService
@@ -35,28 +36,32 @@ async def register(
         if db.query(models.Organization).filter(models.Organization.admin_email == email).first():
             raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
         
-        # 1. S3 업로드 (S3Service 활용)
+        # 1. Redis에서 이메일 인증 통과 여부 확인
+        pending_data = AuthService.get_pending_signup(email)
+        if not pending_data or not pending_data.get("verified"):
+            raise HTTPException(status_code=400, detail="이메일 인증이 완료되지 않았습니다.")
+        
+        # 2. S3 업로드
         s3_url = await S3Service.upload_certificate(email, certificate)
 
-        # 2. 인증코드 생성 및 Redis 저장 (AuthService 활용)
-        v_code = AuthService.generate_verification_code()
-        signup_data = {
-            "company_name": company_name,
-            "admin_email": email,
-            "password_hash": auth.get_password_hash(password),
-            "business_reg_s3_url": s3_url,
-            "code": v_code
-        }
-        AuthService.save_pending_signup(email, signup_data)
+        # 3. DB 바로 생성 (이메일 인증 선행됨)
+        new_org = models.Organization(
+            admin_email=email,
+            password_hash=auth.get_password_hash(password),
+            company_name=company_name,
+            plan="none",
+            verification_status="pending",
+            business_reg_s3_url=s3_url,
+            is_active=True
+        )
+        db.add(new_org)
+        db.commit()
+        
+        AuthService.delete_pending_signup(email)
 
-        # 3. 이메일 발송
-        try:
-            EmailService.send_verification_email(email, v_code)
-        except Exception as e:
-            print(f"[Email Error] {e}")
-
-        return {"success": True, "message": "인증 메일이 발송되었습니다."}
+        return {"success": True, "message": "회원가입이 완료되었습니다. 관리자 승인 후 이용 가능합니다."}
     except Exception as e:
+        db.rollback()
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -96,7 +101,8 @@ async def verify_email(data: schemas.EmailVerification, db: Session = Depends(ge
                 "orgId": str(new_org.id),
                 "verification_status": new_org.verification_status,
                 "plan": new_org.plan,
-                "max_seats": new_org.max_seats
+                "max_seats": new_org.max_seats,
+                "business_reg_s3_url": new_org.business_reg_s3_url
             }
         }
     except Exception as e:
@@ -157,7 +163,8 @@ def login(login_data: schemas.OrgLogin, db: Session = Depends(get_db)):
                 "orgId": str(org.id),
                 "verification_status": org.verification_status,
                 "plan": org.plan,
-                "max_seats": org.max_seats
+                "max_seats": org.max_seats,
+                "business_reg_s3_url": org.business_reg_s3_url
             }
         }
 
@@ -200,3 +207,69 @@ def refresh_token(payload: dict = Body(...), db: Session = Depends(get_db)):
         return {"success": True, "token": auth.create_access_token(data={"sub": email})}
     except:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+from pydantic import BaseModel
+
+class EmailCheckRequest(BaseModel):
+    email: str
+
+class CompanyCheckRequest(BaseModel):
+    company_name: str
+
+@router.post("/check-email", response_model=schemas.CommonResponse)
+async def check_email(data: EmailCheckRequest, db: Session = Depends(get_db)):
+    if db.query(models.Organization).filter(models.Organization.admin_email == data.email).first():
+        raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
+    return {"success": True, "message": "사용 가능한 이메일입니다."}
+
+@router.post("/check-company", response_model=schemas.CommonResponse)
+async def check_company(data: CompanyCheckRequest, db: Session = Depends(get_db)):
+    if db.query(models.Organization).filter(models.Organization.company_name == data.company_name).first():
+        raise HTTPException(status_code=400, detail="이미 사용중인 기업명입니다.")
+    return {"success": True, "message": "사용 가능한 기업명입니다."}
+
+@router.post("/send-code", response_model=schemas.CommonResponse)
+async def send_code(data: EmailCheckRequest, db: Session = Depends(get_db)):
+    if db.query(models.Organization).filter(models.Organization.admin_email == data.email).first():
+        raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
+    
+    v_code = AuthService.generate_verification_code()
+    AuthService.save_pending_signup(data.email, {"code": v_code})
+    
+    try:
+        EmailService.send_verification_email(data.email, v_code)
+    except Exception as e:
+        print(f"[Email Error] {e}")
+        
+    return {"success": True, "message": "인증 코드가 발송되었습니다."}
+
+@router.post("/verify-code", response_model=schemas.CommonResponse)
+async def verify_code(data: schemas.EmailVerification, db: Session = Depends(get_db)):
+    pending_data = AuthService.get_pending_signup(data.email)
+    if not pending_data or pending_data.get("code") != data.code:
+        raise HTTPException(status_code=400, detail="인증 코드가 일치하지 않거나 만료되었습니다.")
+    
+    # 인증 성공 시 verified 플래그를 Redis에 남김
+    pending_data["verified"] = True
+    AuthService.save_pending_signup(data.email, pending_data)
+    return {"success": True, "message": "이메일 인증이 완료되었습니다."}
+
+@router.get("/me")
+async def get_me(
+    db: Session = Depends(get_db),
+    current_user: models.Organization = Depends(get_current_user)
+):
+    """현재 로그인 사용자의 최신 프로필 정보 반환"""
+    return {
+        "success": True,
+        "user": {
+            "email": current_user.admin_email,
+            "companyName": current_user.company_name,
+            "role": "user",
+            "orgId": str(current_user.id),
+            "verification_status": current_user.verification_status,
+            "plan": current_user.plan,
+            "max_seats": current_user.max_seats,
+            "business_reg_s3_url": current_user.business_reg_s3_url,
+        }
+    }

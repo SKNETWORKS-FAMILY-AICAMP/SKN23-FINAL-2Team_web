@@ -13,7 +13,13 @@ Modification History:
  */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu";
 
 interface LandingNavProps {
   isAuthenticated: boolean;
@@ -35,57 +41,48 @@ export const LandingNav: React.FC<LandingNavProps> = ({ isAuthenticated, user, l
   return (
     <nav className="fixed top-0 w-full z-[100] border-b border-zinc-200 bg-white/80 backdrop-blur-xl">
       <div className="flex justify-between items-center w-full px-8 py-4 max-w-screen-2xl mx-auto">
-        <div className="flex items-center gap-2 cursor-pointer group" onClick={handleLogoClick}>
-          <span className="w-2 h-8 bg-[#0071e3] group-hover:scale-y-110 transition-transform" />
-          <span className="text-xl font-bold tracking-tighter text-zinc-900 group-hover:text-[#0071e3] transition-colors">Cadence AI</span>
+        <div className="flex items-center gap-10">
+          <div className="flex items-center gap-2 cursor-pointer group" onClick={handleLogoClick}>
+            <span className="w-2 h-8 bg-[#0071e3] group-hover:scale-y-110 transition-transform" />
+            <span className="text-xl font-bold tracking-tighter text-zinc-900 group-hover:text-[#0071e3] transition-colors pr-4">Cadence AI</span>
+          </div>
         </div>
 
-        <div className="hidden md:flex gap-10">
-          <a href="#showcase" className="text-zinc-500 font-medium hover:text-zinc-900 transition-colors text-sm uppercase tracking-widest">Showcase</a>
-          <a href="#features" className="text-zinc-500 font-medium hover:text-zinc-900 transition-colors text-sm uppercase tracking-widest">Features</a>
-          <a href="#how-it-works" className="text-zinc-500 font-medium hover:text-zinc-900 transition-colors text-sm uppercase tracking-widest">How It Works</a>
-          <a href="#pricing" className="text-zinc-500 font-medium hover:text-zinc-900 transition-colors text-sm uppercase tracking-widest">Pricing</a>
-          <button onClick={() => navigate('/inquiries', { state: { tab: 'faq' } })} className="text-zinc-500 font-medium hover:text-zinc-900 transition-colors text-sm uppercase tracking-widest">Support</button>
-        </div>
-
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/pricing')} className="text-sm font-semibold text-zinc-600 hover:text-zinc-900 transition-colors px-3 py-2 hidden md:block">
+            가격 책정
+          </button>
+          <button
+            onClick={() => navigate('/inquiries', { state: { tab: 'faq' } })}
+            className="text-sm font-semibold text-zinc-600 hover:text-zinc-900 transition-colors px-3 py-2 hidden md:block"
+          >
+            문의하기
+          </button>
           {isAuthenticated ? (
-            <div className="flex items-center gap-3 bg-zinc-100 p-1 rounded-full pl-4 border border-zinc-200">
-              <span className="text-xs font-bold text-zinc-700">{user?.companyName || 'Member'}</span>
-              <div className="flex gap-2">
-                <div className="relative group/nav">
-                  <button
-                    onClick={() => navigate((user?.role === 'admin' || user?.role === 'superuser') ? '/admin' : '/profile')}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-1.5 bg-zinc-900 text-white text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/nav:opacity-100 -translate-y-2 group-hover/nav:translate-y-0 transition-all duration-300 whitespace-nowrap z-[110] border border-zinc-700"
-                  >
-                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-zinc-900 rotate-45 border-l border-t border-zinc-700" />
-                    {(user?.role === 'admin' || user?.role === 'superuser') ? '관리자 페이지' : '마이페이지'}
-                  </button>
-                  <button
-                    onClick={() => navigate((user?.role === 'admin' || user?.role === 'superuser') ? '/admin' : '/profile')}
-                    className="p-2 rounded-full bg-zinc-200 hover:bg-zinc-300 text-zinc-700 transition-all"
-                  >
-                    <User className="w-4 h-4" />
-                  </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center gap-2 bg-white hover:bg-zinc-50 px-3 py-1.5 rounded-md border border-zinc-200 cursor-pointer transition-all shadow-sm group outline-none">
+                  <span className="text-sm font-bold text-zinc-700">
+                    {user?.companyName ? `${user.companyName}님` : 'Member'}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-zinc-400 group-hover:text-zinc-600 transition-colors" />
                 </div>
-
-                <div className="relative group/logout">
-                  <button
-                    onClick={logout}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-1.5 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/logout:opacity-100 -translate-y-2 group-hover/logout:translate-y-0 transition-all duration-300 whitespace-nowrap z-[110]"
-                  >
-                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-600 rotate-45" />
-                    Logout
-                  </button>
-                  <button
-                    onClick={logout}
-                    className="bg-red-50 p-2 rounded-full hover:bg-red-100 transition-all group"
-                  >
-                    <LogOut className="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform" />
-                  </button>
-                </div>
-              </div>
-            </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={0} className="w-[var(--radix-dropdown-menu-trigger-width)] p-1 bg-white !rounded-sm border border-zinc-200 shadow-lg z-[200]">
+                <DropdownMenuItem
+                  onClick={() => navigate((user?.role === 'admin' || user?.role === 'superuser') ? '/admin' : '/profile')}
+                  className="w-full text-center px-3 py-2 cursor-pointer rounded-sm font-semibold text-[13px] text-zinc-700 hover:bg-zinc-100 focus:bg-zinc-100 focus:text-zinc-900 outline-none transition-colors"
+                >
+                  {(user?.role === 'admin' || user?.role === 'superuser') ? '관리자 페이지' : '마이페이지'}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={logout}
+                  className="w-full text-center px-3 py-2 cursor-pointer rounded-sm font-bold text-[13px] text-red-600 hover:bg-red-50 focus:bg-red-50 focus:text-red-700 outline-none transition-colors mt-0.5 border-t border-zinc-100"
+                >
+                  로그아웃
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <div className="flex items-center gap-2">
               <button

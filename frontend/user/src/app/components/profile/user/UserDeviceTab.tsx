@@ -29,7 +29,7 @@ export const UserDeviceTab: React.FC<DeviceTabProps> = ({
   const handleToggleStatus = async (deviceId: string, currentStatus: boolean) => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://localhost:8001/api/v1/devices/${deviceId}/toggle`, {
+      const response = await fetch(`http://localhost:8000/api/v1/devices/${deviceId}/toggle`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

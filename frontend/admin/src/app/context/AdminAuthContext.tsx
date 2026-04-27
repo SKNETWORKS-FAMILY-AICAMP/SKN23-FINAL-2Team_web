@@ -17,7 +17,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const adminLogin = async (pin: string): Promise<{ success: boolean; message?: string }> => {
     try {
-      const response = await fetch('http://localhost:8001/api/v1/admin/pin-login', {
+      const response = await fetch('http://localhost:8000/api/v1/admin/pin-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin }),

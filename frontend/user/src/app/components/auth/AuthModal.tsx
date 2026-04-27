@@ -96,8 +96,7 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
             toast.error('비밀번호가 일치하지 않습니다.'); setIsLoading(false); return;
           }
           await register(formData.companyName, formData.email, formData.password, formData.certificateFile);
-          toast.success('인증 메일이 발송되었습니다.');
-          setPrevStep('signup'); setActiveTab('verify');
+          handleSuccess('회원가입이 신청되었습니다! 관리자 승인 후 이용 가능합니다.');
         } else {
           if (!formData.email || !formData.password) {
             toast.error('이메일과 비밀번호를 입력해주세요.'); setIsLoading(false); return;
@@ -112,7 +111,12 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
             }
           }
         }
-      } catch (error) { console.error(error); } finally { setIsLoading(false); }
+      } catch (error: any) {
+        console.error(error);
+        toast.error(error.message || '요청 처리 중 오류가 발생했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     const handleVerify = async () => {
@@ -239,12 +243,17 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
         <AnimatePresence>
           {showSuccessModal && (
             <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-zinc-900 border border-white/10 p-10 rounded-3xl text-center space-y-4 max-w-sm w-full">
-                <div className="w-16 h-16 bg-[#47e266]/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <CheckCircle className="w-8 h-8 text-[#47e266]" />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }} 
+                animate={{ opacity: 1, scale: 1 }} 
+                exit={{ opacity: 0, scale: 0.9 }} 
+                className="bg-white border border-zinc-200 p-10 rounded-[32px] text-center space-y-4 max-w-sm w-full shadow-2xl"
+              >
+                <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-2 border border-emerald-100">
+                  <CheckCircle className="w-8 h-8 text-emerald-500" />
                 </div>
-                <h3 className="text-xl font-bold text-white">{successMessage}</h3>
-                <p className="text-sm text-zinc-500">잠시 후 대시보드로 이동합니다...</p>
+                <h3 className="text-xl font-black text-zinc-900 tracking-tight">{successMessage}</h3>
+                <p className="text-sm text-zinc-500 font-medium">잠시 후 대시보드로 이동합니다...</p>
               </motion.div>
             </div>
           )}

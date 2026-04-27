@@ -17,8 +17,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  ChevronLeft, User, CreditCard, Key, Activity, Monitor, FileDown,
-  LogOut, ShieldCheck, MessageSquare, Trash2, Lock, X, CheckCircle
+  ChevronLeft, User, CreditCard, Key, Monitor, FileDown,
+  LogOut, ShieldCheck, Trash2, Lock, X, CheckCircle
 } from 'lucide-react';
 import { format, subDays, startOfMonth, isValid, parseISO } from 'date-fns';
 import { useAuth } from '@/app/context/AuthContext';
@@ -27,17 +27,38 @@ import { toast } from 'sonner';
 import { UserAccountTab } from '@/app/components/profile/user/UserAccountTab';
 import { UserPaymentTab } from '@/app/components/profile/user/UserPaymentTab';
 import { UserAPIKeyTab } from '@/app/components/profile/user/UserAPIKeyTab';
-import { UserUsageTab } from '@/app/components/profile/user/UserUsageTab';
 import { UserDeviceTab } from '@/app/components/profile/user/UserDeviceTab';
-import { UserInquiriesTab } from '@/app/components/profile/user/UserInquiriesTab';
 
 
-type TabType = 'account' | 'billing' | 'api' | 'usage' | 'devices' | 'downloads' | 'my_inquiries';
+type TabType = 'account' | 'billing' | 'api' | 'devices';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user: authUser, isAuthenticated, logout } = useAuth();
+  const [user, setUser] = useState<any>(authUser);
+
+  // 마운트 시 DB에서 최신 프로필(business_reg_s3_url 포함) 가져오기
+  useEffect(() => {
+    const fetchMe = async () => {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      try {
+        const res = await fetch('http://localhost:8000/api/v1/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) setUser(data.user);
+        }
+      } catch { /* 조용히 실패 */ }
+    };
+    fetchMe();
+  }, []);
+
+  useEffect(() => {
+    setUser(authUser);
+  }, [authUser]);
 
   useEffect(() => {
     if (!user && !isAuthenticated) {
@@ -56,7 +77,7 @@ export default function ProfilePage() {
     navigate(`/profile?tab=${tab}`, { replace: true });
   };
 
-  // --- 1. Subscription & Payment State ---
+// --- 1. Subscription & Payment State ---
   const [currentPlan, setCurrentPlan] = useState<string>('');
   const [paymentInfo, setPaymentInfo] = useState<any>(null);
   const [isLoadingPayment, setIsLoadingPayment] = useState(false);
@@ -66,7 +87,7 @@ export default function ProfilePage() {
       setIsLoadingPayment(true);
       try {
         const token = localStorage.getItem('access_token');
-        const response = await fetch('http://localhost:8001/api/v1/payments/current', {
+        const response = await fetch('http://localhost:8000/api/v1/payments/current', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -87,53 +108,7 @@ export default function ProfilePage() {
 
   useEffect(() => { fetchPayment(); }, [activeTab]);
 
-  // --- 2. Usage Dashboard State ---
-  const [usageStats, setUsageStats] = useState<any>(null);
-  const [isLoadingUsage, setIsLoadingUsage] = useState(false);
-  const [usageDateRange, setUsageDateRange] = useState({
-    start: format(subDays(new Date(), 6), 'yyyy-MM-dd'),
-    end: format(new Date(), 'yyyy-MM-dd')
-  });
-  const [selectedMetric, setSelectedMetric] = useState<'all' | 'calls' | 'tokens'>('all');
-
-  useEffect(() => {
-    const fetchUsage = async () => {
-      if (activeTab === 'usage' && !isLoadingUsage) {
-        setIsLoadingUsage(true);
-        try {
-          const token = localStorage.getItem('access_token');
-          const url = `http://localhost:8001/api/v1/usage/stats?start_date=${usageDateRange.start}&end_date=${usageDateRange.end}`;
-          const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-          const data = await response.json();
-          if (data && data.success) setUsageStats(data);
-        } catch (error) {
-          console.error("Usage Fetch Error", error);
-        } finally {
-          setIsLoadingUsage(false);
-        }
-      }
-    };
-    fetchUsage();
-  }, [activeTab, usageDateRange]);
-
-  const handleCustomDateChange = (type: 'start' | 'end', value: string) => {
-    if (!value || !isValid(parseISO(value))) return;
-    const today = format(new Date(), 'yyyy-MM-dd');
-    if (type === 'start' && value > usageDateRange.end) { toast.error('시작 날짜는 종료 날짜보다 늦을 수 없습니다.'); return; }
-    if (type === 'end' && value < usageDateRange.start) { toast.error('종료 날짜는 시작 날짜보다 빠를 수 없습니다.'); return; }
-    if (value > today) { toast.error('미래 날짜는 조회할 수 없습니다.'); return; }
-    setUsageDateRange(prev => ({ ...prev, [type]: value }));
-  };
-
-  const setQuickRange = (days: number | 'month') => {
-    let start: Date;
-    const end = new Date();
-    if (days === 'month') start = startOfMonth(new Date());
-    else start = subDays(new Date(), days - 1);
-    setUsageDateRange({ start: format(start, 'yyyy-MM-dd'), end: format(end, 'yyyy-MM-dd') });
-  };
-
-  // --- 3. API Keys & Devices State ---
+  // --- 2. API Keys & Devices State ---
   const [apiKeys, setApiKeys] = useState<any[]>([]);
   const [isLoadingKeys, setIsLoadingKeys] = useState(false);
   const [devices, setDevices] = useState<any[]>([]);
@@ -145,7 +120,7 @@ export default function ProfilePage() {
         setIsLoadingKeys(true);
         try {
           const token = localStorage.getItem('access_token');
-          const response = await fetch('http://localhost:8001/api/v1/keys', { headers: { 'Authorization': `Bearer ${token}` } });
+          const response = await fetch('http://localhost:8000/api/v1/keys', { headers: { 'Authorization': `Bearer ${token}` } });
           const data = await response.json();
           if (Array.isArray(data)) setApiKeys(data);
         } catch (error) { console.error("Keys Fetch Error", error); }
@@ -162,7 +137,7 @@ export default function ProfilePage() {
         setIsLoadingDevices(true);
         try {
           const token = localStorage.getItem('access_token');
-          const response = await fetch('http://localhost:8001/api/v1/devices/', { headers: { 'Authorization': `Bearer ${token}` } });
+          const response = await fetch('http://localhost:8000/api/v1/devices/', { headers: { 'Authorization': `Bearer ${token}` } });
           const data = await response.json();
           if (Array.isArray(data)) setDevices(data);
         } catch (error) { console.error("Devices Fetch Error", error); }
@@ -174,35 +149,17 @@ export default function ProfilePage() {
 
   const isVerified = user?.verification_status === 'verified';
 
-  // --- 4. Modals & Handlers ---
+  // --- 3. Modals & Handlers ---
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
   const [deletePassword, setDeletePassword] = useState('');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [passwordStep, setPasswordStep] = useState<'verify' | 'reset'>('verify');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isProcessingPassword, setIsProcessingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [certFile, setCertFile] = useState<File | null>(null);
-
-  // --- 5. My Inquiries States ---
-  const [myTickets, setMyTickets] = useState<any[]>([]);
-  const [isLoadingInquiries, setIsLoadingInquiries] = useState(false);
-
-  useEffect(() => {
-    if (activeTab === 'my_inquiries') {
-      const fetchMyTickets = async () => {
-        setIsLoadingInquiries(true);
-        try {
-          const token = localStorage.getItem('access_token');
-          const res = await fetch('http://localhost:8001/api/v1/support/tickets/me', { headers: { 'Authorization': `Bearer ${token}` } });
-          const data = await res.json();
-          if (data.success) setMyTickets(data.tickets);
-        } catch (e) { console.error(e); }
-        finally { setIsLoadingInquiries(false); }
-      };
-      fetchMyTickets();
-    }
-  }, [activeTab]);
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState<any>({ title: '', message: '', onConfirm: () => { }, type: 'blue' });
@@ -211,6 +168,7 @@ export default function ProfilePage() {
     setConfirmConfig({ title, message, onConfirm, type });
     setShowConfirmModal(true);
   };
+
 
   const handleLogout = useCallback(() => { logout(); navigate('/'); }, [logout, navigate]);
 
@@ -227,20 +185,70 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePasswordResetComplete = () => {
-    if (newPassword.length < 8) { toast.error('비밀번호는 8자 이상이어야 합니다.'); return; }
-    if (newPassword !== newPasswordConfirm) { toast.error('비밀번호가 일치하지 않습니다.'); return; }
-    toast.success('비밀번호가 성공적으로 변경되었습니다.');
-    setShowPasswordModal(false);
-    setIsEmailVerified(false);
-    setNewPassword('');
-    setNewPasswordConfirm('');
+  const { requestPasswordReset, resetPassword } = useAuth();
+  const validatePassword = (pw: string) => {
+    const regex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+    return regex.test(pw);
+  };
+
+  const handleSendCode = async () => {
+    if (!user?.email) return;
+    setIsProcessingPassword(true);
+    try {
+      const res = await requestPasswordReset(user.email);
+      if (res.success) {
+        toast.success('이메일로 인증 코드가 발송되었습니다.');
+      } else {
+        toast.error(res.detail || '코드 발송 실패');
+      }
+    } catch (e) {
+      toast.error('코드 발송 중 오류가 발생했습니다.');
+    } finally {
+      setIsProcessingPassword(false);
+    }
+  };
+
+  const handleVerifyCodeNext = () => {
+    if (verificationCode.length !== 6) {
+      toast.error('6자리 인증 코드를 입력해주세요.');
+      return;
+    }
+    setPasswordStep('reset');
+  };
+
+  const handlePasswordResetComplete = async () => {
+    if (!validatePassword(newPassword)) {
+      toast.error('비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다.');
+      return;
+    }
+    if (newPassword !== newPasswordConfirm) {
+      toast.error('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+    setIsProcessingPassword(true);
+    try {
+      const res = await resetPassword(user!.email, verificationCode, newPassword);
+      if (res.success) {
+        toast.success('비밀번호가 성공적으로 변경되었습니다.');
+        setShowPasswordModal(false);
+        setPasswordStep('verify');
+        setVerificationCode('');
+        setNewPassword('');
+        setNewPasswordConfirm('');
+      } else {
+        toast.error(res.detail || '비밀번호 변경 실패');
+      }
+    } catch (e) {
+      toast.error('비밀번호 변경 중 오류가 발생했습니다.');
+    } finally {
+      setIsProcessingPassword(false);
+    }
   };
 
   const fetchKeys = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch('http://localhost:8001/api/v1/keys', { headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch('http://localhost:8000/api/v1/keys', { headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
       if (Array.isArray(data)) setApiKeys(data);
     } catch (e) { }
@@ -249,7 +257,7 @@ export default function ProfilePage() {
   const handleGenerateKey = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch('http://localhost:8001/api/v1/keys/generate', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch('http://localhost:8000/api/v1/keys/generate', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
       if (res.ok) {
         toast.success('새 API 키가 생성되었습니다.');
         const data = await res.json();
@@ -266,7 +274,7 @@ export default function ProfilePage() {
     triggerConfirm('API 키 폐기', '해당 키를 영구 삭제합니다. 외부 서비스 연동이 끊어질 수 있습니다. 계속하시겠습니까?', async () => {
       try {
         const token = localStorage.getItem('access_token');
-        const res = await fetch(`http://localhost:8001/api/v1/keys/${keyId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`http://localhost:8000/api/v1/keys/${keyId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
         if (res.ok) { toast.success('API 키가 즉시 폐기되었습니다.'); fetchKeys(); }
         else { const data = await res.json(); toast.error(data.detail || '삭제 실패'); }
       } catch (e) { toast.error('오류가 발생했습니다.'); }
@@ -303,12 +311,8 @@ export default function ProfilePage() {
         return <UserPaymentTab isLoadingPayment={isLoadingPayment} paymentInfo={paymentInfo} isVerified={isVerified} triggerConfirm={triggerConfirm} navigate={navigate} refetchPayment={() => fetchPayment(true)} />;
       case 'api':
         return <UserAPIKeyTab user={user} apiKeys={apiKeys} isLoadingKeys={isLoadingKeys} handleGenerateKey={handleGenerateKey} handleDeleteKey={handleDeleteKey} setActiveTab={setActiveTab} />;
-      case 'usage':
-        return <UserUsageTab isLoadingUsage={isLoadingUsage} usageStats={usageStats} usageDateRange={usageDateRange} handleCustomDateChange={handleCustomDateChange} setQuickRange={setQuickRange} selectedMetric={selectedMetric} setSelectedMetric={setSelectedMetric} />;
       case 'devices':
         return <UserDeviceTab isLoadingDevices={isLoadingDevices} devices={devices} />;
-      case 'my_inquiries':
-        return <UserInquiriesTab isLoadingInquiries={isLoadingInquiries} myTickets={myTickets} />;
       default:
         return null;
     }
@@ -318,10 +322,7 @@ export default function ProfilePage() {
     { id: 'account', label: '계정 설정', icon: User },
     { id: 'billing', label: '요금제 정보', icon: CreditCard },
     { id: 'api', label: 'API Key 관리', icon: Key },
-    { id: 'usage', label: '실시간 사용량', icon: Activity },
     { id: 'devices', label: '기기 등록 현황', icon: Monitor },
-    { id: 'my_inquiries', label: '내 문의 내역', icon: MessageSquare },
-    { id: 'downloads', label: '감리 리포트 다운로드', icon: FileDown },
   ];
 
   return (
@@ -340,9 +341,9 @@ export default function ProfilePage() {
             <span className="font-bold text-lg text-zinc-900">마이페이지</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm font-bold text-zinc-700">{user?.companyName || 'N/A'}</span>
-            <button onClick={handleLogout} className="flex items-center gap-2 text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
-              <LogOut className="w-4 h-4" /> 로그아웃
+            <span className="text-sm font-bold text-zinc-700">{user?.companyName ? `${user.companyName}님` : 'N/A'}</span>
+            <button onClick={handleLogout} className="text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+              로그아웃
             </button>
           </div>
         </div>
@@ -354,11 +355,10 @@ export default function ProfilePage() {
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                activeTab === tab.id
-                  ? 'bg-blue-50 text-[#0071e3] font-semibold border-l-2 border-[#0071e3] pl-3.5'
-                  : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === tab.id
+                ? 'bg-blue-50 text-[#0071e3] font-semibold border-l-2 border-[#0071e3] pl-3.5'
+                : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+                }`}
             >
               <tab.icon className="w-5 h-5 shrink-0" />{tab.label}
             </button>
@@ -390,16 +390,78 @@ export default function ProfilePage() {
       <AnimatePresence>
         {showPasswordModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)} />
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setShowPasswordModal(false); setPasswordStep('verify'); setVerificationCode(''); }} />
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-md bg-white border border-zinc-200 rounded-2xl shadow-2xl p-8 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold text-zinc-900">비밀번호 변경</h3>
-                <button onClick={() => setShowPasswordModal(false)} className="p-1.5 hover:bg-zinc-100 rounded-lg transition-colors text-zinc-500"><X className="w-4 h-4" /></button>
+                <button onClick={() => { setShowPasswordModal(false); setPasswordStep('verify'); setVerificationCode(''); }} className="p-1.5 hover:bg-zinc-100 rounded-lg transition-colors text-zinc-500"><X className="w-4 h-4" /></button>
               </div>
               <div className="space-y-4">
-                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 p-3 rounded-xl text-sm text-zinc-900 focus:border-[#0071e3] focus:ring-1 focus:ring-[#0071e3]/20 outline-none transition-all" placeholder="새 비밀번호" />
-                <input type="password" value={newPasswordConfirm} onChange={(e) => setNewPasswordConfirm(e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 p-3 rounded-xl text-sm text-zinc-900 focus:border-[#0071e3] focus:ring-1 focus:ring-[#0071e3]/20 outline-none transition-all" placeholder="비밀번호 확인" />
-                <button onClick={handlePasswordResetComplete} className="w-full py-3 bg-[#0071e3] text-white font-bold rounded-xl hover:brightness-110 transition-all">변경 완료</button>
+                {passwordStep === 'verify' ? (
+                  <>
+                    <div className="space-y-2">
+                      <p className="text-sm text-zinc-500 font-medium px-1">등록된 이메일로 인증 코드를 발송합니다.</p>
+                      <div className="flex gap-2">
+                        <div className="flex-1 bg-zinc-50 border border-zinc-200 p-3 rounded-xl text-sm text-zinc-400 select-none">
+                          {user?.email}
+                        </div>
+                        <button
+                          onClick={handleSendCode}
+                          disabled={isProcessingPassword}
+                          className="px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold rounded-xl text-sm transition-colors disabled:opacity-50"
+                        >
+                          코드 발송
+                        </button>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value)}
+                      className="w-full bg-zinc-50 border border-zinc-200 p-3 rounded-xl text-sm text-zinc-900 focus:border-[#0071e3] focus:ring-1 focus:ring-[#0071e3]/20 outline-none transition-all"
+                      placeholder="인증 코드 6자리"
+                    />
+                    <button
+                      onClick={handleVerifyCodeNext}
+                      className="w-full py-3 bg-[#0071e3] text-white font-bold rounded-xl hover:brightness-110 transition-all"
+                    >
+                      다음 단계
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full bg-zinc-50 border border-zinc-200 p-3 rounded-xl text-sm text-zinc-900 focus:border-[#0071e3] focus:ring-1 focus:ring-[#0071e3]/20 outline-none transition-all"
+                      placeholder="새 비밀번호 (영문+숫자+특수문자 8자 이상)"
+                    />
+                    <input
+                      type="password"
+                      value={newPasswordConfirm}
+                      onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                      className="w-full bg-zinc-50 border border-zinc-200 p-3 rounded-xl text-sm text-zinc-900 focus:border-[#0071e3] focus:ring-1 focus:ring-[#0071e3]/20 outline-none transition-all"
+                      placeholder="비밀번호 확인"
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => setPasswordStep('verify')}
+                        className="flex-1 py-3 bg-zinc-100 text-zinc-600 font-bold rounded-xl hover:bg-zinc-200 transition-colors"
+                      >
+                        이전
+                      </button>
+                      <button
+                        onClick={handlePasswordResetComplete}
+                        disabled={isProcessingPassword}
+                        className="flex-2 py-3 bg-[#0071e3] text-white font-bold rounded-xl hover:brightness-110 transition-all disabled:opacity-50"
+                      >
+                        {isProcessingPassword ? '변경 중...' : '변경 완료'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </motion.div>
           </div>

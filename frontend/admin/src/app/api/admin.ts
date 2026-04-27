@@ -8,9 +8,17 @@ Modification History:
     - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경 
 */
 
-const BASE_URL = 'http://localhost:8001/api/v1/admin';
+const BASE_URL = 'http://localhost:8000/api/v1/admin';
 
 export const adminApi = {
+    // PIN 검증 (로그인과 동일하게 /pin-login 활용)
+    verifyPin: (pin: string) =>
+        fetch(`${BASE_URL}/pin-login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin })
+        }),
+
     // 가입 승인 대기열
     getPendingApprovals: (token: string) =>
         fetch(`${BASE_URL}/pending-approvals`, { headers: { 'Authorization': `Bearer ${token}` } }),
@@ -101,5 +109,13 @@ export const adminApi = {
         fetch(`${BASE_URL}/documents/${docId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
-        })
+        }),
+
+    // 국세청 사업자등록 진위확인
+    verifyBusiness: (token: string, b_no: string) =>
+        fetch(`${BASE_URL}/verify-business`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ b_no })
+        }),
 };

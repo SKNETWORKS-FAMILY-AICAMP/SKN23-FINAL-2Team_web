@@ -154,7 +154,7 @@ export const UserPaymentTab: React.FC<BillingTabProps> = ({
                   '구독 유지',
                   '해지 예약을 취소하고 구독을 유지하시겠습니까?',
                   async () => {
-                    const res = await fetch('http://localhost:8001/api/v1/payments/resume', {
+                    const res = await fetch('http://localhost:8000/api/v1/payments/resume', {
                       method: 'POST',
                       headers: { 'Authorization': `Bearer ${token}` }
                     });
@@ -170,7 +170,7 @@ export const UserPaymentTab: React.FC<BillingTabProps> = ({
                   '구독 해지',
                   '정말 구독을 해지하시겠습니까? 해지 후에도 현재 주기가 끝날 때까지는 이용 가능합니다.',
                   async () => {
-                    const res = await fetch('http://localhost:8001/api/v1/payments/cancel', {
+                    const res = await fetch('http://localhost:8000/api/v1/payments/cancel', {
                       method: 'POST',
                       headers: { 'Authorization': `Bearer ${token}` }
                     });
