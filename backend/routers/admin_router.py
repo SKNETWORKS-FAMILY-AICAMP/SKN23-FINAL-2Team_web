@@ -14,6 +14,7 @@ from typing import List, Optional
 from jose import jwt, JWTError
 import datetime
 import uuid
+import os
 
 from ..models import models, schemas
 from ..core import auth_utils
@@ -24,15 +25,38 @@ from ..services.s3_service import S3Service
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
-# 관리자 권한 확인 의존성
+# ── PIN 로그인 ─────────────────────────────────────────────
+@router.post("/pin-login")
+def pin_login(payload: dict = Body(...)):
+    """관리자 PIN 번호로 로그인 — JWT 토큰 발급"""
+    pin = str(payload.get("pin", "")).strip()
+    admin_pin = str(os.getenv("ADMIN_PIN", "")).strip()
+
+    if not admin_pin:
+        raise HTTPException(status_code=500, detail="서버에 ADMIN_PIN이 설정되지 않았습니다.")
+    if pin != admin_pin:
+        raise HTTPException(status_code=401, detail="PIN이 올바르지 않습니다.")
+
+    token = auth_utils.create_access_token(
+        data={"sub": "system_admin", "auth_type": "pin"}
+    )
+    return {"success": True, "token": token}
+
+# ── 관리자 권한 확인 의존성 ────────────────────────────────
 def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, auth_utils.SECRET_KEY, algorithms=[auth_utils.ALGORITHM])
+        auth_type: str = payload.get("auth_type")
+
+        # PIN 로그인으로 발급된 토큰
+        if auth_type == "pin" and payload.get("sub") == "system_admin":
+            return models.SystemAdmin(id="pin_admin", email="system_admin")
+
+        # 기존 DB 기반 토큰
         email: str = payload.get("sub")
         if email is None:
             raise HTTPException(status_code=401, detail="Invalid token")
-        
         admin = db.query(models.SystemAdmin).filter(models.SystemAdmin.email == email).first()
         if not admin:
             raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
