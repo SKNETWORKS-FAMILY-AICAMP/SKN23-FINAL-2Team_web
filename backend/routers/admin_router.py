@@ -19,6 +19,7 @@ import os
 from ..models import models, schemas
 from ..core import auth_utils
 from ..core.database import get_db
+from ..core.plan_utils import get_effective_max_seats
 from ..services.email_service import EmailService
 from ..core.dependencies import security
 from ..services.s3_service import S3Service
@@ -47,22 +48,42 @@ def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(securi
     token = credentials.credentials
     try:
         payload = jwt.decode(token, auth_utils.SECRET_KEY, algorithms=[auth_utils.ALGORITHM])
-        auth_type: str = payload.get("auth_type")
+        
+        # access 토큰 타입 검증 추가
+        if payload.get("type") != "access":
+            print(f"[Admin Auth] Invalid token type: {payload.get('type')}")
+            raise HTTPException(status_code=401, detail="Invalid token type")
 
-        # PIN 로그인으로 발급된 토큰
-        if auth_type == "pin" and payload.get("sub") == "system_admin":
+        auth_type: str = payload.get("auth_type")
+        sub: str = payload.get("sub")
+
+        # PIN 로그인으로 발급된 토큰 (시스템 관리자)
+        if auth_type == "pin" and sub == "system_admin":
             return models.SystemAdmin(id="00000000-0000-0000-0000-000000000000", email="system_admin")
 
-        # 기존 DB 기반 토큰
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        admin = db.query(models.SystemAdmin).filter(models.SystemAdmin.email == email).first()
+        # 기존 DB 기반 토큰 (DB 관리자)
+        if sub is None:
+            print("[Admin Auth] Token payload missing 'sub'")
+            raise HTTPException(status_code=401, detail="Invalid token: missing subject")
+            
+        admin = db.query(models.SystemAdmin).filter(models.SystemAdmin.email == sub).first()
         if not admin:
+            print(f"[Admin Auth] Admin not found in DB: {sub}")
             raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
         return admin
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+
+    except jwt.ExpiredSignatureError:
+        print("[Admin Auth] Token has expired")
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.JWTClaimsError:
+        print("[Admin Auth] Token claims are invalid")
+        raise HTTPException(status_code=401, detail="Invalid token claims")
+    except JWTError as e:
+        print(f"[Admin Auth] JWT Error: {str(e)}")
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+    except Exception as e:
+        print(f"[Admin Auth] Unexpected Error: {str(e)}")
+        raise HTTPException(status_code=401, detail="Authentication failed")
 
 @router.get("/pending-approvals")
 def get_pending_approvals(db: Session = Depends(get_db), current_admin: models.SystemAdmin = Depends(get_current_admin)):
@@ -157,7 +178,7 @@ def get_all_organizations(
                 "payment_method": last_payment.payment_method if last_payment else "N/A",
                 "pg_provider": last_payment.pg_provider if last_payment else"N/A",
                 "pg_transaction_id": last_payment.pg_transaction_id if last_payment else "N/A",
-                "total_seats": org.max_seats or 0
+                "total_seats": get_effective_max_seats(db, org)
             }
         })
     return results

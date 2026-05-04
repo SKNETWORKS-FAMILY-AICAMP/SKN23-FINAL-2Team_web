@@ -35,6 +35,12 @@ export const authStorage = {
       localStorage.setItem(KEYS.USER_INFO, JSON.stringify({ ...user, plan: planName }));
     }
   },
+  updateUserInfo: (updates: Record<string, unknown>) => {
+    const user = authStorage.getUserInfo();
+    if (user) {
+      localStorage.setItem(KEYS.USER_INFO, JSON.stringify({ ...user, ...updates }));
+    }
+  },
   clear: () => {
     localStorage.removeItem(KEYS.ACCESS_TOKEN);
     localStorage.removeItem(KEYS.REFRESH_TOKEN);

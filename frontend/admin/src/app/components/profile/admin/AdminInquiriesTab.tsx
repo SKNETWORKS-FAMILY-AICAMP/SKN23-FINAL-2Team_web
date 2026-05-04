@@ -9,7 +9,7 @@ Modification History:
     - 2026-04-27 : 라이트 테마 전환, getAdminToken으로 수정
 */
 import React, { useState } from 'react';
-import { MessageSquare, Send, CheckCircle2, Clock, ChevronRight } from 'lucide-react';
+import { MessageSquare, Send, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { adminApi } from '@/app/api/admin';
 import { getAdminToken } from '@/app/context/AdminAuthContext';
@@ -75,40 +75,48 @@ export const AdminInquiriesTab = ({ isLoading, inquiries, onRefresh }: Props) =>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
         {/* 문의 목록 (왼쪽) */}
-        <div className="lg:col-span-2 space-y-2 max-h-[620px] overflow-y-auto pr-1">
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm max-h-[620px] overflow-y-auto">
           {!Array.isArray(inquiries) || inquiries.length === 0 ? (
-            <div className="text-center py-16 border border-dashed border-slate-200 rounded-xl bg-white">
+            <div className="text-center py-16">
               <MessageSquare className="w-8 h-8 text-slate-300 mx-auto mb-3" />
               <p className="text-sm text-slate-400">접수된 문의가 없습니다.</p>
             </div>
           ) : (
-            inquiries.map((inquiry) => (
-              <div
-                key={inquiry.id}
-                onClick={() => handleSelectInquiry(inquiry)}
-                className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                  selectedInquiry?.id === inquiry.id
-                    ? 'bg-blue-50 border-[#1e40af]/30 shadow-sm'
-                    : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
-                    inquiry.status === 'answered'
-                      ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                      : 'bg-amber-50 text-amber-600 border border-amber-200'
-                  }`}>
-                    {inquiry.status === 'answered' ? '답변 완료' : '대기 중'}
-                  </span>
-                  <ChevronRight className={`w-4 h-4 transition-colors ${selectedInquiry?.id === inquiry.id ? 'text-[#1e40af]' : 'text-slate-300'}`} />
-                </div>
-                <h4 className="text-sm font-bold text-slate-900 mb-1 line-clamp-1">{inquiry.title}</h4>
-                <p className="text-xs text-slate-500">{inquiry.company_name} · {inquiry.inquiry_type}</p>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  {format(new Date(inquiry.created_at), 'yyyy.MM.dd HH:mm')}
-                </p>
+            <>
+              <div className="grid grid-cols-12 px-4 py-3 bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+                <div className="col-span-5">제목</div>
+                <div className="col-span-3">기업</div>
+                <div className="col-span-2">유형</div>
+                <div className="col-span-2 text-right">상태</div>
               </div>
-            ))
+              <div className="divide-y divide-slate-100">
+                {inquiries.map((inquiry) => (
+                  <button
+                    key={inquiry.id}
+                    onClick={() => handleSelectInquiry(inquiry)}
+                    className={`grid w-full grid-cols-12 items-center px-4 py-3.5 text-left transition-colors ${
+                      selectedInquiry?.id === inquiry.id ? 'bg-blue-50' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="col-span-5 min-w-0">
+                      <p className="truncate text-sm font-bold text-slate-900">{inquiry.title}</p>
+                      <p className="text-[10px] text-slate-400">{format(new Date(inquiry.created_at), 'yyyy.MM.dd HH:mm')}</p>
+                    </div>
+                    <div className="col-span-3 truncate text-xs text-slate-500">{inquiry.company_name}</div>
+                    <div className="col-span-2 truncate text-xs text-slate-500">{inquiry.inquiry_type}</div>
+                    <div className="col-span-2 text-right">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        inquiry.status === 'answered'
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                          : 'bg-amber-50 text-amber-600 border border-amber-200'
+                      }`}>
+                        {inquiry.status === 'answered' ? '완료' : '대기'}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
           )}
         </div>
 

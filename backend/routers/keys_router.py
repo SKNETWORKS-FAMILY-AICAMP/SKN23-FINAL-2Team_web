@@ -57,7 +57,7 @@ def delete_api_key(key_id: str, current_org: models.Organization = Depends(ensur
         
     # Hard Delete associated data
     db.query(models.Device).filter(models.Device.license_id == key_id).delete()
-    db.query(models.APIUsageLog).filter(models.APIUsageLog.license_id == key_id).delete()
+    db.query(models.ApiUsageLog).filter(models.ApiUsageLog.license_id == key_id).delete()
     db.query(models.Payment).filter(models.Payment.generated_license_id == key_id).update({"generated_license_id": None})
     
     db.delete(key_to_delete)

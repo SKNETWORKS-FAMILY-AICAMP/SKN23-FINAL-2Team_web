@@ -23,13 +23,14 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         body: JSON.stringify({ pin }),
       });
       const data = await response.json();
-      if (data?.success) {
-        localStorage.setItem(ADMIN_TOKEN_KEY, data.token ?? 'admin-authenticated');
+      if (data?.success && data?.token) {
+        localStorage.setItem(ADMIN_TOKEN_KEY, data.token);
         setIsAdminAuthenticated(true);
         return { success: true };
       }
-      return { success: false, message: data?.message ?? 'PIN이 올바르지 않습니다.' };
-    } catch {
+      return { success: false, message: data?.detail || data?.message || 'PIN이 올바르지 않습니다.' };
+    } catch (err) {
+      console.error('[Admin Auth] Login Error:', err);
       return { success: false, message: '서버 연결에 실패했습니다.' };
     }
   };

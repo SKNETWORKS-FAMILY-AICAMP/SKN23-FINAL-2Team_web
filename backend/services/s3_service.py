@@ -8,6 +8,7 @@ import os
 import boto3
 from datetime import datetime
 from fastapi import HTTPException
+from urllib.parse import urlparse, unquote
 
 class S3Service:
     client = boto3.client(
@@ -18,6 +19,24 @@ class S3Service:
     )
     BUCKET_NAME = os.getenv("AWS_S3_BUCKET_NAME", "skn23-final-2team")
     REGION = os.getenv("AWS_REGION", "ap-northeast-2")
+
+    @classmethod
+    def _extract_s3_key(cls, s3_url_or_key: str):
+        if not s3_url_or_key:
+            return None
+
+        parsed = urlparse(s3_url_or_key)
+        if parsed.scheme == "s3":
+            return unquote(parsed.path.lstrip("/"))
+
+        if parsed.scheme in {"http", "https"} and parsed.netloc:
+            return unquote(parsed.path.lstrip("/"))
+
+        prefix = f"https://{cls.BUCKET_NAME}.s3.{cls.REGION}.amazonaws.com/"
+        if s3_url_or_key.startswith(prefix):
+            return unquote(s3_url_or_key.replace(prefix, ""))
+
+        return s3_url_or_key
 
     @classmethod
     async def upload_certificate(cls, email: str, file):
@@ -42,11 +61,7 @@ class S3Service:
         if not s3_url_or_key:
             return None
         
-        # 전체 URL이 들어온 경우 Key만 추출
-        s3_key = s3_url_or_key
-        prefix = f"https://{cls.BUCKET_NAME}.s3.{cls.REGION}.amazonaws.com/"
-        if s3_url_or_key.startswith(prefix):
-            s3_key = s3_url_or_key.replace(prefix, "")
+        s3_key = cls._extract_s3_key(s3_url_or_key)
         
         try:
             url = cls.client.generate_presigned_url(
@@ -81,10 +96,7 @@ class S3Service:
         """S3 파일 삭제"""
         if not s3_url: return
         
-        s3_key = s3_url
-        prefix = f"https://{cls.BUCKET_NAME}.s3.{cls.REGION}.amazonaws.com/"
-        if s3_url.startswith(prefix):
-            s3_key = s3_url.replace(prefix, "")
+        s3_key = cls._extract_s3_key(s3_url)
             
         try:
             cls.client.delete_object(Bucket=cls.BUCKET_NAME, Key=s3_key)

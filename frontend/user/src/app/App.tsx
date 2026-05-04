@@ -13,7 +13,6 @@ Modification History:
  */
 import { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'motion/react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
 import {
@@ -26,14 +25,15 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 
-const DEMO_VIDEO_URL = 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260416_101255_3099d3e4-d0cf-4e59-9666-97fbf521ac71.mp4';
-
 import { LandingNav } from '@/app/components/landing/LandingNav';
 import { LandingFeatures } from '@/app/components/landing/LandingFeatures';
 import { LandingWorkflow } from '@/app/components/landing/LandingWorkflow';
 import { LandingPricing } from '@/app/components/landing/LandingPricing';
 import { LandingFAQ } from '@/app/components/landing/LandingFAQ';
 import { LandingFooter } from '@/app/components/landing/LandingFooter';
+import landingMainImage from '@/assets/landing-main.png';
+
+const HERO_BACKGROUND_IMAGE = landingMainImage;
 
 const domains = [
   {
@@ -90,7 +90,6 @@ const domains = [
 export default function App() {
   const [activeDomain, setActiveDomain] = useState(0);
   const { scrollYProgress } = useScroll();
-  const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
 
   const heroOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
@@ -120,20 +119,17 @@ export default function App() {
       <div className="h-[1000vh] relative z-10">
         {/* HERO */}
         <section className="sticky top-0 h-screen flex items-center justify-center overflow-hidden bg-black">
-          {/* Video background */}
-          <video
+          <img
             className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
-            src={DEMO_VIDEO_URL}
-            autoPlay
-            loop
-            muted
-            playsInline
+            src={HERO_BACKGROUND_IMAGE}
+            alt=""
+            aria-hidden="true"
           />
-          {/* Dark gradient overlay — top/bottom만 어둡게, 중앙은 투명 */}
-          <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-b from-black/60 via-black/10 to-black/70" />
+          <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-b from-black/70 via-black/35 to-black/80" />
+          <div className="absolute inset-0 z-10 pointer-events-none bg-black/20" />
           {/* 좌우 엣지 페이드 */}
           <div className="absolute inset-0 z-10 pointer-events-none"
-            style={{ boxShadow: 'inset 80px 0 80px -40px rgba(0,0,0,0.5), inset -80px 0 80px -40px rgba(0,0,0,0.5)' }}
+            style={{ boxShadow: 'inset 120px 0 120px -48px rgba(0,0,0,0.72), inset -120px 0 120px -48px rgba(0,0,0,0.72)' }}
           />
 
           <motion.div
@@ -143,37 +139,25 @@ export default function App() {
 
 
             <motion.h1
-              className="text-6xl md:text-8xl font-extrabold tracking-tighter mb-8 leading-[0.9]"
+              className="text-5xl md:text-7xl font-extrabold tracking-tighter mb-8 leading-[1.02]"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <span
-                className="text-transparent bg-clip-text drop-shadow-lg"
-                style={{
-                  backgroundImage: 'linear-gradient(90deg, #ffffff, #e0f2fe, #bae6fd)',
-                }}
-              >PRECISION</span> <br />
-              <span
-                className="text-transparent bg-clip-text"
-                style={{
-                  backgroundImage: 'linear-gradient(90deg, #38bdf8, #818cf8, #c084fc, #fb7185, #38bdf8, #34d399, #38bdf8)',
-                  backgroundSize: '300% 100%',
-                  animation: 'gradientShift 5s linear infinite',
-                }}
-              >
+              <span className="text-white drop-shadow-[0_8px_32px_rgba(0,0,0,0.72)]">PRECISION</span> <br />
+              <span className="text-white drop-shadow-[0_8px_32px_rgba(0,0,0,0.72)]">
                 WITHOUT LIMITS
               </span>
             </motion.h1>
 
             <motion.p
-              className="text-lg md:text-xl text-white/75 mb-12 max-w-2xl mx-auto leading-relaxed drop-shadow"
+              className="text-base md:text-lg text-white/78 mb-12 max-w-2xl mx-auto leading-relaxed drop-shadow"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              도면의 모든 선이 법규와 완벽하게 일치합니다.<br />
-              에이전트가 탐지하고, 당신이 승인하면, 즉시 수정됩니다.
+              도면의 충돌, 치수 오류, 기준 위반을 실시간으로 탐지합니다.<br />
+              검토 결과와 수정 제안을 확인하고 필요한 항목만 바로 적용하세요.
             </motion.p>
 
             {!isAuthenticated && (
@@ -185,15 +169,9 @@ export default function App() {
               >
                 <button
                   onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }))}
-                  className="relative text-white px-12 py-4 rounded-xl font-bold text-base shadow-2xl hover:scale-105 transition-all overflow-hidden"
-                  style={{
-                    backgroundImage: 'linear-gradient(90deg, #38bdf8, #818cf8, #c084fc)',
-                    backgroundSize: '200% 100%',
-                    animation: 'gradientShift 4s linear infinite',
-                    boxShadow: '0 8px 32px rgba(56,189,248,0.35)',
-                  }}
+                  className="relative bg-white text-zinc-950 px-10 py-4 rounded-xl font-bold text-base shadow-[0_16px_48px_rgba(0,0,0,0.4)] hover:bg-white/90 hover:scale-105 transition-all overflow-hidden"
                 >
-                  시작하기
+                  도면 분석 시작하기
                 </button>
               </motion.div>
             )}
