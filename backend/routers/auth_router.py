@@ -16,6 +16,7 @@ from jose import jwt
 from ..models import models, schemas
 from ..core import auth_utils as auth
 from ..core import database
+from ..core.plan_utils import get_effective_max_seats
 from ..core.database import get_db
 from ..core.dependencies import get_current_user
 from ..services.email_service import EmailService
@@ -163,7 +164,7 @@ def login(login_data: schemas.OrgLogin, db: Session = Depends(get_db)):
                 "orgId": str(org.id),
                 "verification_status": org.verification_status,
                 "plan": org.plan,
-                "max_seats": org.max_seats,
+                "max_seats": get_effective_max_seats(db, org),
                 "business_reg_s3_url": org.business_reg_s3_url
             }
         }
@@ -269,7 +270,7 @@ async def get_me(
             "orgId": str(current_user.id),
             "verification_status": current_user.verification_status,
             "plan": current_user.plan,
-            "max_seats": current_user.max_seats,
+            "max_seats": get_effective_max_seats(db, current_user),
             "business_reg_s3_url": current_user.business_reg_s3_url,
         }
     }

@@ -15,6 +15,7 @@ import { motion } from 'motion/react';
 import { CheckCircle, Loader2, Key, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/app/context/AuthContext';
+import { API_BASE_URL } from '@/app/api/client';
 
 export default function PaymentSuccessPage() {
   const [searchParams] = useSearchParams();
@@ -40,7 +41,7 @@ export default function PaymentSuccessPage() {
         const token = localStorage.getItem('access_token');
         const pending_added_seats = localStorage.getItem('pending_added_seats') || '0';
 
-        const response = await fetch('http://localhost:8000/api/v1/payments/toss-confirm', {
+        const response = await fetch(`${API_BASE_URL}/payments/toss-confirm`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

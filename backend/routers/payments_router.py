@@ -17,9 +17,28 @@ import base64
 from ..models import models
 from ..core.database import get_db
 from ..core.dependencies import get_current_user, ensure_verified
+from ..core.plan_utils import apply_plan_seats, calculate_plan_amount, get_effective_max_seats, get_plan_base_seats, list_plan_definitions
 from ..services.email_service import EmailService
 
 router = APIRouter(prefix="/api/v1/payments", tags=["payments"])
+
+@router.get("/plans")
+def get_payment_plans(db: Session = Depends(get_db)):
+    return {
+        "success": True,
+        "plans": [
+            {
+                "plan_code": plan["plan_code"],
+                "plan_name": plan["plan_name"],
+                "base_seats": plan["base_seats"],
+                "base_price": int(plan["base_price"]),
+                "addon_price_per_seat": int(plan["addon_price_per_seat"]),
+                "daily_token_limit": plan.get("daily_token_limit"),
+                "per_seat_token_bonus": plan.get("per_seat_token_bonus", 0),
+            }
+            for plan in list_plan_definitions(db)
+        ],
+    }
 
 @router.get("/current")
 def get_current_payment(current_org: models.Organization =Depends(get_current_user), db: Session = Depends(get_db)):
@@ -43,12 +62,16 @@ def get_current_payment(current_org: models.Organization =Depends(get_current_us
         delta = end_date - datetime.now(timezone.utc)
         remaining_days = max(0, delta.days)
 
-    amount = last_payment.amount if last_payment else (300000 if current_org.plan == "Basic" else 100000)
+    added_seats = int(last_payment.added_seats or 0) if last_payment else 0
+    amount = last_payment.amount if last_payment else calculate_plan_amount(db, current_org.plan, added_seats)
     pg_provider = last_payment.pg_provider if last_payment else "TossPayments"
     
     return {
         "success": True,
         "plan_name": current_org.plan,
+        "max_seats": get_effective_max_seats(db, current_org),
+        "seats": last_payment.seats if last_payment else current_org.max_seats,
+        "added_seats": added_seats,
         "amount": amount,
         "payment_method": payment_method,
         "pg_provider": pg_provider,
@@ -88,15 +111,68 @@ def resume_subscription(current_org: models.Organization = Depends(get_current_u
     db.commit()
     return {"success": True, "message": "구독 유지가 확정되었습니다."}
 
+@router.post("/activate")
+def activate_subscription(payload: dict, current_org: models.Organization = Depends(get_current_user), db: Session = Depends(get_db)):
+    """토스 없이 직접 구독 활성화 (테스트/데모용)"""
+    plan_name = payload.get("plan_name")
+    if not plan_name or plan_name not in ("Basic", "Pro", "Enterprise"):
+        raise HTTPException(status_code=400, detail="유효하지 않은 플랜입니다.")
+
+    added_seats = max(0, int(payload.get("added_seats", 0) or 0))
+    amount = calculate_plan_amount(db, plan_name, added_seats)
+    total_seats = get_plan_base_seats(db, plan_name) + added_seats
+
+    now = datetime.now(timezone.utc)
+    billing_end = now + timedelta(days=365)
+
+    existing_key = db.query(models.License).filter(
+        models.License.org_id == current_org.id,
+        models.License.status == "active"
+    ).first()
+    auto_key = None
+    if not existing_key:
+        auto_key = f"sk-{uuid.uuid4()}"
+        db.add(models.License(org_id=current_org.id, api_key=auto_key, status="active"))
+
+    current_org.plan = plan_name
+    db.add(models.Payment(
+        org_id=current_org.id,
+        plan_name=plan_name,
+        seats=total_seats,
+        amount=amount,
+        payment_method="무료 활성화",
+        pg_provider="Direct",
+        status="completed",
+        completed_at=now,
+        payment_type="subscription",
+        added_seats=added_seats,
+        billing_period_start=now,
+        billing_period_end=billing_end
+    ))
+    apply_plan_seats(db, current_org)
+    db.commit()
+
+    try:
+        EmailService.send_receipt_email(current_org.admin_email, current_org.company_name, 0, plan_name)
+    except Exception as e:
+        print(f"[Email Error] Receipt failed: {e}")
+
+    return {"success": True, "auto_key": auto_key, "message": "구독이 활성화되었습니다."}
+
+
 @router.post("/toss-confirm")
 def toss_confirm(payload: dict, current_org: models.Organization =Depends(get_current_user), db: Session = Depends(get_db)):
     payment_key = payload.get("paymentKey")
     order_id = payload.get("orderId")
     amount = payload.get("amount")
     plan_name = payload.get("plan_name")
-    added_seats = payload.get("added_seats", 0)
+    added_seats = max(0, int(payload.get("added_seats", 0) or 0))
     if not payment_key or not order_id or not amount:
         raise HTTPException(status_code=400, detail="필수 결제 정보가누락되었습니다.")
+    expected_amount = int(calculate_plan_amount(db, plan_name, added_seats))
+    total_seats = get_plan_base_seats(db, plan_name) + added_seats
+    if int(amount) != expected_amount:
+        raise HTTPException(status_code=400, detail="결제 금액이 선택한 요금제와 일치하지 않습니다.")
     secret_key = os.getenv("TOSS_SECRET_KEY")
     if not secret_key:
         raise HTTPException(status_code=500, detail="결제 설정을 찾을 수없습니다.")
@@ -116,9 +192,7 @@ def toss_confirm(payload: dict, current_org: models.Organization =Depends(get_cu
             # 시작일 및 종료일 계산
             now = datetime.now(timezone.utc)
             billing_start = now
-            billing_end = None
-            if plan_name.lower() == "pro":
-                billing_end = now + timedelta(days=30)
+            billing_end = now + timedelta(days=365)
             # API 키 자동 발급 체크
             existing_key = db.query(models.License).filter(
                 models.License.org_id == current_org.id,
@@ -129,10 +203,11 @@ def toss_confirm(payload: dict, current_org: models.Organization =Depends(get_cu
                 auto_key = f"sk-{uuid.uuid4()}"
                 new_license = models.License(org_id=current_org.id,api_key=auto_key, status="active")
                 db.add(new_license)
-               # 결제 정보 저장
+            # 결제 정보 저장
             new_payment = models.Payment(
                 org_id=current_org.id,
                 plan_name=plan_name,
+                seats=total_seats,
                 amount=amount,
                 payment_method=res_data.get("method"),
                 pg_provider="TossPayments",
@@ -145,8 +220,9 @@ def toss_confirm(payload: dict, current_org: models.Organization =Depends(get_cu
                 billing_period_end=billing_end
             )
             db.add(new_payment)
+            apply_plan_seats(db, current_org)
             db.commit()
-               # 영수증 메일 발송
+            # 영수증 메일 발송
             try:
                 EmailService.send_receipt_email(
                     current_org.admin_email,
@@ -156,12 +232,13 @@ def toss_confirm(payload: dict, current_org: models.Organization =Depends(get_cu
                 )
             except Exception as e:
                 print(f"[Email Error] Receipt failed: {e}")
-                return {
-                    "success": True,
-                    "message": "결제 승인 성공" + (" 및 첫 API 키가 발급되었습니다."if auto_key else ""),
-                    "data": res_data,
-                    "auto_key": auto_key
-                }
+
+            return {
+                "success": True,
+                "message": "결제 승인 성공" + (" 및 첫 API 키가 발급되었습니다." if auto_key else ""),
+                "data": res_data,
+                "auto_key": auto_key
+            }
         else:
             return {"success": False, "message": res_data.get("message", "결제승인 실패"), "error": res_data}
     except Exception as e:

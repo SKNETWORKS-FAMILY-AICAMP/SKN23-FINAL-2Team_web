@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/app/context/AuthContext';
 import { LandingNav } from '@/app/components/landing/LandingNav';
 import { LandingFooter } from '@/app/components/landing/LandingFooter';
-import { Check, Info } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import logoMark from '@/assets/chat_logo_mark.png';
 
 const detailedPlans = [
   {
@@ -108,6 +109,8 @@ const detailedPlans = [
 export default function PricingPage() {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
+  const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
+  const highlightedPlan = hoveredPlan;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -137,17 +140,28 @@ export default function PricingPage() {
       <main className="flex-1 pt-32 pb-24 border-b border-zinc-200">
         <div className="max-w-[1400px] mx-auto px-6">
           <div className="text-center mb-20 space-y-5 flex flex-col items-center">
-            <img src="/cadence-logo.png" alt="Cadence AI Logo" className="w-24 h-24 object-contain mb-2" />
+            <img src={logoMark} alt="Cadence AI Logo" className="w-16 h-16 object-contain mb-2" />
             <h2 className="text-4xl md:text-5xl font-black text-zinc-900 tracking-tight mt-0">
               <span className="text-[#0071e3]">Cadence AI</span>를 최대한 활용하세요
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-            {detailedPlans.map((plan, idx) => (
+            {detailedPlans.map((plan, idx) => {
+              const isHighlighted = highlightedPlan === plan.name;
+
+              return (
               <div
                 key={plan.name}
-                className={`flex flex-col p-8 rounded-3xl transition-shadow bg-white ${plan.isPopular ? 'border-2 border-[#0071e3] shadow-[0_4px_24px_rgba(0,113,227,0.12)]' : 'border border-zinc-200 hover:shadow-xl'}`}
+                onMouseEnter={() => setHoveredPlan(plan.name)}
+                onMouseLeave={() => setHoveredPlan(null)}
+                onFocus={() => setHoveredPlan(plan.name)}
+                onBlur={() => setHoveredPlan(null)}
+                className={`group flex flex-col p-8 rounded-3xl bg-white cursor-pointer transition-all duration-300 ease-out focus-within:-translate-y-2 ${
+                  isHighlighted
+                    ? 'border-2 border-[#0071e3] shadow-[0_4px_24px_rgba(0,113,227,0.12)] hover:-translate-y-2 hover:shadow-[0_18px_48px_rgba(0,113,227,0.22)] focus-within:shadow-[0_18px_48px_rgba(0,113,227,0.22)]'
+                    : 'border-2 border-zinc-200 hover:border-[#0071e3]/60 hover:-translate-y-2 hover:shadow-[0_18px_42px_rgba(15,23,42,0.08)] focus-within:border-[#0071e3]/60 focus-within:shadow-[0_18px_42px_rgba(15,23,42,0.08)]'
+                }`}
               >
                 <div className="mb-8">
                   <h3 className="text-2xl font-black text-zinc-900 mb-4">{plan.name}</h3>
@@ -158,14 +172,14 @@ export default function PricingPage() {
                   {plan.price === "0" ? (
                     <div className="flex items-baseline gap-1">
                       <span className="text-[10px] font-bold text-zinc-500">Cadence AI 계정당 매월</span>
-                      <span className="text-3xl font-black ml-1">₩0</span>
+                      <span className={`text-3xl font-black ml-1 transition-colors ${isHighlighted ? 'text-[#0071e3]' : 'text-zinc-900'}`}>₩0</span>
                       <span className="text-xs font-bold">KRW</span>
                     </div>
                   ) : (
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-zinc-500">{plan.period}</span>
                       <div className="flex items-baseline gap-1 mt-1">
-                        {plan.isPopular ? <span className="text-3xl font-black text-[#0071e3]">₩{plan.price}</span> : <span className="text-3xl font-black">₩{plan.price}</span>}
+                        <span className={`text-3xl font-black transition-colors ${isHighlighted ? 'text-[#0071e3]' : 'text-zinc-900'}`}>₩{plan.price}</span>
                         <span className="text-xs font-bold">KRW</span>
                       </div>
                     </div>
@@ -174,11 +188,15 @@ export default function PricingPage() {
 
                 <div className="mb-8">
                   {idx === 0 ? (
-                    <button onClick={handleAction} className="w-full py-2.5 rounded-full border border-zinc-300 text-zinc-700 font-bold text-sm tracking-wide hover:bg-zinc-50 transition-colors">
+                    <button onClick={handleAction} className={`w-full py-2.5 rounded-full border font-bold text-sm tracking-wide transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3]/30 ${
+                      isHighlighted
+                        ? 'border-[#0071e3] bg-[#0071e3] text-white hover:brightness-110'
+                        : 'border-zinc-300 text-zinc-700 group-hover:border-zinc-400 group-hover:bg-zinc-50'
+                    }`}>
                       {plan.buttonText}
                     </button>
                   ) : (
-                    <button onClick={handleAction} className="w-full py-2.5 rounded-full bg-[#0071e3] hover:brightness-110 text-white font-bold text-sm tracking-wide transition-colors">
+                    <button onClick={handleAction} className="w-full py-2.5 rounded-full bg-[#0071e3] text-white font-bold text-sm tracking-wide transition-all group-hover:brightness-110 group-hover:shadow-lg group-hover:shadow-[#0071e3]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3]/30">
                       {plan.buttonText}
                     </button>
                   )}
@@ -189,13 +207,13 @@ export default function PricingPage() {
                     <li key={fidx} className="flex items-start gap-4">
                       {feature.desc === "" ? (
                         <div className="flex items-center gap-2 mt-1">
-                          <Check className={`w-4 h-4 ${idx === 0 ? 'text-zinc-400' : 'text-[#0071e3]'}`} strokeWidth={3} />
+                          <Check className={`w-4 h-4 ${idx === 0 && !isHighlighted ? 'text-zinc-400' : 'text-[#0071e3]'}`} strokeWidth={3} />
                           <span className="text-sm font-bold text-zinc-900">{feature.title}</span>
                         </div>
                       ) : (
                         <>
                           <div className="mt-0.5">
-                            <span className="text-xl">✦</span>
+                            <span className={`text-xl transition-colors ${isHighlighted ? 'text-[#0071e3]' : 'text-zinc-900'}`}>✦</span>
                           </div>
                           <div>
                             <div className="text-[13px] font-bold text-zinc-900 flex items-center gap-1.5 mb-1">
@@ -211,7 +229,8 @@ export default function PricingPage() {
                   ))}
                 </ul>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-8 text-center text-xs text-zinc-400 space-y-1">

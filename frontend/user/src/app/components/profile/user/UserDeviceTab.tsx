@@ -6,143 +6,134 @@ Description : 마이페이지 - 기기 등록 및 관리 탭 컴포넌트
 
 Modification History:
     - 2026-04-23 (김민정) : 모듈화 작업으로 인한 파일 분리 생성
+    - 2026-05-04 (송주엽) : Apple 스타일 리디자인
  */
 import React from 'react';
-import { Monitor, Puzzle, CheckCircle, Clock, Power } from 'lucide-react';
+import { Monitor, Clock, Power, Download } from 'lucide-react';
 import { format } from 'date-fns';
-import { useAuth } from '@/app/context/AuthContext';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '@/app/api/client';
 
 interface DeviceTabProps {
+  user?: any;
   isLoadingDevices: boolean;
   devices: any[];
 }
 
 export const UserDeviceTab: React.FC<DeviceTabProps> = ({
+  user,
   isLoadingDevices,
   devices
 }) => {
-  const { user } = useAuth();
   const maxDevices = user?.max_seats ?? 0;
   const currentCount = devices.length;
+  const atLimit = maxDevices > 0 && currentCount >= maxDevices;
 
   const handleToggleStatus = async (deviceId: string, currentStatus: boolean) => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://localhost:8000/api/v1/devices/${deviceId}/toggle`, {
+      const response = await fetch(`${API_BASE_URL}/devices/${deviceId}/toggle`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (response.ok) {
-        toast.success(currentStatus ? '해당 기기의 사용이 일시 중지되었습니다.' : '기기가 다시 활성화되었습니다.');
-        // 상태 갱신을 위해 임시 새로고침
+        toast.success(currentStatus ? '기기 사용이 중지되었습니다.' : '기기가 활성화되었습니다.');
         setTimeout(() => window.location.reload(), 1500);
       } else {
         toast.error('기기 상태를 변경할 수 없습니다.');
       }
-    } catch (e) {
+    } catch {
       toast.error('서버와의 통신 오류가 발생했습니다.');
     }
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
-      <div className="flex justify-between items-end pb-4 border-b border-zinc-200">
+    <div className="space-y-6">
+      <div className="flex items-end justify-between">
         <div>
-          <h2 className="text-2xl font-bold">기기 관리</h2>
-          <p className="text-sm text-zinc-500 mt-1">플러그인이 설치되고 활성화된 기기 목록입니다.</p>
+          <h1 className="text-xl font-semibold text-zinc-900">기기 관리</h1>
+          <p className="mt-1 text-sm text-zinc-500">플러그인이 설치되고 활성화된 기기 목록입니다.</p>
         </div>
         <div className="text-right">
-          <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">현재 등록 현황</div>
-          <div className="text-xl font-black text-zinc-900">
-            <span className={maxDevices > 0 && currentCount >= maxDevices ? "text-red-500" : "text-[#0071e3]"}>
-            {currentCount}
-            </span>
-            <span className="text-zinc-600 font-normal text-sm"> / {maxDevices}대</span>
-          </div>
+          <p className="text-[11px] text-zinc-400 uppercase tracking-wide mb-0.5">등록 현황</p>
+          <p className="text-lg font-semibold text-zinc-900">
+            <span className={atLimit ? 'text-red-500' : 'text-zinc-900'}>{currentCount}</span>
+            <span className="text-zinc-400 font-normal text-sm"> / {maxDevices}대</span>
+          </p>
         </div>
       </div>
 
-      <div className="grid gap-4">
+      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
         {isLoadingDevices ? (
-          <div className="text-center py-12 text-zinc-500 animate-pulse">기기 목록을 불러오는 중입니다...</div>
+          <div className="py-12 text-center text-sm text-zinc-400">기기 목록을 불러오는 중...</div>
         ) : devices.length === 0 ? (
-          <div className="bg-zinc-50 border border-dashed border-zinc-300 p-12 rounded-3xl text-center">
-            <Monitor className="w-8 h-8 text-zinc-400 mx-auto mb-4" />
-            <p className="text-zinc-500 text-sm">등록된 기기가 없습니다.</p>
+          <div className="py-12 text-center space-y-2">
+            <Monitor className="w-6 h-6 text-zinc-300 mx-auto" />
+            <p className="text-sm text-zinc-400">등록된 기기가 없습니다.</p>
           </div>
         ) : (
-          devices.map((device) => (
-            <div
-              key={device.id}
-              className="bg-white border border-zinc-200 shadow-sm p-6 rounded-2xl flex items-center justify-between"
-            >
-              <div className="flex items-center gap-5">
-                <div className="bg-zinc-100 p-3 rounded-xl">
-                  <Monitor className="w-5 h-5 text-zinc-500" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-zinc-900 text-lg">{device.hostname}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                      device.is_active ? 'bg-green-500/10 text-green-400' : 'bg-zinc-500/10 text-zinc-500'
-                    }`}>
-                      {device.is_active ? 'Active' : 'Inactive'}
-                    </span>
+          <div className="divide-y divide-zinc-100">
+            {devices.map((device) => (
+              <div key={device.id} className="flex items-center justify-between px-5 py-4">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${device.is_active ? 'bg-emerald-400' : 'bg-zinc-300'}`} />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-zinc-800">{device.hostname}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                        device.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-zinc-100 text-zinc-400'
+                      }`}>
+                        {device.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 text-[11px] text-zinc-400">
+                      <span>{device.os_user}</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {format(new Date(device.last_seen), 'yyyy-MM-dd HH:mm')}
+                      </span>
+                      {device.api_key_snippet && (
+                        <span className="font-mono">···{device.api_key_snippet}</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-zinc-500">
-                    <span className="flex items-center gap-1.5"><Puzzle className="w-3.5 h-3.5" /> {device.os_user}</span>
-                    <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> 마지막 동기화: {format(new Date(device.last_seen), 'yyyy-MM-dd HH:mm')}</span>
-                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="px-3 py-1 bg-zinc-50 border border-zinc-200 rounded-lg text-[10px] text-zinc-500">
-                  Key Snippet: {device.api_key_snippet || '보안상 숨김'}
-                </div>
-                <div className="relative group flex items-center">
+                <div className="relative group ml-4">
                   <button
                     onClick={() => handleToggleStatus(device.id, device.is_active)}
-                    className={`p-2 rounded-xl transition-all border ${
+                    className={`p-2 rounded-lg transition-colors border ${
                       device.is_active
-                        ? 'bg-red-50 border-red-200 text-red-500 hover:bg-red-100'
-                        : 'bg-green-50 border-green-200 text-green-600 hover:bg-green-100'
+                        ? 'border-zinc-200 text-zinc-400 hover:border-red-200 hover:text-red-400 hover:bg-red-50'
+                        : 'border-zinc-200 text-zinc-400 hover:border-emerald-200 hover:text-emerald-500 hover:bg-emerald-50'
                     }`}
                   >
-                    <Power className="w-4 h-4" />
+                    <Power className="w-3.5 h-3.5" />
                   </button>
-                  {/* Tailwind Custom Tooltip */}
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-zinc-800 border border-zinc-700 text-[10px] text-white font-bold rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap pointer-events-none z-10 shadow-xl">
-                    {device.is_active ? '클릭 시 기기 사용 중지' : '클릭 시 기기 활성화'}
+                  <div className="absolute -top-8 right-0 px-2.5 py-1 bg-zinc-800 text-[10px] text-white rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap pointer-events-none z-10">
+                    {device.is_active ? '기기 중지' : '기기 활성화'}
                   </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
 
-      <div className="bg-white border border-zinc-200 shadow-sm p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="flex items-start gap-4">
-          <div className="bg-blue-50 p-2 rounded-lg mt-1">
-            <CheckCircle className="w-5 h-5 text-[#0071e3]" />
-          </div>
-          <div>
-            <h4 className="font-bold text-zinc-900 text-sm">새 기기 등록 방법</h4>
-            <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-              AutoCAD 전용 플러그인을 다운로드하여 설치한 후, 플러그인 설정 메뉴에서 본인의 <br className="hidden md:block" />
-              API Key를 입력하면 해당 기기가 자동으로 등록됩니다. (플랜 별 최대 접속 대수 유의)
-            </p>
-          </div>
+      {/* 새 기기 등록 안내 */}
+      <div className="bg-white border border-zinc-200 rounded-xl p-5 flex items-start justify-between gap-6">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-zinc-900">새 기기 등록 방법</p>
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            AutoCAD 전용 플러그인을 설치한 후, 플러그인 설정 메뉴에서 API Key를 입력하면 자동으로 등록됩니다.
+          </p>
         </div>
-        
-        <button 
-          onClick={() => { /* 실제 다운로드 로직: 예) window.open('/downloads/CadSllmAgent.zip') */ }}
-          className="shrink-0 px-6 py-3 bg-[#0071e3] text-white text-xs font-bold rounded-xl hover:bg-[#0071e3]/90 transition-all shadow-lg flex items-center gap-2"
+        <button
+          onClick={() => { }}
+          className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 bg-[#0071e3] hover:brightness-105 text-white text-xs font-medium rounded-lg transition-all"
         >
-          <Puzzle className="w-4 h-4" /> 
-          AutoCAD 플러그인 다운로드
+          <Download className="w-3.5 h-3.5" />
+          플러그인 다운로드
         </button>
       </div>
     </div>

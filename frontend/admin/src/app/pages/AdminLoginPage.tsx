@@ -10,6 +10,7 @@ import React from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { PinLoginForm } from '@/app/components/auth/PinLoginForm';
 import { useAdminAuth } from '@/app/context/AdminAuthContext';
+import logoMark from '../../../../user/src/assets/chat_logo_mark.png';
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();
@@ -22,14 +23,9 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8">
       {/* 중앙 로고 */}
-      <div className="flex items-center gap-2 mb-8 transform -translate-y-4">
-        <div className="w-9 h-9 bg-[#1e40af] rounded-xl flex items-center justify-center shadow-md shadow-blue-900/10">
-          <span className="text-white font-black text-lg">C</span>
-        </div>
+      <div className="flex items-center gap-3 mb-8 transform -translate-y-4">
+        <img src={logoMark} alt="Cadence AI" className="h-10 w-10 object-contain" />
         <span className="text-2xl font-black tracking-tight text-zinc-900">Cadence AI</span>
-        <span className="ml-1.5 px-2.5 py-1 bg-blue-100/60 text-[#1e40af] text-[10px] font-black uppercase tracking-widest rounded-md">
-          Admin
-        </span>
       </div>
 
       <div className="w-full max-w-sm">

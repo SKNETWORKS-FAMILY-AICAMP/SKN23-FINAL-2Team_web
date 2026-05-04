@@ -8,52 +8,52 @@ Modification History:
     - 2026-04-24 (김민정) : 모듈화
     - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경
 */
-const BASE_URL = 'http://localhost:8000/api/v1';
+import { API_BASE_URL } from './client';
 
 export const authApi = {
   login: (payload: object) => 
-    fetch(`${BASE_URL}/auth/login`, {
+    fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }),
 
   register: (formData: FormData) =>
-    fetch(`${BASE_URL}/auth/register`, {
+    fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       body: formData,
     }),
 
   refresh: (refreshToken: string) =>
-    fetch(`${BASE_URL}/auth/refresh`, {
+    fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: refreshToken })
     }),
 
   verifyEmail: (payload: object) =>
-    fetch(`${BASE_URL}/auth/verify-email`, {
+    fetch(`${API_BASE_URL}/auth/verify-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }),
 
   requestReset: (email: string) =>
-    fetch(`${BASE_URL}/auth/request-password-reset`, {
+    fetch(`${API_BASE_URL}/auth/request-password-reset`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
     }),
 
   resetPassword: (payload: object) =>
-    fetch(`${BASE_URL}/auth/reset-password`, {
+    fetch(`${API_BASE_URL}/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }),
 
   getCurrentPayment: (token: string) =>
-    fetch(`${BASE_URL}/payments/current`, {
+    fetch(`${API_BASE_URL}/payments/current`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
 };

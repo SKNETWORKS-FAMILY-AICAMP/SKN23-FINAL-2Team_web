@@ -36,8 +36,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await authApi.getCurrentPayment(token);
       const data = await response.json();
       if (data?.success) {
-        setUser(prev => prev ? { ...prev, plan: data.plan_name } : null);
-        authStorage.updateUserPlan(data.plan_name);
+        const updates = {
+          plan: data.plan_name,
+          ...(data.max_seats != null ? { max_seats: data.max_seats } : {}),
+        };
+        setUser(prev => prev ? { ...prev, ...updates } : null);
+        authStorage.updateUserInfo(updates);
       }
     } catch (error) {
       console.error('Failed to refresh user data:', error);

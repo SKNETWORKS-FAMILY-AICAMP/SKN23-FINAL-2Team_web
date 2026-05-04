@@ -13,14 +13,14 @@ Modification History:
     - 2026-04-26 (김민정) : device 더미 데이터 삭제 및 DB 연동
     - 2026-04-27 (송주엽) : 라이트 테마 전환
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  ChevronLeft, User, CreditCard, Key, Monitor, FileDown,
-  LogOut, ShieldCheck, Trash2, Lock, X, CheckCircle
+  ChevronLeft, User, CreditCard, Key, Monitor,
+  ShieldCheck, Trash2, X, CheckCircle
 } from 'lucide-react';
-import { format, subDays, startOfMonth, isValid, parseISO } from 'date-fns';
+import { format, startOfMonth } from 'date-fns';
 import { useAuth } from '@/app/context/AuthContext';
 import { toast } from 'sonner';
 
@@ -28,25 +28,49 @@ import { UserAccountTab } from '@/app/components/profile/user/UserAccountTab';
 import { UserPaymentTab } from '@/app/components/profile/user/UserPaymentTab';
 import { UserAPIKeyTab } from '@/app/components/profile/user/UserAPIKeyTab';
 import { UserDeviceTab } from '@/app/components/profile/user/UserDeviceTab';
+import { API_BASE_URL } from '@/app/api/client';
 
 
 type TabType = 'account' | 'billing' | 'api' | 'devices';
+
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user: authUser, isAuthenticated, logout } = useAuth();
   const [user, setUser] = useState<any>(authUser);
+  const didHandleUnauthorized = useRef(false);
+
+  const getAuthToken = useCallback(() => {
+    const token = localStorage.getItem('access_token');
+    return token && token !== 'null' && token !== 'undefined' ? token : null;
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    logout();
+    navigate('/');
+  }, [logout, navigate]);
+
+  const handleUnauthorized = useCallback(() => {
+    if (didHandleUnauthorized.current) return;
+    didHandleUnauthorized.current = true;
+    logout();
+    navigate('/', { replace: true });
+  }, [logout, navigate]);
 
   // 마운트 시 DB에서 최신 프로필(business_reg_s3_url 포함) 가져오기
   useEffect(() => {
     const fetchMe = async () => {
-      const token = localStorage.getItem('access_token');
+      const token = getAuthToken();
       if (!token) return;
       try {
-        const res = await fetch('http://localhost:8000/api/v1/auth/me', {
+        const res = await fetch(`${API_BASE_URL}/auth/me`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (res.status === 401) {
+          handleUnauthorized();
+          return;
+        }
         if (res.ok) {
           const data = await res.json();
           if (data.success) setUser(data.user);
@@ -54,14 +78,15 @@ export default function ProfilePage() {
       } catch { /* 조용히 실패 */ }
     };
     fetchMe();
-  }, []);
+  }, [getAuthToken, handleUnauthorized]);
 
   useEffect(() => {
     setUser(authUser);
   }, [authUser]);
 
   useEffect(() => {
-    if (!user && !isAuthenticated) {
+    if (!isAuthenticated) {
+      navigate('/', { replace: true });
     } else if (user?.role === 'admin' || user?.role === 'superuser') {
       navigate('/admin', { replace: true });
     }
@@ -78,22 +103,26 @@ export default function ProfilePage() {
   };
 
 // --- 1. Subscription & Payment State ---
-  const [currentPlan, setCurrentPlan] = useState<string>('');
   const [paymentInfo, setPaymentInfo] = useState<any>(null);
   const [isLoadingPayment, setIsLoadingPayment] = useState(false);
 
   const fetchPayment = useCallback(async (force = false) => {
-    if ((activeTab === 'billing' || force) && (!paymentInfo || force) && !isLoadingPayment) {
+    if ((activeTab === 'billing' || activeTab === 'account' || force) && (!paymentInfo || force) && !isLoadingPayment) {
+      if (!isAuthenticated) return;
+      const token = getAuthToken();
+      if (!token) return;
       setIsLoadingPayment(true);
       try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch('http://localhost:8000/api/v1/payments/current', {
+        const response = await fetch(`${API_BASE_URL}/payments/current`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (response.status === 401) {
+          handleUnauthorized();
+          return;
+        }
         const data = await response.json();
         if (data && data.success) {
           setPaymentInfo(data);
-          setCurrentPlan(data.plan_name);
         } else {
           setPaymentInfo({ noPlan: true });
         }
@@ -104,9 +133,9 @@ export default function ProfilePage() {
         setIsLoadingPayment(false);
       }
     }
-  }, [activeTab, paymentInfo, isLoadingPayment]);
+  }, [activeTab, paymentInfo, isLoadingPayment, isAuthenticated, getAuthToken, handleUnauthorized]);
 
-  useEffect(() => { fetchPayment(); }, [activeTab]);
+  useEffect(() => { fetchPayment(); }, [fetchPayment]);
 
   // --- 2. API Keys & Devices State ---
   const [apiKeys, setApiKeys] = useState<any[]>([]);
@@ -116,11 +145,17 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const fetchApiKeys = async () => {
-      if (activeTab === 'api' && !isLoadingKeys) {
+      if ((activeTab === 'api' || activeTab === 'account') && apiKeys.length === 0) {
+        if (!isAuthenticated) return;
+        const token = getAuthToken();
+        if (!token) return;
         setIsLoadingKeys(true);
         try {
-          const token = localStorage.getItem('access_token');
-          const response = await fetch('http://localhost:8000/api/v1/keys', { headers: { 'Authorization': `Bearer ${token}` } });
+          const response = await fetch(`${API_BASE_URL}/keys`, { headers: { 'Authorization': `Bearer ${token}` } });
+          if (response.status === 401) {
+            handleUnauthorized();
+            return;
+          }
           const data = await response.json();
           if (Array.isArray(data)) setApiKeys(data);
         } catch (error) { console.error("Keys Fetch Error", error); }
@@ -128,16 +163,22 @@ export default function ProfilePage() {
       }
     };
     fetchApiKeys();
-  }, [activeTab]);
+  }, [activeTab, apiKeys.length, isAuthenticated, getAuthToken, handleUnauthorized]);
 
   const [isLoadingDevices, setIsLoadingDevices] = useState(false);
   useEffect(() => {
     const fetchDevices = async () => {
-      if (activeTab === 'devices' && !isLoadingDevices) {
+      if ((activeTab === 'devices' || activeTab === 'account') && devices.length === 0) {
+        if (!isAuthenticated) return;
+        const token = getAuthToken();
+        if (!token) return;
         setIsLoadingDevices(true);
         try {
-          const token = localStorage.getItem('access_token');
-          const response = await fetch('http://localhost:8000/api/v1/devices/', { headers: { 'Authorization': `Bearer ${token}` } });
+          const response = await fetch(`${API_BASE_URL}/devices/`, { headers: { 'Authorization': `Bearer ${token}` } });
+          if (response.status === 401) {
+            handleUnauthorized();
+            return;
+          }
           const data = await response.json();
           if (Array.isArray(data)) setDevices(data);
         } catch (error) { console.error("Devices Fetch Error", error); }
@@ -145,7 +186,38 @@ export default function ProfilePage() {
       }
     };
     fetchDevices();
-  }, [activeTab]);
+  }, [activeTab, devices.length, isAuthenticated, getAuthToken, handleUnauthorized]);
+
+  const [usageStats, setUsageStats] = useState<any>(null);
+  const [isLoadingUsage, setIsLoadingUsage] = useState(false);
+
+  useEffect(() => {
+    const fetchUsageStats = async () => {
+      if (activeTab !== 'account' || usageStats || !isAuthenticated) return;
+      const token = getAuthToken();
+      if (!token) return;
+      setIsLoadingUsage(true);
+      try {
+        const today = new Date();
+        const startDate = format(startOfMonth(today), 'yyyy-MM-dd');
+        const endDate = format(today, 'yyyy-MM-dd');
+        const response = await fetch(`${API_BASE_URL}/usage/stats?start_date=${startDate}&end_date=${endDate}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.status === 401) {
+          handleUnauthorized();
+          return;
+        }
+        const data = await response.json();
+        if (data?.success) setUsageStats(data);
+      } catch (error) {
+        console.error("Usage Fetch Error", error);
+      } finally {
+        setIsLoadingUsage(false);
+      }
+    };
+    fetchUsageStats();
+  }, [activeTab, usageStats, isAuthenticated, getAuthToken, handleUnauthorized]);
 
   const isVerified = user?.verification_status === 'verified';
 
@@ -159,7 +231,6 @@ export default function ProfilePage() {
   const [isProcessingPassword, setIsProcessingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
-  const [certFile, setCertFile] = useState<File | null>(null);
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState<any>({ title: '', message: '', onConfirm: () => { }, type: 'blue' });
@@ -168,9 +239,6 @@ export default function ProfilePage() {
     setConfirmConfig({ title, message, onConfirm, type });
     setShowConfirmModal(true);
   };
-
-
-  const handleLogout = useCallback(() => { logout(); navigate('/'); }, [logout, navigate]);
 
   const handleDeleteAccountSubmit = () => {
     if (!user) return;
@@ -247,8 +315,13 @@ export default function ProfilePage() {
 
   const fetchKeys = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const res = await fetch('http://localhost:8000/api/v1/keys', { headers: { 'Authorization': `Bearer ${token}` } });
+      const token = getAuthToken();
+      if (!token) return;
+      const res = await fetch(`${API_BASE_URL}/keys`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       const data = await res.json();
       if (Array.isArray(data)) setApiKeys(data);
     } catch (e) { }
@@ -256,8 +329,13 @@ export default function ProfilePage() {
 
   const handleGenerateKey = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const res = await fetch('http://localhost:8000/api/v1/keys/generate', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      const token = getAuthToken();
+      if (!token) return;
+      const res = await fetch(`${API_BASE_URL}/keys/generate`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       if (res.ok) {
         toast.success('새 API 키가 생성되었습니다.');
         const data = await res.json();
@@ -273,8 +351,13 @@ export default function ProfilePage() {
   const handleDeleteKey = async (keyId: string) => {
     triggerConfirm('API 키 폐기', '해당 키를 영구 삭제합니다. 외부 서비스 연동이 끊어질 수 있습니다. 계속하시겠습니까?', async () => {
       try {
-        const token = localStorage.getItem('access_token');
-        const res = await fetch(`http://localhost:8000/api/v1/keys/${keyId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        const token = getAuthToken();
+        if (!token) return;
+        const res = await fetch(`${API_BASE_URL}/keys/${keyId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.status === 401) {
+          handleUnauthorized();
+          return;
+        }
         if (res.ok) { toast.success('API 키가 즉시 폐기되었습니다.'); fetchKeys(); }
         else { const data = await res.json(); toast.error(data.detail || '삭제 실패'); }
       } catch (e) { toast.error('오류가 발생했습니다.'); }
@@ -284,35 +367,41 @@ export default function ProfilePage() {
   const renderTabContent = () => {
     if (user?.verification_status !== 'verified' && activeTab !== 'account') {
       return (
-        <div className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
-          <div className="bg-amber-50 border border-amber-200 p-12 rounded-2xl text-center space-y-6">
-            <div className="bg-amber-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
-              <ShieldCheck className="w-8 h-8 text-amber-500" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-zinc-900">서비스 승인 대기 중</h3>
-              <p className="text-sm text-zinc-500 mt-2 leading-relaxed">
-                현재 사업자등록증 검토가 진행 중입니다.<br />
-                관리자의 승인이 완료된 후 모든 기능을 이용하실 수 있습니다.
-              </p>
-            </div>
-            <button onClick={() => setActiveTab('account')} className="px-6 py-2 bg-zinc-900 text-white rounded-lg text-sm font-bold transition-all hover:bg-zinc-700">
-              정보 확인하기
-            </button>
+        <div className="bg-white border border-zinc-200 rounded-xl p-10 text-center space-y-4">
+          <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center mx-auto">
+            <ShieldCheck className="w-5 h-5 text-amber-400" />
           </div>
+          <div>
+            <p className="text-sm font-semibold text-zinc-900">서비스 승인 대기 중</p>
+            <p className="text-xs text-zinc-500 mt-1">관리자의 승인이 완료된 후 모든 기능을 이용하실 수 있습니다.</p>
+          </div>
+          <button onClick={() => setActiveTab('account')} className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-xs font-medium transition-colors hover:bg-zinc-700">
+            계정 정보 확인
+          </button>
         </div>
       );
     }
 
     switch (activeTab) {
       case 'account':
-        return <UserAccountTab user={user} setShowPasswordModal={setShowPasswordModal} setShowDeleteModal={setShowDeleteModal} setCertFile={setCertFile} certFile={certFile} />;
+        return (
+          <UserAccountTab
+            user={user}
+            setShowPasswordModal={setShowPasswordModal}
+            setShowDeleteModal={setShowDeleteModal}
+            paymentInfo={paymentInfo}
+            devices={devices}
+            apiKeys={apiKeys}
+            usageStats={usageStats}
+            isLoadingUsage={isLoadingUsage}
+          />
+        );
       case 'billing':
         return <UserPaymentTab isLoadingPayment={isLoadingPayment} paymentInfo={paymentInfo} isVerified={isVerified} triggerConfirm={triggerConfirm} navigate={navigate} refetchPayment={() => fetchPayment(true)} />;
       case 'api':
         return <UserAPIKeyTab user={user} apiKeys={apiKeys} isLoadingKeys={isLoadingKeys} handleGenerateKey={handleGenerateKey} handleDeleteKey={handleDeleteKey} setActiveTab={setActiveTab} />;
       case 'devices':
-        return <UserDeviceTab isLoadingDevices={isLoadingDevices} devices={devices} />;
+        return <UserDeviceTab user={user} isLoadingDevices={isLoadingDevices} devices={devices} />;
       default:
         return null;
     }
@@ -326,45 +415,65 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-zinc-900">
-      <nav className="border-b border-zinc-200 bg-white/90 backdrop-blur-xl sticky top-0 z-50">
-        {!isVerified && (
-          <div className="bg-[#0071e3] text-white py-2 text-center text-xs font-bold">
-            현재 사업자 등록 승인 대기 상태입니다. 일부 기능 이용이 제한됩니다.
-          </div>
-        )}
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/')} className="p-2 hover:bg-zinc-100 rounded-full transition-colors text-zinc-500 hover:text-zinc-900">
-              <ChevronLeft className="w-5 h-5" />
+    <div className="min-h-screen bg-[#f5f5f7] text-zinc-900">
+      {/* 상단 알림 배너 */}
+      {!isVerified && (
+        <div className="border-b border-amber-200 bg-amber-50 py-2 text-center text-[11px] font-medium text-amber-700">
+          사업자 등록 승인 대기 중입니다 — 승인 완료 후 모든 기능을 이용하실 수 있습니다.
+        </div>
+      )}
+
+      {/* Nav */}
+      <nav className="border-b border-zinc-200 bg-white/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="mx-auto flex h-12 max-w-[1200px] items-center justify-between px-6">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-1 text-xs font-medium text-zinc-400 transition-colors hover:text-zinc-700"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              홈으로
             </button>
-            <span className="font-bold text-lg text-zinc-900">마이페이지</span>
+            <span className="text-zinc-200 text-xs">/</span>
+            <span className="text-xs font-medium text-zinc-700">마이페이지</span>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-bold text-zinc-700">{user?.companyName ? `${user.companyName}님` : 'N/A'}</span>
-            <button onClick={handleLogout} className="text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-zinc-400">
+              {user?.companyName || user?.email ? `${user.companyName || user.email} 님` : ''}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-zinc-50"
+            >
               로그아웃
             </button>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row gap-12">
-        <aside className="w-full md:w-64 shrink-0 space-y-1">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === tab.id
-                ? 'bg-blue-50 text-[#0071e3] font-semibold border-l-2 border-[#0071e3] pl-3.5'
-                : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+      {/* 본문 */}
+      <div className="mx-auto flex max-w-[1200px] gap-8 px-6 py-8 md:flex-row">
+        {/* 사이드 내비 */}
+        <aside className="hidden w-[180px] shrink-0 md:block">
+          <nav className="space-y-0.5">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200'
+                    : 'text-zinc-500 hover:bg-white/60 hover:text-zinc-700'
                 }`}
-            >
-              <tab.icon className="w-5 h-5 shrink-0" />{tab.label}
-            </button>
-          ))}
+              >
+                <tab.icon className="h-3.5 w-3.5 shrink-0" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
         </aside>
-        <main className="flex-1 min-w-0">{renderTabContent()}</main>
+
+        <main className="min-w-0 flex-1">{renderTabContent()}</main>
       </div>
 
       {/* Confirm Modal */}

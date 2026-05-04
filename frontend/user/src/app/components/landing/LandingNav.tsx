@@ -13,13 +13,14 @@ Modification History:
  */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
+import logoMark from '@/assets/chat_logo_mark.png';
 
 interface LandingNavProps {
   isAuthenticated: boolean;
@@ -39,12 +40,17 @@ export const LandingNav: React.FC<LandingNavProps> = ({ isAuthenticated, user, l
   };
 
   return (
-    <nav className="fixed top-0 w-full z-[100] border-b border-zinc-200 bg-white/80 backdrop-blur-xl">
-      <div className="flex justify-between items-center w-full px-8 py-4 max-w-screen-2xl mx-auto">
-        <div className="flex items-center gap-10">
-          <div className="flex items-center gap-2 cursor-pointer group" onClick={handleLogoClick}>
-            <span className="w-2 h-8 bg-[#0071e3] group-hover:scale-y-110 transition-transform" />
-            <span className="text-xl font-bold tracking-tighter text-zinc-900 group-hover:text-[#0071e3] transition-colors pr-4">Cadence AI</span>
+    <nav className="fixed top-0 w-full z-[100] border-b border-zinc-100 bg-white shadow-sm">
+      <div className="flex justify-between items-center w-full px-4 py-3 md:px-8 md:py-4 max-w-screen-2xl mx-auto">
+        <div className="flex items-center gap-6 md:gap-10 min-w-0">
+          <div className="flex items-center gap-2.5 cursor-pointer group min-w-0" onClick={handleLogoClick}>
+            <img
+              src={logoMark}
+              alt=""
+              aria-hidden="true"
+              className="h-8 w-8 md:h-9 md:w-9 object-contain transition-transform group-hover:scale-105 shrink-0"
+            />
+            <span className="text-lg md:text-xl font-bold tracking-tighter text-zinc-900 group-hover:text-[#0071e3] transition-colors pr-2 md:pr-4 whitespace-nowrap">Cadence AI</span>
           </div>
         </div>
 
@@ -87,13 +93,13 @@ export const LandingNav: React.FC<LandingNavProps> = ({ isAuthenticated, user, l
             <div className="flex items-center gap-2">
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }))}
-                className="text-sm font-semibold text-zinc-600 hover:text-zinc-900 transition-colors px-4 py-2"
+                className="hidden sm:inline-flex text-sm font-semibold text-zinc-600 hover:text-zinc-900 transition-colors px-3 md:px-4 py-2 whitespace-nowrap"
               >
                 로그인
               </button>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'signup' } }))}
-                className="bg-zinc-900 text-white px-5 py-2 rounded-lg font-semibold hover:bg-zinc-800 transition-all text-sm"
+                className="bg-zinc-900 text-white px-4 md:px-5 py-2 rounded-lg font-semibold hover:bg-zinc-800 transition-all text-sm whitespace-nowrap"
               >
                 회원가입
               </button>

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LandingNav } from '@/app/components/landing/LandingNav';
 import { LandingFooter } from '@/app/components/landing/LandingFooter';
+import { API_BASE_URL } from '@/app/api/client';
 
 export default function InquiriesPage() {
   const navigate = useNavigate();
@@ -52,7 +53,7 @@ export default function InquiriesPage() {
       const headers: any = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch(`http://localhost:8000/api/v1/support/tickets?device_uuid=${deviceUuid}&page=${currentPage}&limit=${limit}`, { headers });
+      const res = await fetch(`${API_BASE_URL}/support/tickets?device_uuid=${deviceUuid}&page=${currentPage}&limit=${limit}`, { headers });
       const data = await res.json();
       if (data.success) {
         setTickets(data.tickets);
@@ -95,7 +96,7 @@ export default function InquiriesPage() {
       const headers: any = {};
       if (user && token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch(`http://localhost:8000/api/v1/support${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}/support${endpoint}`, {
         method: 'POST',
         headers,
         body: formData
@@ -146,7 +147,7 @@ export default function InquiriesPage() {
       const formData = new FormData();
       formData.append('password', verifyPassword);
 
-      const res = await fetch(`http://localhost:8000/api/v1/support/tickets/${pinModalTicketId}/verify`, {
+      const res = await fetch(`${API_BASE_URL}/support/tickets/${pinModalTicketId}/verify`, {
         method: 'POST',
         body: formData
       });

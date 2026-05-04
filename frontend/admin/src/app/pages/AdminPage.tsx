@@ -8,7 +8,7 @@ Modification History:
 */
 import React, { useState, useEffect } from 'react';
 import {
-  Users, Building2, BarChart3, Monitor, LogOut,
+  Users, Building2, BarChart3,
   MessagesSquare, FileBox, Bell, TrendingUp, Clock,
   CheckCircle2, ChevronRight, RefreshCw
 } from 'lucide-react';
@@ -19,9 +19,9 @@ import { useAdminAuth, getAdminToken } from '@/app/context/AdminAuthContext';
 import { AdminApprovalsTab } from '@/app/components/profile/admin/AdminApprovalsTab';
 import { AdminManagementTab } from '@/app/components/profile/admin/AdminManagementTab';
 import { AdminUsageTab } from '@/app/components/profile/admin/AdminUsageTab';
-import { AdminDevicesTab } from '@/app/components/profile/admin/AdminDevicesTab';
 import { AdminInquiriesTab } from '@/app/components/profile/admin/AdminInquiriesTab';
 import { AdminDocumentsTab } from '@/app/components/profile/admin/AdminDocumentsTab';
+import logoMark from '../../../../user/src/assets/chat_logo_mark.png';
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -30,14 +30,13 @@ export default function AdminPage() {
 
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
   const [allOrganizations, setAllOrganizations] = useState<any[]>([]);
-  const [devices, setDevices] = useState<any[]>([]);
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [dashboardStats, setDashboardStats] = useState<any>(null);
   const [usageStats, setUsageStats] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [isLoading, setIsLoading] = useState({
-    approvals: false, orgs: false, usage: false, devices: false, inquiries: false
+    approvals: false, orgs: false, usage: false, inquiries: false
   });
 
   const handle401 = () => { adminLogout(); navigate('/login'); };
@@ -73,17 +72,6 @@ export default function AdminPage() {
       setUsageStats(data);
     } catch { toast.error('통계 로드 실패'); }
     finally { setIsLoading(prev => ({ ...prev, usage: false })); }
-  };
-
-  const fetchDevices = async (orgId?: string) => {
-    setIsLoading(prev => ({ ...prev, devices: true }));
-    try {
-      const res = await adminApi.getDevices(getAdminToken()!, orgId);
-      if (!res.ok) { if (res.status === 401) handle401(); return; }
-      const data = await res.json();
-      setDevices(Array.isArray(data) ? data : []);
-    } catch { toast.error('기기 목록 로드 실패'); setDevices([]); }
-    finally { setIsLoading(prev => ({ ...prev, devices: false })); }
   };
 
   const fetchInquiries = async (status?: string) => {
@@ -130,18 +118,19 @@ export default function AdminPage() {
   useEffect(() => {
     if (!isAdminAuthenticated) return;
     if (activeTab === 'management') fetchAllOrganizations();
-    else if (activeTab === 'usage') fetchUsageStats(
-      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      new Date().toISOString().split('T')[0]
-    );
-    else if (activeTab === 'devices') fetchDevices();
+    else if (activeTab === 'usage') {
+      if (allOrganizations.length === 0) fetchAllOrganizations();
+      fetchUsageStats(
+        new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        new Date().toISOString().split('T')[0]
+      );
+    }
   }, [activeTab, isAdminAuthenticated]);
 
   const navItems = [
     { id: 'approvals', icon: Users, label: '가입 승인', badge: pendingUsers.length },
     { id: 'management', icon: Building2, label: '기업 관리' },
     { id: 'usage', icon: BarChart3, label: '사용량 통계' },
-    { id: 'devices', icon: Monitor, label: '기기 관리' },
     { id: 'tickets', icon: MessagesSquare, label: 'Q&A 관리', badge: inquiries.filter(i => i.status === 'pending').length },
     { id: 'documents', icon: FileBox, label: '문서 관리' },
   ];
@@ -157,7 +146,6 @@ export default function AdminPage() {
     approvals: '가입 승인 관리',
     management: '기업 회원 관리',
     usage: '시스템 사용량 통계',
-    devices: '기기 관리',
     tickets: 'Q&A 문의 관리',
     documents: '법령 문서 관리',
   };
@@ -167,12 +155,9 @@ export default function AdminPage() {
       {/* GNB — 최상단 헤더 */}
       <header className="bg-white border-b border-slate-200 h-14 flex items-center px-6 sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-3 flex-shrink-0 w-56">
-          <div className="w-7 h-7 bg-[#1e40af] rounded-lg flex items-center justify-center">
-            <span className="text-white font-extrabold text-xs">CA</span>
-          </div>
+          <img src={logoMark} alt="Cadence AI" className="h-7 w-7 object-contain" />
           <div className="leading-tight">
             <span className="font-bold text-slate-900 text-sm">Cadence AI</span>
-            <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-[#1e40af] text-[9px] font-bold uppercase rounded">Admin</span>
           </div>
         </div>
 
@@ -290,9 +275,6 @@ export default function AdminPage() {
             )}
             {activeTab === 'usage' && (
               <AdminUsageTab isLoading={isLoading.usage} stats={usageStats?.daily_stats || []} orgs={allOrganizations} onSearch={fetchUsageStats} />
-            )}
-            {activeTab === 'devices' && (
-              <AdminDevicesTab isLoading={isLoading.devices} devices={devices} orgs={allOrganizations} onSearch={fetchDevices} onRefresh={fetchDevices} />
             )}
             {activeTab === 'tickets' && (
               <AdminInquiriesTab isLoading={isLoading.inquiries} inquiries={inquiries} onRefresh={fetchInquiries} />

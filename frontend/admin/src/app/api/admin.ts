@@ -35,12 +35,6 @@ export const adminApi = {
     getPlanHistory: (token: string, orgId: string) =>
         fetch(`${BASE_URL}/plan-history/${orgId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
 
-    // 기기 관리 (기업별 필터 추가)
-    getDevices: (token: string, orgId?: string) => {
-        const url = orgId && orgId !== 'all' ? `${BASE_URL}/devices?org_id=${orgId}` : `${BASE_URL}/devices`;
-        return fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-    },
-
     // 대시보드 요약 통계
     getDashboardStats: (token: string) =>
         fetch(`${BASE_URL}/dashboard-stats`, { headers: { 'Authorization': `Bearer ${token}` } }),
@@ -66,13 +60,6 @@ export const adminApi = {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ plan })
-        }),
-
-    // 기기 차단
-    blockDevice: (token: string, deviceId: string) =>
-        fetch(`${BASE_URL}/devices/${deviceId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
         }),
 
     // Q&A 관리
