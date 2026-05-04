@@ -40,6 +40,8 @@ export default function PaymentSuccessPage() {
       try {
         const token = localStorage.getItem('access_token');
         const pending_added_seats = localStorage.getItem('pending_added_seats') || '0';
+        const pending_incremental_added_seats = localStorage.getItem('pending_incremental_added_seats') || pending_added_seats;
+        const pending_payment_mode = localStorage.getItem('pending_payment_mode') || 'plan';
 
         const response = await fetch(`${API_BASE_URL}/payments/toss-confirm`, {
           method: 'POST',
@@ -52,7 +54,9 @@ export default function PaymentSuccessPage() {
             orderId,
             amount: Number(amount),
             plan_name,
-            added_seats: Number(pending_added_seats)
+            added_seats: Number(pending_added_seats),
+            incremental_added_seats: Number(pending_incremental_added_seats),
+            payment_type: pending_payment_mode === 'addSeats' ? 'seat_addon' : 'subscription'
           })
         });
 
@@ -63,6 +67,12 @@ export default function PaymentSuccessPage() {
             setAutoKey(data.auto_key);
           }
           if (refreshUser) await refreshUser();
+          localStorage.removeItem('pending_payment_mode');
+          localStorage.removeItem('pending_added_seats');
+          localStorage.removeItem('pending_incremental_added_seats');
+          localStorage.removeItem('pending_total_seats');
+          localStorage.removeItem('pending_amount');
+          localStorage.removeItem('pending_plan_name');
           setIsConfirming(false);
           // 꿀팁: 자동 발급된 키가 있으면 조금 더 오래 보여줌
           setTimeout(() => navigate('/profile'), data.auto_key ? 6000 : 3000);

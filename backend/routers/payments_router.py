@@ -17,7 +17,7 @@ import base64
 from ..models import models
 from ..core.database import get_db
 from ..core.dependencies import get_current_user, ensure_verified
-from ..core.plan_utils import apply_plan_seats, calculate_plan_amount, get_effective_max_seats, get_plan_base_seats, list_plan_definitions
+from ..core.plan_utils import apply_plan_seats, calculate_plan_amount, get_effective_max_seats, get_plan_base_seats, get_plan_definition, list_plan_definitions
 from ..services.email_service import EmailService
 
 router = APIRouter(prefix="/api/v1/payments", tags=["payments"])
@@ -166,10 +166,18 @@ def toss_confirm(payload: dict, current_org: models.Organization =Depends(get_cu
     order_id = payload.get("orderId")
     amount = payload.get("amount")
     plan_name = payload.get("plan_name")
+    payment_type = payload.get("payment_type", "subscription")
     added_seats = max(0, int(payload.get("added_seats", 0) or 0))
+    incremental_added_seats = max(0, int(payload.get("incremental_added_seats", added_seats) or 0))
     if not payment_key or not order_id or not amount:
         raise HTTPException(status_code=400, detail="필수 결제 정보가누락되었습니다.")
-    expected_amount = int(calculate_plan_amount(db, plan_name, added_seats))
+    if payment_type == "seat_addon":
+        plan = get_plan_definition(db, plan_name or current_org.plan)
+        if not plan or incremental_added_seats <= 0:
+            raise HTTPException(status_code=400, detail="추가 시트 결제 정보가 올바르지 않습니다.")
+        expected_amount = int(plan["addon_price_per_seat"]) * incremental_added_seats
+    else:
+        expected_amount = int(calculate_plan_amount(db, plan_name, added_seats))
     total_seats = get_plan_base_seats(db, plan_name) + added_seats
     if int(amount) != expected_amount:
         raise HTTPException(status_code=400, detail="결제 금액이 선택한 요금제와 일치하지 않습니다.")
@@ -214,7 +222,7 @@ def toss_confirm(payload: dict, current_org: models.Organization =Depends(get_cu
                 pg_transaction_id=payment_key,
                 status="completed",
                 completed_at=now,
-                payment_type="subscription",
+                payment_type=payment_type,
                 added_seats=added_seats,
                 billing_period_start=billing_start,
                 billing_period_end=billing_end
