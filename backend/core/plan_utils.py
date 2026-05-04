@@ -34,7 +34,14 @@ DEFAULT_PLANS = {
 
 
 def _normalize_plan(plan_name: str | None) -> str:
-    return (plan_name or "").strip().lower()
+    normalized = (plan_name or "").strip().lower()
+    if "enterprise" in normalized:
+        return "enterprise"
+    if "pro" in normalized:
+        return "pro"
+    if "basic" in normalized:
+        return "basic"
+    return normalized
 
 
 def get_plan_definition(db: Session, plan_name: str | None) -> dict | None:

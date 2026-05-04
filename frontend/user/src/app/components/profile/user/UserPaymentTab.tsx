@@ -10,7 +10,7 @@ Modification History:
     - 2026-05-04 (송주엽) : Apple 스타일 리디자인
  */
 import React from 'react';
-import { CreditCard, ArrowRight, CheckCircle } from 'lucide-react';
+import { CreditCard, ArrowRight, CheckCircle, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_BASE_URL } from '@/app/api/client';
 
@@ -157,38 +157,55 @@ export const UserPaymentTab: React.FC<BillingTabProps> = ({
               ? `${nextDate} 이후 서비스 이용이 종료됩니다.`
               : '현재 결제 주기 종료일까지 모든 기능을 정상 이용하실 수 있습니다.'}
           </p>
-          <button
-            disabled={!isVerified}
-            onClick={() => {
-              const token = localStorage.getItem('access_token');
-              if (paymentInfo.is_cancelling) {
-                triggerConfirm('구독 유지', '해지 예약을 취소하고 구독을 유지하시겠습니까?', async () => {
-                  const res = await fetch(`${API_BASE_URL}/payments/resume`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  });
-                  if (res.ok) { toast.success('구독 유지가 확정되었습니다.'); refetchPayment(); }
-                }, 'blue');
-              } else {
-                triggerConfirm('구독 해지', '정말 구독을 해지하시겠습니까? 해지 후에도 현재 주기가 끝날 때까지는 이용 가능합니다.', async () => {
-                  const res = await fetch(`${API_BASE_URL}/payments/cancel`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  });
-                  if (res.ok) { toast.success('해지 예약되었습니다.'); refetchPayment(); }
-                }, 'red');
-              }
-            }}
-            className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-              !isVerified
-                ? 'text-zinc-300 cursor-not-allowed'
-                : paymentInfo.is_cancelling
-                  ? 'text-[#0071e3] hover:bg-blue-50'
-                  : 'text-red-500 hover:bg-red-50'
-            }`}
-          >
-            {!isVerified ? '승인 대기 중' : paymentInfo.is_cancelling ? '해지 취소' : '구독 해지'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={!isVerified || paymentInfo.is_cancelling}
+              onClick={() => navigate('/payment', {
+                state: {
+                  mode: 'addSeats',
+                  plan: paymentInfo?.plan_name,
+                  currentPlan: paymentInfo?.plan_name,
+                  addedSeats,
+                }
+              })}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-300"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              좌석 추가
+            </button>
+            <button
+              disabled={!isVerified}
+              onClick={() => {
+                const token = localStorage.getItem('access_token');
+                if (paymentInfo.is_cancelling) {
+                  triggerConfirm('구독 유지', '해지 예약을 취소하고 구독을 유지하시겠습니까?', async () => {
+                    const res = await fetch(`${API_BASE_URL}/payments/resume`, {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) { toast.success('구독 유지가 확정되었습니다.'); refetchPayment(); }
+                  }, 'blue');
+                } else {
+                  triggerConfirm('구독 해지', '정말 구독을 해지하시겠습니까? 해지 후에도 현재 주기가 끝날 때까지는 이용 가능합니다.', async () => {
+                    const res = await fetch(`${API_BASE_URL}/payments/cancel`, {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) { toast.success('해지 예약되었습니다.'); refetchPayment(); }
+                  }, 'red');
+                }
+              }}
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                !isVerified
+                  ? 'text-zinc-300 cursor-not-allowed'
+                  : paymentInfo.is_cancelling
+                    ? 'text-[#0071e3] hover:bg-blue-50'
+                    : 'text-red-500 hover:bg-red-50'
+              }`}
+            >
+              {!isVerified ? '승인 대기 중' : paymentInfo.is_cancelling ? '해지 취소' : '구독 해지'}
+            </button>
+          </div>
         </div>
       </div>
 
