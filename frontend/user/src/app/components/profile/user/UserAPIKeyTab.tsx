@@ -127,30 +127,16 @@ export const UserAPIKeyTab: React.FC<APIKeyTabProps> = ({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white border border-zinc-200 rounded-xl p-5 space-y-2.5">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
-            <p className="text-xs font-semibold text-zinc-700">보안 주의사항</p>
-          </div>
-          <ul className="text-xs text-zinc-500 space-y-1.5 list-disc pl-4">
-            <li>API Key는 외부로 공유하지 마세요.</li>
-            <li>키가 노출된 경우 즉시 삭제하고 새 키를 발급받으세요.</li>
-          </ul>
+      <div className="bg-white border border-zinc-200 rounded-xl p-5 space-y-2.5">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+          <p className="text-xs font-semibold text-zinc-700">보안 주의사항</p>
         </div>
-
-        <div className="bg-white border border-zinc-200 rounded-xl p-5 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold text-zinc-900">AutoCAD 플러그인 설치</p>
-            <p className="text-xs text-zinc-400 mt-0.5">플러그인을 다운받고 API Key를 입력하세요.</p>
-          </div>
-          <button
-            onClick={() => { }}
-            className="shrink-0 px-3.5 py-2 bg-[#0071e3] hover:brightness-105 text-white text-xs font-medium rounded-lg transition-all"
-          >
-            다운로드
-          </button>
-        </div>
+        <ul className="text-xs text-zinc-500 space-y-1.5 list-disc pl-4">
+          <li>API Key는 외부로 공유하지 마세요.</li>
+          <li>키가 노출된 경우 즉시 삭제하고 새 키를 발급받으세요.</li>
+          <li>플러그인 설치 파일은 공식 다운로드 페이지에서만 받으세요.</li>
+        </ul>
       </div>
     </div>
   );

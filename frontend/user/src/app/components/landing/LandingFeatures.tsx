@@ -35,21 +35,21 @@ const features = [
 
 export const LandingFeatures: React.FC = () => {
   return (
-    <section className="py-32 px-8 bg-slate-50 border-t border-zinc-100" id="features">
+    <section className="py-20 px-8 bg-slate-50 border-t border-zinc-100" id="features">
       <div className="max-w-7xl mx-auto">
         <motion.div
-          className="text-center mb-20"
+          className="text-center mb-12"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-4xl md:text-5xl font-black text-zinc-900 mb-4">Core Features</h2>
+          <h2 className="text-3xl md:text-4xl font-black text-zinc-900 mb-4">Core Features</h2>
           <p className="text-zinc-500 text-lg max-w-xl mx-auto">도면 설계의 모든 단계를 AI가 실시간으로 지원합니다.</p>
           <div className="w-12 h-1 bg-[#0071e3] mx-auto mt-6 rounded-full" />
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-6">
           {features.map((feature, idx) => (
             <motion.div
               key={idx}
@@ -57,7 +57,7 @@ export const LandingFeatures: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.15 }}
-              className="bg-white rounded-2xl p-8 border border-zinc-200 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group"
+              className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group"
             >
               <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                 <feature.icon className="w-6 h-6 text-white" />

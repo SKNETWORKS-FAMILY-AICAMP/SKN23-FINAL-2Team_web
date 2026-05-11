@@ -26,6 +26,7 @@ export const AdminApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState({ show: false, type: '', orgId: '', companyName: '', pin: '' });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // 사업자등록 진위확인 상태
   const [bizNo, setBizNo] = useState('');
@@ -98,35 +99,48 @@ export const AdminApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
     </div>
   );
 
-  const selectedOrg = users.find((org) => org.id === selectedOrgId) || users[0];
+  const filteredUsers = users.filter((org) => {
+    const keyword = searchTerm.trim().toLowerCase();
+    if (!keyword) return true;
+    return [org.company_name, org.admin_email, org.id]
+      .some(value => String(value || '').toLowerCase().includes(keyword));
+  });
+  const selectedOrg = filteredUsers.find((org) => org.id === selectedOrgId) || filteredUsers[0];
 
   return (
     <>
-      {/* 섹션 헤더 */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-slate-900">가입 승인 대기열</h2>
-        <p className="text-sm text-slate-500 mt-0.5">신규 기업 가입 신청을 검토하고 승인 또는 거절 처리합니다.</p>
-      </div>
-
       {!Array.isArray(users) || users.length === 0 ? (
         <div className="text-center py-24 border border-dashed border-slate-200 rounded-2xl bg-white flex flex-col items-center">
           <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
             <Users className="w-7 h-7 text-slate-300" />
           </div>
           <p className="font-semibold text-sm text-slate-400">승인 대기 중인 기업이 없습니다</p>
-          <p className="text-xs text-slate-300 mt-1">새로운 가입 신청이 들어오면 이곳에 표시됩니다.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-5">
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="border-b border-slate-200 bg-white p-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="기업명, 이메일, 조직 ID 검색"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm outline-none transition-all focus:border-[#1e40af] focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+            </div>
             <div className="grid grid-cols-12 px-5 py-3 bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
               <div className="col-span-4">기업명</div>
               <div className="col-span-4">관리자 이메일</div>
               <div className="col-span-3">신청일</div>
               <div className="col-span-1 text-right">상태</div>
             </div>
+            {filteredUsers.length === 0 ? (
+              <div className="py-16 text-center text-sm text-slate-400">검색 결과가 없습니다.</div>
+            ) : (
             <div className="divide-y divide-slate-100">
-              {users.map((org) => (
+              {filteredUsers.map((org) => (
                 <button
                   key={org.id}
                   onClick={() => setSelectedOrgId(org.id)}
@@ -150,8 +164,10 @@ export const AdminApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
                 </button>
               ))}
             </div>
+            )}
           </div>
 
+          {selectedOrg && (
           <aside className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
             <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-2">상세 보기</p>
             <h3 className="text-lg font-black text-slate-900 truncate">{selectedOrg.company_name}</h3>
@@ -193,6 +209,7 @@ export const AdminApprovalsTab = ({ isLoading, users, onRefresh }: Props) => {
               </button>
             </div>
           </aside>
+          )}
         </div>
       )}
 

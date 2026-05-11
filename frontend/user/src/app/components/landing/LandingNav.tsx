@@ -58,6 +58,9 @@ export const LandingNav: React.FC<LandingNavProps> = ({ isAuthenticated, user, l
           <button onClick={() => navigate('/pricing')} className="text-sm font-semibold text-zinc-600 hover:text-zinc-900 transition-colors px-3 py-2 hidden md:block">
             가격 책정
           </button>
+          <button onClick={() => navigate('/download')} className="text-sm font-semibold text-zinc-600 hover:text-zinc-900 transition-colors px-3 py-2 hidden md:block">
+            다운로드
+          </button>
           <button
             onClick={() => navigate('/inquiries', { state: { tab: 'faq' } })}
             className="text-sm font-semibold text-zinc-600 hover:text-zinc-900 transition-colors px-3 py-2 hidden md:block"
@@ -76,10 +79,16 @@ export const LandingNav: React.FC<LandingNavProps> = ({ isAuthenticated, user, l
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" sideOffset={0} className="w-[var(--radix-dropdown-menu-trigger-width)] p-1 bg-white !rounded-sm border border-zinc-200 shadow-lg z-[200]">
                 <DropdownMenuItem
-                  onClick={() => navigate((user?.role === 'admin' || user?.role === 'superuser') ? '/admin' : '/profile')}
+                  onClick={() => navigate('/profile')}
                   className="w-full text-center px-3 py-2 cursor-pointer rounded-sm font-semibold text-[13px] text-zinc-700 hover:bg-zinc-100 focus:bg-zinc-100 focus:text-zinc-900 outline-none transition-colors"
                 >
-                  {(user?.role === 'admin' || user?.role === 'superuser') ? '관리자 페이지' : '마이페이지'}
+                  마이페이지
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/download')}
+                  className="w-full text-center px-3 py-2 cursor-pointer rounded-sm font-semibold text-[13px] text-zinc-700 hover:bg-zinc-100 focus:bg-zinc-100 focus:text-zinc-900 outline-none transition-colors"
+                >
+                  다운로드
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={logout}

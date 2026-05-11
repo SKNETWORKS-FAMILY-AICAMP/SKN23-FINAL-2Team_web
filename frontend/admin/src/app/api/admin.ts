@@ -8,12 +8,22 @@ Modification History:
     - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경 
 */
 
-const BASE_URL = 'http://localhost:8000/api/v1/admin';
+const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '');
+
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+    ? `${trimTrailingSlash(import.meta.env.VITE_API_BASE_URL)}/admin`
+    : undefined;
+
+export const ADMIN_API_BASE_URL = trimTrailingSlash(
+    import.meta.env.VITE_ADMIN_API_BASE_URL ||
+    apiBaseUrl ||
+    (import.meta.env.DEV ? 'http://localhost:8000/api/v1/admin' : '/api/v1/admin')
+);
 
 export const adminApi = {
     // PIN 검증 (로그인과 동일하게 /pin-login 활용)
     verifyPin: (pin: string) =>
-        fetch(`${BASE_URL}/pin-login`, {
+        fetch(`${ADMIN_API_BASE_URL}/pin-login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ pin })
@@ -21,11 +31,11 @@ export const adminApi = {
 
     // 가입 승인 대기열
     getPendingApprovals: (token: string) =>
-        fetch(`${BASE_URL}/pending-approvals`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${ADMIN_API_BASE_URL}/pending-approvals`, { headers: { 'Authorization': `Bearer ${token}` } }),
 
     // 전체 회원 관리 (검색/필터 추가)
     getOrganizations: (token: string, companyName?: string, plan?: string) => {
-        let url = `${BASE_URL}/organizations?`;
+        let url = `${ADMIN_API_BASE_URL}/organizations?`;
         if (companyName) url += `company_name=${encodeURIComponent(companyName)}&`;
         if (plan && plan !== 'all') url += `plan=${plan}&`;
         return fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -33,22 +43,22 @@ export const adminApi = {
 
     // 요금제 변경 이력 조회
     getPlanHistory: (token: string, orgId: string) =>
-        fetch(`${BASE_URL}/plan-history/${orgId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${ADMIN_API_BASE_URL}/plan-history/${orgId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
 
     // 대시보드 요약 통계
     getDashboardStats: (token: string) =>
-        fetch(`${BASE_URL}/dashboard-stats`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${ADMIN_API_BASE_URL}/dashboard-stats`, { headers: { 'Authorization': `Bearer ${token}` } }),
 
     // 사용량 통계 (기업별 필터)
     getUsageStats: (token: string, start: string, end: string, orgId?: string) => {
-        let url = `${BASE_URL}/usage-stats?start_date=${start}&end_date=${end}`;
+        let url = `${ADMIN_API_BASE_URL}/usage-stats?start_date=${start}&end_date=${end}`;
         if (orgId && orgId !== 'all') url += `&org_id=${orgId}`;
         return fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
     },
 
     // 승인/거절 액션
     executeAction: (token: string, endpoint: 'approve' | 'reject', orgId: string, reason?: string) =>
-        fetch(`${BASE_URL}/${endpoint}/${orgId}`, {
+        fetch(`${ADMIN_API_BASE_URL}/${endpoint}/${orgId}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ reason })
@@ -56,7 +66,7 @@ export const adminApi = {
 
     // 요금제 수동 변경
     updatePlan: (token: string, orgId: string, plan: string) =>
-        fetch(`${BASE_URL}/organizations/${orgId}/plan`, {
+        fetch(`${ADMIN_API_BASE_URL}/organizations/${orgId}/plan`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ plan })
@@ -64,12 +74,12 @@ export const adminApi = {
 
     // Q&A 관리
     getInquiries: (token: string, status?: string) => {
-        const url = status ? `${BASE_URL}/tickets?status=${status}` : `${BASE_URL}/tickets`;
+        const url = status ? `${ADMIN_API_BASE_URL}/tickets?status=${status}` : `${ADMIN_API_BASE_URL}/tickets`;
         return fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
     },
 
     answerTicket: (token: string, ticketId: number, answer: string) =>
-        fetch(`${BASE_URL}/tickets/${ticketId}/answer`, {
+        fetch(`${ADMIN_API_BASE_URL}/tickets/${ticketId}/answer`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ answer })
@@ -77,7 +87,7 @@ export const adminApi = {
 
     // 문서 관리 (S3)
     getDocuments: (token: string, category?: string) => {
-        const url = category && category !== 'all' ? `${BASE_URL}/documents?category=${encodeURIComponent(category)}` : `${BASE_URL}/documents`;
+        const url = category && category !== 'all' ? `${ADMIN_API_BASE_URL}/documents?category=${encodeURIComponent(category)}` : `${ADMIN_API_BASE_URL}/documents`;
         return fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
     },
 
@@ -85,7 +95,7 @@ export const adminApi = {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('category', category);
-        return fetch(`${BASE_URL}/documents`, {
+        return fetch(`${ADMIN_API_BASE_URL}/documents`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
@@ -93,14 +103,14 @@ export const adminApi = {
     },
 
     deleteDocument: (token: string, docId: string) =>
-        fetch(`${BASE_URL}/documents/${docId}`, {
+        fetch(`${ADMIN_API_BASE_URL}/documents/${docId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         }),
 
     // 국세청 사업자등록 진위확인
     verifyBusiness: (token: string, b_no: string) =>
-        fetch(`${BASE_URL}/verify-business`, {
+        fetch(`${ADMIN_API_BASE_URL}/verify-business`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ b_no })

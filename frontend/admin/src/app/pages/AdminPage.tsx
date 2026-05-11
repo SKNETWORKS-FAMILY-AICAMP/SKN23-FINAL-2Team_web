@@ -151,7 +151,7 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f6f9]" style={{ fontFamily: "'Pretendard', 'Inter', sans-serif" }}>
+    <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'Pretendard', 'Inter', sans-serif" }}>
       {/* GNB — 최상단 헤더 */}
       <header className="bg-white border-b border-slate-200 h-14 flex items-center px-6 sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-3 flex-shrink-0 w-56">
@@ -237,25 +237,25 @@ export default function AdminPage() {
         </aside>
 
         {/* 메인 콘텐츠 */}
-        <main className="flex-1 min-w-0 p-6 space-y-6">
+        <main className="flex-1 min-w-0 p-4 space-y-4">
           {/* 통계 카드 */}
           {statCards.length > 0 && (
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
               {statCards.map((stat) => (
                 <div
                   key={stat.label}
-                  className="bg-white border rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-white border rounded-xl p-3.5 flex items-center gap-3 shadow-sm hover:shadow-md transition-shadow"
                   style={{ borderColor: stat.border }}
                 >
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: stat.bg }}
                   >
-                    <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
+                    <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
                   </div>
                   <div>
                     <p className="text-xs text-slate-400 font-medium">{stat.label}</p>
-                    <p className="text-xl font-extrabold text-slate-900 leading-tight">
+                    <p className="text-lg font-extrabold text-slate-900 leading-tight">
                       {stat.value}
                       <span className="text-xs font-normal text-slate-400 ml-1">{stat.unit}</span>
                     </p>
@@ -266,7 +266,7 @@ export default function AdminPage() {
           )}
 
           {/* 탭 콘텐츠 카드 */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm min-h-[500px] p-6">
+          <div className="min-h-[480px]">
             {activeTab === 'approvals' && (
               <AdminApprovalsTab isLoading={isLoading.approvals} users={pendingUsers} onRefresh={fetchPendingApprovals} />
             )}

@@ -90,12 +90,6 @@ export const AdminUsageTab = ({ isLoading: isFetching, stats: originalStats, org
 
   return (
     <div className="space-y-6">
-      {/* 헤더 */}
-      <div>
-        <h2 className="text-xl font-bold text-slate-900">시스템 사용량</h2>
-        <p className="text-sm text-slate-500 mt-0.5">전체 또는 기업별 AI 엔진 호출 및 토큰 소모 현황</p>
-      </div>
-
       {/* 필터 바 */}
       <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-xl flex flex-wrap gap-5 items-end">
         {/* 빠른 기간 선택 */}

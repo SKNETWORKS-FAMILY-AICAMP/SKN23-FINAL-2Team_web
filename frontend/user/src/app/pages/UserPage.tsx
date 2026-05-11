@@ -31,7 +31,12 @@ import { UserDeviceTab } from '@/app/components/profile/user/UserDeviceTab';
 import { API_BASE_URL } from '@/app/api/client';
 
 
-type TabType = 'account' | 'billing' | 'api' | 'devices';
+const profileTabs = ['account', 'billing', 'api', 'devices'] as const;
+type TabType = typeof profileTabs[number];
+
+const isProfileTab = (tab: unknown): tab is TabType => (
+  typeof tab === 'string' && (profileTabs as readonly string[]).includes(tab)
+);
 
 
 export default function ProfilePage() {
@@ -87,14 +92,13 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/', { replace: true });
-    } else if (user?.role === 'admin' || user?.role === 'superuser') {
-      navigate('/admin', { replace: true });
     }
-  }, [user, navigate, isAuthenticated]);
+  }, [navigate, isAuthenticated]);
 
   const searchParams = new URLSearchParams(location.search);
-  const queryTab = searchParams.get('tab') as TabType;
-  const initialTab = queryTab || (location.state?.tab as TabType) || 'account';
+  const queryTab = searchParams.get('tab');
+  const stateTab = location.state?.tab;
+  const initialTab = isProfileTab(queryTab) ? queryTab : isProfileTab(stateTab) ? stateTab : 'account';
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
 
   const handleTabChange = (tab: TabType) => {
@@ -620,8 +624,8 @@ export default function ProfilePage() {
                     키 복사하기
                   </button>
                   {devices?.length === 0 && (
-                    <button onClick={() => { }} className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-sm rounded-xl border border-zinc-200 transition-colors">
-                      플러그인 다운로드
+                    <button onClick={() => { setNewGeneratedKey(null); navigate('/download'); }} className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-sm rounded-xl border border-zinc-200 transition-colors">
+                      다운로드 페이지로 이동
                     </button>
                   )}
                 </div>

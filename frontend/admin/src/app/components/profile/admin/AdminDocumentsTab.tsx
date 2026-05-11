@@ -25,6 +25,17 @@ interface Document {
   created_at: string;
 }
 
+type UploadKind = 'json' | 'markdown' | 'text' | 'binary';
+
+type PendingUpload = {
+  id: string;
+  file: File;
+  category: string;
+  content: string;
+  kind: UploadKind;
+  error?: string;
+};
+
 const CATEGORIES = [
   { id: '소방', prefix: 'fire_', icon: Flame, color: 'text-orange-500', badge: 'bg-orange-50 text-orange-600 border-orange-200' },
   { id: '건축', prefix: 'arch_', icon: BrickWall, color: 'text-blue-500', badge: 'bg-blue-50 text-blue-600 border-blue-200' },
@@ -46,13 +57,9 @@ export const AdminDocumentsTab = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
-  const [pendingUpload, setPendingUpload] = useState<{
-    file: File;
-    category: string;
-    content: string;
-    kind: 'json' | 'markdown' | 'text' | 'binary';
-    error?: string;
-  } | null>(null);
+  const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
+  const [selectedPendingIndex, setSelectedPendingIndex] = useState(0);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDocuments = async () => {
@@ -83,53 +90,84 @@ export const AdminDocumentsTab = () => {
     return CATEGORIES.find(cat => fileName.startsWith(cat.prefix)) || null;
   };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const inferCategoryFromFile = (file: File) => {
     const lowerName = file.name.toLowerCase();
-    const kind: 'json' | 'markdown' | 'text' | 'binary' =
+    return CATEGORIES.find(cat => lowerName.startsWith(cat.prefix.toLowerCase()))?.id || uploadCategory;
+  };
+
+  const createPendingUpload = async (file: File): Promise<PendingUpload> => {
+    const lowerName = file.name.toLowerCase();
+    const kind: UploadKind =
       lowerName.endsWith('.json') ? 'json'
         : lowerName.endsWith('.md') || lowerName.endsWith('.markdown') ? 'markdown'
           : file.type.startsWith('text/') ? 'text'
             : 'binary';
+    const baseUpload = {
+      id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
+      file,
+      category: inferCategoryFromFile(file),
+      content: '',
+      kind,
+    };
 
     try {
       const rawContent = kind === 'binary' ? '' : await file.text();
       const content = kind === 'json' ? JSON.stringify(JSON.parse(rawContent), null, 2) : rawContent;
-      setPendingUpload({ file, category: uploadCategory, content, kind });
-    } catch (error) {
-      setPendingUpload({
-        file,
-        category: uploadCategory,
-        content: '',
-        kind,
+      return { ...baseUpload, content };
+    } catch {
+      return {
+        ...baseUpload,
         error: kind === 'json' ? 'JSON 형식이 올바르지 않습니다. 내용을 확인한 뒤 다시 선택해주세요.' : '파일 내용을 읽지 못했습니다.'
-      });
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      };
     }
   };
 
-  const handleCancelPendingUpload = () => {
-    setPendingUpload(null);
+  const queueFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+    const queued = await Promise.all(files.map(createPendingUpload));
+    const firstNewIndex = pendingUploads.length;
+    setPendingUploads(prev => [...prev, ...queued]);
+    setSelectedPendingIndex(firstNewIndex);
+    toast.success(`${queued.length}개 파일이 업로드 대기열에 추가되었습니다.`);
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    await queueFiles(Array.from(e.target.files || []));
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleCancelPendingUpload = () => {
+    setPendingUploads([]);
+    setSelectedPendingIndex(0);
+    setIsUploadModalOpen(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleRemovePendingUpload = (index: number) => {
+    const next = pendingUploads.filter((_, itemIndex) => itemIndex !== index);
+    setPendingUploads(next);
+    setSelectedPendingIndex(Math.min(selectedPendingIndex, Math.max(0, next.length - 1)));
   };
 
   const handleConfirmUpload = async () => {
     const token = getAdminToken();
-    if (!pendingUpload || !token || pendingUpload.error) return;
+    if (!token || pendingUploads.length === 0) return;
+    if (pendingUploads.some(item => item.error)) {
+      toast.error('오류가 있는 파일을 제거한 뒤 업로드해주세요.');
+      return;
+    }
 
     try {
       setIsUploading(true);
-      const res = await adminApi.uploadDocument(token, pendingUpload.file, pendingUpload.category);
-      if (res.ok) {
-        toast.success(`[${pendingUpload.category}] 업로드 완료`);
-        setPendingUpload(null);
-        fetchDocuments();
-      } else {
-        toast.error('업로드에 실패했습니다.');
+      for (const item of pendingUploads) {
+        const res = await adminApi.uploadDocument(token, item.file, item.category);
+        if (!res.ok) throw new Error(item.file.name);
       }
+      toast.success(`${pendingUploads.length}개 문서 업로드 완료`);
+      setPendingUploads([]);
+      setSelectedPendingIndex(0);
+      setIsUploadModalOpen(false);
+      fetchDocuments();
     } catch {
       toast.error('업로드 중 오류가 발생했습니다.');
     } finally {
@@ -153,18 +191,14 @@ export const AdminDocumentsTab = () => {
   const totalPages = Math.ceil(filteredDocs.length / ITEMS_PER_PAGE);
   const currentDocs = filteredDocs.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
   const selectedDoc = filteredDocs.find((doc) => doc.id === selectedDocId) || filteredDocs[0];
+  const selectedPending = pendingUploads[selectedPendingIndex] || pendingUploads[0];
+  const hasUploadErrors = pendingUploads.some(item => item.error);
   const getDocumentUrl = (doc: Document) => doc.s3_url || doc.raw_s3_url;
   const isImagePreview = (url: string) => /\.(png|jpe?g|webp|gif)(\?|#|$)/i.test(url);
   const isPdfPreview = (url: string) => /\.pdf(\?|#|$)/i.test(url);
 
   return (
     <div className="space-y-5">
-      {/* 헤더 */}
-      <div>
-        <h2 className="text-xl font-bold text-slate-900">법령 문서 관리</h2>
-        <p className="text-sm text-slate-500 mt-0.5">분야별 법규 및 표준 문서를 업로드하고 관리합니다.</p>
-      </div>
-
       {/* 툴바 */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap items-center gap-3">
         {/* 카테고리 필터 */}
@@ -221,44 +255,9 @@ export const AdminDocumentsTab = () => {
           )}
         </div>
 
-        <div className="h-6 w-px bg-slate-200" />
-
-        {/* 업로드 분야 선택 */}
-        <div className="relative">
-          <button
-            onClick={() => setIsUploadPickerOpen(!isUploadPickerOpen)}
-            onBlur={() => setTimeout(() => setIsUploadPickerOpen(false), 200)}
-            className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-300 outline-none min-w-[90px] justify-between"
-          >
-            <span>{uploadCategory}</span>
-            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isUploadPickerOpen ? 'rotate-180' : ''}`} />
-          </button>
-          <AnimatePresence>
-            {isUploadPickerOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 4 }}
-                className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden min-w-[100px]"
-              >
-                {CATEGORIES.map(cat => (
-                  <div
-                    key={cat.id}
-                    onClick={() => { setUploadCategory(cat.id); setIsUploadPickerOpen(false); }}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-sm cursor-pointer border-b border-slate-100 last:border-0 ${uploadCategory === cat.id ? 'bg-blue-50 text-[#1e40af] font-semibold' : 'text-slate-600 hover:bg-slate-50'}`}
-                  >
-                    <cat.icon className={`w-3.5 h-3.5 ${cat.color}`} />
-                    {cat.id}
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
+        <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" multiple />
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => setIsUploadModalOpen(true)}
           disabled={isUploading}
           className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e40af] hover:bg-[#1d3a9e] text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
         >
@@ -483,9 +482,9 @@ export const AdminDocumentsTab = () => {
         )}
       </AnimatePresence>
 
-      {/* 업로드 전 검토 모달 */}
+      {/* 업로드 모달 */}
       <AnimatePresence>
-        {pendingUpload && (
+        {isUploadModalOpen && (
           <div className="fixed inset-0 bg-black/50 z-[210] flex items-center justify-center p-8 backdrop-blur-sm" onClick={handleCancelPendingUpload}>
             <motion.div
               initial={{ opacity: 0, scale: 0.96 }}
@@ -496,9 +495,9 @@ export const AdminDocumentsTab = () => {
             >
               <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-6 py-4">
                 <div className="min-w-0">
-                  <h5 className="truncate text-sm font-bold text-slate-900">업로드 전 문서 검토</h5>
+                  <h5 className="truncate text-sm font-bold text-slate-900">문서 업로드</h5>
                   <p className="mt-0.5 truncate text-xs text-slate-500">
-                    {pendingUpload.file.name} · {pendingUpload.category} · {(pendingUpload.file.size / 1024).toFixed(1)}KB
+                    분야 선택 후 파일을 추가하고 내용을 확인하세요.
                   </p>
                 </div>
                 <button onClick={handleCancelPendingUpload} className="rounded-lg bg-slate-200 p-1.5 text-slate-500 transition-all hover:bg-red-100 hover:text-red-600">
@@ -506,23 +505,113 @@ export const AdminDocumentsTab = () => {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-auto bg-slate-950 p-6">
-                {pendingUpload.error ? (
-                  <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-600">
-                    {pendingUpload.error}
+              <div className="border-b border-slate-100 bg-white px-6 py-4">
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="relative min-w-[140px]">
+                    <label className="mb-1.5 block text-xs font-bold text-slate-500">업로드 분야</label>
+                    <button
+                      onClick={() => setIsUploadPickerOpen(!isUploadPickerOpen)}
+                      onBlur={() => setTimeout(() => setIsUploadPickerOpen(false), 200)}
+                      className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 outline-none hover:border-slate-300"
+                    >
+                      <span>{uploadCategory}</span>
+                      <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${isUploadPickerOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    <AnimatePresence>
+                      {isUploadPickerOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 4 }}
+                          className="absolute top-full left-0 z-50 mt-1 min-w-[140px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
+                        >
+                          {CATEGORIES.map(cat => (
+                            <div
+                              key={cat.id}
+                              onClick={() => { setUploadCategory(cat.id); setIsUploadPickerOpen(false); }}
+                              className={`flex cursor-pointer items-center gap-2 border-b border-slate-100 px-4 py-2.5 text-sm last:border-0 ${uploadCategory === cat.id ? 'bg-blue-50 font-semibold text-[#1e40af]' : 'text-slate-600 hover:bg-slate-50'}`}
+                            >
+                              <cat.icon className={`h-3.5 w-3.5 ${cat.color}`} />
+                              {cat.id}
+                            </div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                ) : pendingUpload.kind === 'binary' ? (
-                  <div className="flex h-full min-h-[360px] flex-col items-center justify-center rounded-xl border border-slate-700 bg-slate-900 text-center text-slate-300">
-                    <FileText className="mb-4 h-10 w-10 text-slate-500" />
-                    <p className="text-sm font-semibold">이 파일 형식은 본문 미리보기를 지원하지 않습니다.</p>
-                    <p className="mt-1 text-xs text-slate-500">파일명과 분야를 확인한 뒤 승인하면 업로드됩니다.</p>
-                  </div>
-                ) : (
-                  <pre className="min-h-full whitespace-pre-wrap break-words rounded-xl border border-slate-800 bg-slate-900 p-5 font-mono text-xs leading-6 text-slate-100">
-                    {pendingUpload.content}
-                  </pre>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#1d3a9e] disabled:opacity-50"
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    파일 선택
+                  </button>
+                  <p className="pb-2 text-xs text-slate-400">
+                    파일명 접두어 fire_, arch_, pipe_, elec_가 있으면 분야를 자동 인식합니다.
+                  </p>
+                </div>
               </div>
+
+              {selectedPending ? (
+                <div className="grid flex-1 min-h-0 grid-cols-[260px_minmax(0,1fr)]">
+                  <aside className="overflow-y-auto border-r border-slate-200 bg-white p-4">
+                    <div className="mb-3 text-[11px] font-bold uppercase tracking-wide text-slate-400">업로드 대기열</div>
+                    <div className="space-y-2">
+                      {pendingUploads.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className={`group flex items-center gap-2 rounded-lg border p-2 text-left ${
+                            index === selectedPendingIndex
+                              ? 'border-blue-200 bg-blue-50'
+                              : item.error
+                                ? 'border-red-200 bg-red-50'
+                                : 'border-slate-200 bg-white hover:bg-slate-50'
+                          }`}
+                        >
+                          <button type="button" onClick={() => setSelectedPendingIndex(index)} className="min-w-0 flex-1 text-left">
+                            <p className="truncate text-xs font-bold text-slate-800">{item.file.name}</p>
+                            <p className={`mt-0.5 text-[10px] ${item.error ? 'text-red-500' : 'text-slate-400'}`}>
+                              {item.category} · {(item.file.size / 1024).toFixed(1)}KB
+                            </p>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePendingUpload(index)}
+                            className="rounded-md p-1 text-slate-300 opacity-0 transition-all hover:bg-red-100 hover:text-red-500 group-hover:opacity-100"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </aside>
+
+                  <div className="overflow-auto bg-slate-950 p-6">
+                    {selectedPending.error ? (
+                      <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-600">
+                        {selectedPending.error}
+                      </div>
+                    ) : selectedPending.kind === 'binary' ? (
+                      <div className="flex h-full min-h-[360px] flex-col items-center justify-center rounded-xl border border-slate-700 bg-slate-900 text-center text-slate-300">
+                        <FileText className="mb-4 h-10 w-10 text-slate-500" />
+                        <p className="text-sm font-semibold">이 파일 형식은 본문 미리보기를 지원하지 않습니다.</p>
+                        <p className="mt-1 text-xs text-slate-500">파일명과 분야를 확인한 뒤 승인하면 업로드됩니다.</p>
+                      </div>
+                    ) : (
+                      <pre className="min-h-full whitespace-pre-wrap break-words rounded-xl border border-slate-800 bg-slate-900 p-5 font-mono text-xs leading-6 text-slate-100">
+                        {selectedPending.content}
+                      </pre>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-1 flex-col items-center justify-center text-center text-slate-400">
+                  <FileText className="mb-3 h-10 w-10 text-slate-300" />
+                  <p className="text-sm font-semibold">업로드할 파일을 선택하세요.</p>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4">
                 <button
@@ -534,17 +623,18 @@ export const AdminDocumentsTab = () => {
                 </button>
                 <button
                   onClick={handleConfirmUpload}
-                  disabled={isUploading || !!pendingUpload.error}
+                  disabled={isUploading || hasUploadErrors || pendingUploads.length === 0}
                   className="inline-flex items-center gap-2 rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#1d3a9e] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                  승인 후 업로드
+                  승인 후 {pendingUploads.length}개 업로드
                 </button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
     </div>
   );
 };

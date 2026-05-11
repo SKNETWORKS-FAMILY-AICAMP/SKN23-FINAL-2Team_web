@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ShieldCheck,
   ArrowRight,
+  AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { toast } from 'sonner';
@@ -66,7 +67,19 @@ const DEFAULT_PLANS: PlanOption[] = [
 ];
 
 const formatCurrency = (value: number) => value.toLocaleString('ko-KR');
-const TOSS_CLIENT_KEY = import.meta.env.VITE_TOSS_CLIENT_KEY;
+const rawTossClientKey = import.meta.env.VITE_TOSS_CLIENT_KEY?.trim() ?? '';
+const TOSS_CLIENT_KEY = rawTossClientKey && rawTossClientKey !== 'your_toss_client_key_here'
+  ? rawTossClientKey
+  : '';
+const IS_TOSS_CONFIGURED = Boolean(TOSS_CLIENT_KEY);
+const PLAN_ORDER: Record<PlanTier, number> = { Basic: 0, Pro: 1, Enterprise: 2 };
+
+const sortPlans = (plans: PlanOption[]) =>
+  [...plans].sort((a, b) => {
+    const tierA = normalizePlanTier(a.plan_code || a.plan_name);
+    const tierB = normalizePlanTier(b.plan_code || b.plan_name);
+    return PLAN_ORDER[tierA] - PLAN_ORDER[tierB];
+  });
 
 export default function PaymentPage() {
   const navigate = useNavigate();
@@ -95,7 +108,7 @@ export default function PaymentPage() {
               seen.set(tier, plan);
             }
           }
-          setPlanOptions(Array.from(seen.values()));
+          setPlanOptions(sortPlans(Array.from(seen.values())));
         }
       } catch (error) {
         console.error('Failed to load payment plans', error);
@@ -109,7 +122,7 @@ export default function PaymentPage() {
     if (paymentMode === 'addSeats' && currentTier) {
       return planOptions.filter((plan) => normalizePlanTier(plan.plan_code || plan.plan_name) === currentTier);
     }
-    return planOptions.filter((plan) => normalizePlanTier(plan.plan_code || plan.plan_name) !== currentTier);
+    return sortPlans(planOptions.filter((plan) => normalizePlanTier(plan.plan_code || plan.plan_name) !== currentTier));
   }, [currentPlan, paymentMode, planOptions]);
 
   const initialTargetPlan = location.state?.plan
@@ -138,6 +151,11 @@ export default function PaymentPage() {
     : selectedPlanInfo.base_price + addonAmount;
 
   const handlePayment = async () => {
+    if (!IS_TOSS_CONFIGURED) {
+      toast.info('결제 설정을 확인 중입니다. 관리자에게 문의해 주세요.');
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const token = localStorage.getItem('access_token');
@@ -154,22 +172,17 @@ export default function PaymentPage() {
       localStorage.setItem('pending_total_seats', String(totalSeats));
       localStorage.setItem('pending_amount', String(totalAmount));
 
-      if (TOSS_CLIENT_KEY) {
-        const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
-        await tossPayments.requestPayment('카드', {
-          amount: totalAmount,
-          orderId: `cadence_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
-          orderName: paymentMode === 'addSeats'
-            ? `${selectedPlan} 추가 시트 ${additionalSeats}개`
-            : `${selectedPlan} 연간 구독${additionalSeats > 0 ? ` + 추가 시트 ${additionalSeats}개` : ''}`,
-          customerName: user?.companyName || user?.email || 'Cadence 고객',
-          successUrl: `${window.location.origin}/payment/success`,
-          failUrl: `${window.location.origin}/payment/fail`,
-        });
-        return;
-      }
-
-      toast.error('토스 결제 클라이언트 키가 설정되지 않았습니다.');
+      const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
+      await tossPayments.requestPayment('카드', {
+        amount: totalAmount,
+        orderId: `cadence_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+        orderName: paymentMode === 'addSeats'
+          ? `${selectedPlan} 추가 시트 ${additionalSeats}개`
+          : `${selectedPlan} 연간 구독${additionalSeats > 0 ? ` + 추가 시트 ${additionalSeats}개` : ''}`,
+        customerName: user?.companyName || user?.email || 'Cadence 고객',
+        successUrl: `${window.location.origin}/payment/success`,
+        failUrl: `${window.location.origin}/payment/fail`,
+      });
     } catch (error) {
       console.error('Payment request failed', error);
       toast.error('결제창을 여는 중 오류가 발생했습니다.');
@@ -391,23 +404,40 @@ export default function PaymentPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span className="text-xs text-emerald-700 font-medium">
-                  {TOSS_CLIENT_KEY ? '결제 버튼을 누르면 토스 결제창이 열립니다' : '토스 결제 클라이언트 키가 필요합니다'}
-                </span>
+              <div className={`flex items-start gap-2 rounded-lg border px-3 py-2 ${
+                IS_TOSS_CONFIGURED
+                  ? 'bg-emerald-50 border-emerald-100'
+                  : 'bg-amber-50 border-amber-100'
+              }`}>
+                {IS_TOSS_CONFIGURED ? (
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                )}
+                <div className="space-y-0.5">
+                  <p className={`text-xs font-medium ${IS_TOSS_CONFIGURED ? 'text-emerald-700' : 'text-amber-700'}`}>
+                    {IS_TOSS_CONFIGURED
+                      ? '결제 버튼을 누르면 토스 결제창이 열립니다'
+                      : '현재 결제 설정을 확인 중입니다. 관리자에게 문의해 주세요.'}
+                  </p>
+                  {!IS_TOSS_CONFIGURED && import.meta.env.DEV && (
+                    <p className="text-[10px] leading-relaxed text-amber-600">
+                      개발 환경에서는 frontend/user/.env에 VITE_TOSS_CLIENT_KEY를 설정해야 합니다.
+                    </p>
+                  )}
+                </div>
               </div>
 
               <button
                 onClick={handlePayment}
-                disabled={isProcessing}
+                disabled={isProcessing || !IS_TOSS_CONFIGURED}
                 className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
-                  isProcessing
+                  isProcessing || !IS_TOSS_CONFIGURED
                     ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
                     : 'bg-[#0071e3] hover:brightness-110 text-white shadow-sm'
                 }`}
               >
-                {isProcessing ? '처리 중...' : (
+                {isProcessing ? '처리 중...' : !IS_TOSS_CONFIGURED ? '결제 설정 확인 필요' : (
                   <>
                     {paymentMode === 'addSeats'
                       ? `시트 ${additionalSeats}개 추가 결제`

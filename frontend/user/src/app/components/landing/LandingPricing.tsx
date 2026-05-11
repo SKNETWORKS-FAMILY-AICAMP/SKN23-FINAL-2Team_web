@@ -71,12 +71,6 @@ export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated,
     }
 
     if (isAuthenticated) {
-      // 관리자 권한인 경우 마이페이지나 결제창 대신 관리자 페이지로 이동
-      if (user?.role === 'admin' || user?.role === 'superuser') {
-        navigate('/admin');
-        return;
-      }
-
       // user.plan이 존재하고 'free'가 아니면 결제되어 있는 상태로 판단
       const isSubscribed = user?.plan && user.plan.toLowerCase() !== 'free';
 
@@ -91,26 +85,26 @@ export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated,
   };
 
   return (
-    <section className="bg-white py-32 border-t border-black/5" id="pricing">
-      <div className="max-w-7xl mx-auto px-8">
+    <section className="bg-white py-20 border-t border-black/5" id="pricing">
+      <div className="max-w-6xl mx-auto px-8">
         {/* 헤더 섹션: 1번 코드의 애니메이션과 디자인 적용 */}
         <motion.div
-          className="text-center mb-24"
+          className="text-center mb-14"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-4xl md:text-5xl font-black text-zinc-900 mb-6">Pricing Plans</h2>
-          <p className="text-zinc-600 max-w-2xl mx-auto text-lg">
+          <h2 className="text-3xl md:text-4xl font-black text-zinc-900 mb-4">Pricing Plans</h2>
+          <p className="text-zinc-600 max-w-2xl mx-auto text-base leading-relaxed">
             평생 소장을 통한 영구적 사용부터 대규모 팀을 위한 유연한 구독 모델까지, <br className="hidden md:block" />
             비즈니스 규모에 맞는 최적의 플랜을 선택하세요.
           </p>
-          <div className="w-16 h-1 bg-[#0071e3] mx-auto mt-8"></div>
+          <div className="w-14 h-1 bg-[#0071e3] mx-auto mt-6"></div>
         </motion.div>
 
         {/* 가격 카드 그리드 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
           {plans.map((plan, idx) => (
             <motion.div
               key={plan.name}
@@ -119,17 +113,17 @@ export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated,
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: idx * 0.1 }}
               whileHover={{ 
-                y: -12,
-                scale: plan.highlight ? 1.07 : 1.03,
+                y: -6,
+                scale: 1.01,
                 transition: { type: "spring", stiffness: 400, damping: 17 }
               }}
-              className={`relative flex flex-col p-10 rounded-[32px] transition-all duration-500 group cursor-default ${plan.highlight
-                ? 'bg-white border-2 border-[#0071e3] scale-105 shadow-[0_10px_40px_rgba(0,113,227,0.15)] z-10 hover:shadow-[0_20px_60px_rgba(0,113,227,0.2)]'
+              className={`relative flex flex-col p-7 rounded-2xl transition-all duration-500 group cursor-default ${plan.highlight
+                ? 'bg-white border-2 border-[#0071e3] shadow-[0_10px_32px_rgba(0,113,227,0.13)] z-10 hover:shadow-[0_18px_44px_rgba(0,113,227,0.18)]'
                 : 'bg-zinc-50 border border-zinc-200 hover:border-zinc-300 hover:bg-white hover:shadow-[0_20px_40px_rgba(0,0,0,0.05)]'
                 }`}
             >
               {plan.badge && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0071e3] text-white px-5 py-1.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase shadow-[0_5px_15px_rgba(0,113,227,0.4)] transition-transform group-hover:scale-110">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0071e3] text-white px-5 py-1.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase shadow-[0_5px_15px_rgba(0,113,227,0.4)]">
                   {plan.badge}
                 </div>
               )}
@@ -142,14 +136,14 @@ export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated,
                 </span>
               </div>
 
-              <div className="text-4xl font-black text-zinc-900 mb-1">
+              <div className="text-3xl font-black text-zinc-900 mb-1">
                 {plan.price === '별도 문의' ? plan.price : `₩${plan.price}`}
               </div>
-              <div className={`text-sm mb-8 ${plan.highlight ? 'text-zinc-500' : 'text-[#0071e3] font-medium'}`}>
+              <div className={`text-sm mb-6 ${plan.highlight ? 'text-zinc-500' : 'text-[#0071e3] font-medium'}`}>
                 {plan.period}
               </div>
 
-              <ul className="space-y-4 text-sm mb-12 flex-grow">
+              <ul className="space-y-3 text-sm mb-8 flex-grow">
                 {plan.features.map((feature, fidx) => (
                   <li key={fidx} className="flex items-start gap-3 text-zinc-600">
                     {plan.highlight ? (
@@ -164,7 +158,7 @@ export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated,
 
               <button
                 onClick={() => handleAction(plan.name)}
-                className={`w-full py-4 rounded-lg transition-all uppercase tracking-widest text-xs font-bold ${plan.highlight
+                className={`w-full py-3 rounded-lg transition-all uppercase tracking-widest text-xs font-bold ${plan.highlight
                   ? 'bg-[#0071e3] text-white hover:brightness-110 shadow-lg shadow-[#0071e3]/20'
                   : 'border border-zinc-300 text-zinc-700 hover:bg-zinc-100 hover:border-zinc-400'
                   }`}>

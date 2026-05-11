@@ -73,12 +73,6 @@ export const AdminManagementTab = ({ isLoading, orgs, onSearch, onRefresh }: Pro
 
   return (
     <div className="space-y-6">
-      {/* 섹션 헤더 */}
-      <div className="mb-2">
-        <h2 className="text-xl font-bold text-slate-900">기업 관리</h2>
-        <p className="text-sm text-slate-500 mt-0.5">등록된 기업의 요금제 및 구독 현황을 관리합니다.</p>
-      </div>
-
       {/* 검색/필터 */}
       <div className="bg-white border border-slate-200 shadow-sm p-5 rounded-xl flex flex-wrap gap-4 items-end">
         <div className="space-y-1.5 flex-1 min-w-[240px]">
