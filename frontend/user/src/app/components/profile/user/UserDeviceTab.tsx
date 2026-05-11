@@ -9,7 +9,7 @@ Modification History:
     - 2026-05-04 (송주엽) : Apple 스타일 리디자인
  */
 import React from 'react';
-import { Monitor, Clock, Power, Download } from 'lucide-react';
+import { Monitor, Clock, Power } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { API_BASE_URL } from '@/app/api/client';
@@ -121,20 +121,13 @@ export const UserDeviceTab: React.FC<DeviceTabProps> = ({
       </div>
 
       {/* 새 기기 등록 안내 */}
-      <div className="bg-white border border-zinc-200 rounded-xl p-5 flex items-start justify-between gap-6">
+      <div className="bg-white border border-zinc-200 rounded-xl p-5">
         <div className="space-y-1">
           <p className="text-sm font-semibold text-zinc-900">새 기기 등록 방법</p>
           <p className="text-xs text-zinc-500 leading-relaxed">
-            AutoCAD 전용 플러그인을 설치한 후, 플러그인 설정 메뉴에서 API Key를 입력하면 자동으로 등록됩니다.
+            마이페이지의 다운로드 메뉴에서 Windows용 AutoCAD 플러그인 번들을 받은 뒤, 플러그인 설정 메뉴에서 API Key를 입력하면 자동으로 등록됩니다.
           </p>
         </div>
-        <button
-          onClick={() => { }}
-          className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 bg-[#0071e3] hover:brightness-105 text-white text-xs font-medium rounded-lg transition-all"
-        >
-          <Download className="w-3.5 h-3.5" />
-          플러그인 다운로드
-        </button>
       </div>
     </div>
   );

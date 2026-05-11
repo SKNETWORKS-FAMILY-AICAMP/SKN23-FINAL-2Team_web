@@ -21,20 +21,17 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
       {/* 중앙 로고 */}
-      <div className="flex items-center gap-3 mb-8 transform -translate-y-4">
-        <img src={logoMark} alt="Cadence AI" className="h-10 w-10 object-contain" />
-        <span className="text-2xl font-black tracking-tight text-zinc-900">Cadence AI</span>
+      <div className="flex items-center gap-3 mb-6 transform -translate-y-3">
+        <img src={logoMark} alt="Cadence AI" className="h-9 w-9 object-contain" />
+        <span className="text-xl font-black tracking-tight text-zinc-900">Cadence AI</span>
       </div>
 
       <div className="w-full max-w-sm">
-        <div className="bg-white border border-slate-200/80 rounded-[2rem] p-10 shadow-2xl shadow-slate-200/50">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl shadow-slate-200/60">
           <PinLoginForm onSuccess={() => navigate('/admin')} />
         </div>
-        <p className="text-center text-[11px] text-slate-400 mt-6 font-medium">
-          접근 권한이 없으신가요? 시스템 담당자에게 문의하세요.
-        </p>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ Modification History:
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { CheckCircle, Loader2, Key, Copy, Check } from 'lucide-react';
+import { CheckCircle, Loader2, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/app/context/AuthContext';
 import { API_BASE_URL } from '@/app/api/client';
@@ -91,45 +91,48 @@ export default function PaymentSuccessPage() {
   }, [searchParams, navigate, refreshUser]);
 
   return (
-    <div className="min-h-screen bg-[#0e0e0e] text-white flex items-center justify-center p-6">
+    <div className="min-h-screen bg-[#f5f7fb] text-zinc-900 flex items-center justify-center p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full bg-zinc-900/50 backdrop-blur-2xl border border-white/10 p-10 rounded-3xl text-center space-y-6"
+        className="max-w-md w-full bg-white border border-zinc-200 p-10 rounded-2xl text-center space-y-6 shadow-xl shadow-zinc-200/70"
       >
         {isConfirming ? (
           <>
             <Loader2 className="w-16 h-16 text-[#0071e3] animate-spin mx-auto" />
             <div className="space-y-2">
               <h2 className="text-2xl font-black">결제 최종 승인 중</h2>
-              <p className="text-zinc-400">잠시만 기다려주세요, 결제를 최종 확인하고 있습니다.</p>
+              <p className="text-zinc-500">잠시만 기다려주세요. 결제와 구독 정보를 안전하게 확인하고 있습니다.</p>
             </div>
           </>
         ) : (
           <>
-            <div className="w-20 h-20 bg-[#47e266]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-10 h-10 text-[#47e266]" />
+            <div className="w-20 h-20 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-10 h-10 text-emerald-500" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-3xl font-black">결제 완료!</h2>
-              <p className="text-zinc-400">구독이 성공적으로 시작되었습니다.</p>
+              <h2 className="text-3xl font-black">결제 완료</h2>
+              <p className="text-zinc-500">구독이 성공적으로 시작되었습니다.</p>
 
               {autoKey && (
-                <div className="mt-8 p-4 bg-black/40 border border-[#0071e3]/30 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <p className="text-[10px] text-[#0071e3] font-bold uppercase tracking-widest text-left">Auto-Generated API Key</p>
+                <div className="mt-8 p-4 bg-blue-50 border border-blue-100 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <p className="text-[10px] text-[#0071e3] font-bold uppercase tracking-widest text-left flex items-center gap-1.5">
+                    <KeyRound className="w-3 h-3" />
+                    Auto-Generated API Key
+                  </p>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 bg-white/5 p-2 rounded text-xs text-zinc-300 font-mono text-left break-all select-all">
+                    <code className="flex-1 bg-white p-2 rounded border border-blue-100 text-xs text-zinc-700 font-mono text-left break-all select-all">
                       {autoKey}
                     </code>
                   </div>
                   <p className="text-[10px] text-zinc-500 text-left leading-relaxed">
-                    첫 API 키가 자동으로 발급되었습니다. <br />
-                    마이페이지의 'API Key 관리' 탭에서 언제든 확인하실 수 있습니다.
+                    첫 API 키가 자동으로 발급되었습니다.<br />
+                    마이페이지의 API Key 관리 탭에서 확인할 수 있습니다.
                   </p>
                 </div>
               )}
 
-              <p className="text-xs text-zinc-600 pt-4">잠시 후 마이페이지로 이동합니다...</p>
+              <p className="text-xs text-zinc-400 pt-4">잠시 후 마이페이지로 이동합니다.</p>
             </div>
           </>
         )}

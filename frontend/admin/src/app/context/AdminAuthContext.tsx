@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { adminApi } from '@/app/api/admin';
 
 const ADMIN_TOKEN_KEY = 'admin_token';
 
@@ -17,11 +18,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const adminLogin = async (pin: string): Promise<{ success: boolean; message?: string }> => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/admin/pin-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin }),
-      });
+      const response = await adminApi.verifyPin(pin);
       const data = await response.json();
       if (data?.success && data?.token) {
         localStorage.setItem(ADMIN_TOKEN_KEY, data.token);

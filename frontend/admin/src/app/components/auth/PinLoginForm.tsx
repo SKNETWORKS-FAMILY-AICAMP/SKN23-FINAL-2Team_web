@@ -80,17 +80,17 @@ export const PinLoginForm: React.FC<PinLoginFormProps> = ({ onSuccess }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col items-center gap-8">
+    <form onSubmit={handleSubmit} className="flex flex-col items-center gap-6">
       <div className="flex flex-col items-center gap-2 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-1">
-          <ShieldCheck className="w-7 h-7 text-[#1e40af]" />
+        <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-1">
+          <ShieldCheck className="w-6 h-6 text-[#1e40af]" />
         </div>
         <h2 className="text-2xl font-black text-slate-900 tracking-tight">관리자 인증</h2>
         <p className="text-sm text-slate-500">4자리 PIN 번호를 입력하세요</p>
       </div>
 
       {/* 4자리 PIN 입력 박스 */}
-      <div className="flex gap-3">
+      <div className="flex gap-2.5">
         {pins.map((pin, i) => (
           <input
             key={i}
@@ -103,7 +103,7 @@ export const PinLoginForm: React.FC<PinLoginFormProps> = ({ onSuccess }) => {
             onKeyDown={(e) => handleKeyDown(i, e)}
             disabled={isLoading}
             autoFocus={i === 0}
-            className="w-14 h-16 text-center text-2xl font-black bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-900 focus:border-[#1e40af] focus:ring-4 focus:ring-blue-100 outline-none transition-all disabled:opacity-50"
+            className="w-12 h-14 text-center text-xl font-black bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-900 focus:border-[#1e40af] focus:ring-4 focus:ring-blue-100 outline-none transition-all disabled:opacity-50"
           />
         ))}
       </div>

@@ -12,7 +12,7 @@ Modification History:
     - 2026-04-26 (김민정) : 인증 성공 시 메인 대시보드 연동
 */
 import React, { useState, forwardRef, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Button } from "@/app/components/ui/button";
 import { useAuth } from '@/app/context/AuthContext';
@@ -174,6 +174,9 @@ export const AuthModal = forwardRef<HTMLDivElement, AuthModalProps>(
           <DialogContent className="sm:max-w-[400px] bg-white text-zinc-900 border-zinc-200 overflow-y-auto max-h-[90vh]">
             <DialogHeader>
               <DialogTitle className="text-2xl font-black text-center text-zinc-900">Cadence AI</DialogTitle>
+              <DialogDescription className="sr-only">
+                Cadence AI 계정 로그인, 회원가입, 이메일 인증, 비밀번호 재설정을 진행합니다.
+              </DialogDescription>
             </DialogHeader>
 
             <AnimatePresence mode="wait">

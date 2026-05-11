@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import App from "./app/App";
 import PaymentPage from "@/app/pages/PaymentPage";
 import UserPage from "@/app/pages/UserPage";
@@ -8,6 +8,7 @@ import InquiriesPage from "@/app/pages/InquiriesPage";
 import PaymentSuccessPage from "@/app/pages/PaymentSuccessPage";
 import PaymentFailPage from "@/app/pages/PaymentFailPage";
 import PricingPage from "@/app/pages/PricingPage";
+import DownloadPage from "@/app/pages/DownloadPage";
 import { AuthProvider } from "./app/context/AuthContext";
 import { AuthModal } from "@/app/components/auth/AuthModal";
 import { Toaster } from "./app/components/ui/sonner";
@@ -25,6 +26,8 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/inquiries" element={<InquiriesPage />} />
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/download" element={<DownloadPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <AuthModal />
       <Toaster />

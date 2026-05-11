@@ -118,15 +118,11 @@ export default function PricingPage() {
 
   const handleAction = () => {
     if (isAuthenticated) {
-      if (user?.role === 'admin' || user?.role === 'superuser') {
-        navigate('/admin');
+      const isSubscribed = user?.plan && user.plan.toLowerCase() !== 'free';
+      if (isSubscribed) {
+        navigate('/profile', { state: { tab: 'billing' } });
       } else {
-        const isSubscribed = user?.plan && user.plan.toLowerCase() !== 'free';
-        if (isSubscribed) {
-          navigate('/profile', { state: { tab: 'billing' } });
-        } else {
-          navigate('/payment');
-        }
+        navigate('/payment');
       }
     } else {
       window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }));
@@ -137,16 +133,16 @@ export default function PricingPage() {
     <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans">
       <LandingNav isAuthenticated={isAuthenticated} user={user} logout={logout} />
 
-      <main className="flex-1 pt-32 pb-24 border-b border-zinc-200">
-        <div className="max-w-[1400px] mx-auto px-6">
-          <div className="text-center mb-20 space-y-5 flex flex-col items-center">
-            <img src={logoMark} alt="Cadence AI Logo" className="w-16 h-16 object-contain mb-2" />
-            <h2 className="text-4xl md:text-5xl font-black text-zinc-900 tracking-tight mt-0">
+      <main className="flex-1 pt-24 pb-16 border-b border-zinc-200">
+        <div className="max-w-[1280px] mx-auto px-6">
+          <div className="text-center mb-12 space-y-3 flex flex-col items-center">
+            <img src={logoMark} alt="Cadence AI Logo" className="w-12 h-12 object-contain" />
+            <h2 className="text-3xl md:text-4xl font-black text-zinc-900 tracking-tight mt-0">
               <span className="text-[#0071e3]">Cadence AI</span>를 최대한 활용하세요
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch">
             {detailedPlans.map((plan, idx) => {
               const isHighlighted = highlightedPlan === plan.name;
 
@@ -157,18 +153,18 @@ export default function PricingPage() {
                 onMouseLeave={() => setHoveredPlan(null)}
                 onFocus={() => setHoveredPlan(plan.name)}
                 onBlur={() => setHoveredPlan(null)}
-                className={`group flex flex-col p-8 rounded-3xl bg-white cursor-pointer transition-all duration-300 ease-out focus-within:-translate-y-2 ${
+                className={`group flex flex-col p-6 rounded-2xl bg-white cursor-pointer transition-all duration-300 ease-out focus-within:-translate-y-1 ${
                   isHighlighted
-                    ? 'border-2 border-[#0071e3] shadow-[0_4px_24px_rgba(0,113,227,0.12)] hover:-translate-y-2 hover:shadow-[0_18px_48px_rgba(0,113,227,0.22)] focus-within:shadow-[0_18px_48px_rgba(0,113,227,0.22)]'
-                    : 'border-2 border-zinc-200 hover:border-[#0071e3]/60 hover:-translate-y-2 hover:shadow-[0_18px_42px_rgba(15,23,42,0.08)] focus-within:border-[#0071e3]/60 focus-within:shadow-[0_18px_42px_rgba(15,23,42,0.08)]'
+                    ? 'border-2 border-[#0071e3] shadow-[0_4px_20px_rgba(0,113,227,0.12)] hover:-translate-y-1 hover:shadow-[0_14px_36px_rgba(0,113,227,0.18)] focus-within:shadow-[0_14px_36px_rgba(0,113,227,0.18)]'
+                    : 'border-2 border-zinc-200 hover:border-[#0071e3]/60 hover:-translate-y-1 hover:shadow-[0_14px_32px_rgba(15,23,42,0.08)] focus-within:border-[#0071e3]/60 focus-within:shadow-[0_14px_32px_rgba(15,23,42,0.08)]'
                 }`}
               >
-                <div className="mb-8">
-                  <h3 className="text-2xl font-black text-zinc-900 mb-4">{plan.name}</h3>
-                  <p className="text-[13px] text-zinc-600 leading-relaxed font-medium min-h-[60px]">{plan.tagline}</p>
+                <div className="mb-5">
+                  <h3 className="text-xl font-black text-zinc-900 mb-3">{plan.name}</h3>
+                  <p className="text-[12px] text-zinc-600 leading-relaxed font-medium min-h-[52px]">{plan.tagline}</p>
                 </div>
 
-                <div className="mb-6">
+                <div className="mb-5">
                   {plan.price === "0" ? (
                     <div className="flex items-baseline gap-1">
                       <span className="text-[10px] font-bold text-zinc-500">Cadence AI 계정당 매월</span>
@@ -186,7 +182,7 @@ export default function PricingPage() {
                   )}
                 </div>
 
-                <div className="mb-8">
+                <div className="mb-6">
                   {idx === 0 ? (
                     <button onClick={handleAction} className={`w-full py-2.5 rounded-full border font-bold text-sm tracking-wide transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3]/30 ${
                       isHighlighted
@@ -202,9 +198,9 @@ export default function PricingPage() {
                   )}
                 </div>
 
-                <ul className="flex-1 space-y-6">
+                <ul className="flex-1 space-y-4">
                   {plan.features.map((feature, fidx) => (
-                    <li key={fidx} className="flex items-start gap-4">
+                    <li key={fidx} className="flex items-start gap-3">
                       {feature.desc === "" ? (
                         <div className="flex items-center gap-2 mt-1">
                           <Check className={`w-4 h-4 ${idx === 0 && !isHighlighted ? 'text-zinc-400' : 'text-[#0071e3]'}`} strokeWidth={3} />
@@ -219,7 +215,7 @@ export default function PricingPage() {
                             <div className="text-[13px] font-bold text-zinc-900 flex items-center gap-1.5 mb-1">
                               {feature.title}
                             </div>
-                            <p className="text-[12px] text-zinc-500 leading-relaxed max-w-[200px]">
+                            <p className="text-[12px] text-zinc-500 leading-relaxed">
                               {feature.desc}
                             </p>
                           </div>
