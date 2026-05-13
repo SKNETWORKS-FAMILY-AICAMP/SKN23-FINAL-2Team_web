@@ -2,6 +2,9 @@
 File    : src/app/components/profile/user/UserAccountTab.tsx
 Author  : 김민정 / 송주엽
 Description : 마이페이지 - 계정 설정 탭 (Apple-style 리디자인)
+
+Modification History:
+    - 2026-05-13 (김민정) : 바로가기 버튼 활성화
  */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -28,6 +31,7 @@ interface AccountTabProps {
   apiKeys?: any[];
   usageStats?: any;
   isLoadingUsage?: boolean;
+  setActiveTab: (tab: any) => void;
 }
 
 export const UserAccountTab: React.FC<AccountTabProps> = ({
@@ -39,6 +43,7 @@ export const UserAccountTab: React.FC<AccountTabProps> = ({
   apiKeys = [],
   usageStats,
   isLoadingUsage = false,
+  setActiveTab,
 }) => {
   const navigate = useNavigate();
 
@@ -73,7 +78,7 @@ export const UserAccountTab: React.FC<AccountTabProps> = ({
           <h1 className="text-xl font-semibold text-zinc-900">계정 설정</h1>
           <p className="mt-1 text-sm text-zinc-500">조직 계정, 인증 상태 및 사용 현황을 관리합니다.</p>
         </div>
-        </div>
+      </div>
 
       {/* 요약 카드 4개 */}
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -218,7 +223,7 @@ export const UserAccountTab: React.FC<AccountTabProps> = ({
               ].map(({ label, desc, icon: Icon, tab, highlight }) => (
                 <button
                   key={tab}
-                  onClick={() => navigate(`/profile?tab=${tab}`)}
+                  onClick={() => setActiveTab(tab as any)}
                   className="group flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-zinc-50"
                 >
                   <Icon className={`h-3.5 w-3.5 shrink-0 ${highlight ? 'text-[#0071e3]' : 'text-zinc-300'}`} />

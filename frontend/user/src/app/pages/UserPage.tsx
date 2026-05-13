@@ -12,6 +12,7 @@ Modification History:
     - 2026-04-24 (김민정) : 마이페이지 내 결제 및 계정 관리 UI/UX 개선
     - 2026-04-26 (김민정) : device 더미 데이터 삭제 및 DB 연동
     - 2026-04-27 (송주엽) : 라이트 테마 전환
+    - 2026-05-13 (김민정) : 바로가기 버튼 활성화
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -106,7 +107,7 @@ export default function ProfilePage() {
     navigate(`/profile?tab=${tab}`, { replace: true });
   };
 
-// --- 1. Subscription & Payment State ---
+  // --- 1. Subscription & Payment State ---
   const [paymentInfo, setPaymentInfo] = useState<any>(null);
   const [isLoadingPayment, setIsLoadingPayment] = useState(false);
 
@@ -398,6 +399,7 @@ export default function ProfilePage() {
             apiKeys={apiKeys}
             usageStats={usageStats}
             isLoadingUsage={isLoadingUsage}
+            setActiveTab={setActiveTab}
           />
         );
       case 'billing':
@@ -464,11 +466,10 @@ export default function ProfilePage() {
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200'
-                    : 'text-zinc-500 hover:bg-white/60 hover:text-zinc-700'
-                }`}
+                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${activeTab === tab.id
+                  ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200'
+                  : 'text-zinc-500 hover:bg-white/60 hover:text-zinc-700'
+                  }`}
               >
                 <tab.icon className="h-3.5 w-3.5 shrink-0" />
                 <span>{tab.label}</span>
