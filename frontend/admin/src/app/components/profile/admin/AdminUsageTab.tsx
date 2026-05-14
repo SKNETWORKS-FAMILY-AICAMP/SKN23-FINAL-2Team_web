@@ -11,8 +11,8 @@ import { BarChart3, Calendar, Search, Building2, Zap, Activity, ChevronDown, X }
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { startOfMonth, format, subDays } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover';
-import { Calendar as ShadCalendar } from '@/app/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@shared/ui/overlay';
+import { Calendar as ShadCalendar } from '@shared/ui/data-display';
 
 interface Props {
   isLoading: boolean;

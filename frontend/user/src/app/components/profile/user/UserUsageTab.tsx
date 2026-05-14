@@ -13,8 +13,8 @@ import React from 'react';
 import { Activity, Calendar as CalendarIcon, RefreshCw } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
-import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover';
-import { Calendar as ShadCalendar } from '@/app/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@shared/ui/overlay';
+import { Calendar as ShadCalendar } from '@shared/ui/data-display';
 
 interface UsageTabProps {
   isLoadingUsage: boolean;

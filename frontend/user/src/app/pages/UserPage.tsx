@@ -18,9 +18,10 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  ChevronLeft, User, CreditCard, Key, Monitor,
+  User, CreditCard, Key, Monitor,
   ShieldCheck, Trash2, X, CheckCircle
 } from 'lucide-react';
+import { LandingNav } from '@/app/components/landing/LandingNav';
 import { format, startOfMonth } from 'date-fns';
 import { useAuth } from '@/app/context/AuthContext';
 import { toast } from 'sonner';
@@ -421,41 +422,15 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] text-zinc-900">
+    <div className="min-h-screen bg-[#f5f5f7] text-zinc-900 pt-[60px]">
+      <LandingNav isAuthenticated={isAuthenticated} user={user} logout={handleLogout} />
+
       {/* 상단 알림 배너 */}
       {!isVerified && (
         <div className="border-b border-amber-200 bg-amber-50 py-2 text-center text-[11px] font-medium text-amber-700">
           사업자 등록 승인 대기 중입니다 — 승인 완료 후 모든 기능을 이용하실 수 있습니다.
         </div>
       )}
-
-      {/* Nav */}
-      <nav className="border-b border-zinc-200 bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="mx-auto flex h-12 max-w-[1200px] items-center justify-between px-6">
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => navigate('/')}
-              className="flex items-center gap-1 text-xs font-medium text-zinc-400 transition-colors hover:text-zinc-700"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-              홈으로
-            </button>
-            <span className="text-zinc-200 text-xs">/</span>
-            <span className="text-xs font-medium text-zinc-700">마이페이지</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-zinc-400">
-              {user?.companyName || user?.email ? `${user.companyName || user.email} 님` : ''}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-zinc-50"
-            >
-              로그아웃
-            </button>
-          </div>
-        </div>
-      </nav>
 
       {/* 본문 */}
       <div className="mx-auto flex max-w-[1200px] gap-8 px-6 py-8 md:flex-row">

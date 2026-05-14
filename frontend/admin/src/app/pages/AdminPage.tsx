@@ -21,7 +21,7 @@ import { AdminManagementTab } from '@/app/components/profile/admin/AdminManageme
 import { AdminUsageTab } from '@/app/components/profile/admin/AdminUsageTab';
 import { AdminInquiriesTab } from '@/app/components/profile/admin/AdminInquiriesTab';
 import { AdminDocumentsTab } from '@/app/components/profile/admin/AdminDocumentsTab';
-import logoMark from '../../../../user/src/assets/chat_logo_mark.png';
+import logoMark from '@/assets/chat_logo_mark.png';
 
 export default function AdminPage() {
   const navigate = useNavigate();

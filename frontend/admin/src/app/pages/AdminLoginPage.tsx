@@ -10,7 +10,7 @@ import React from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { PinLoginForm } from '@/app/components/auth/PinLoginForm';
 import { useAdminAuth } from '@/app/context/AdminAuthContext';
-import logoMark from '../../../../user/src/assets/chat_logo_mark.png';
+import logoMark from '@/assets/chat_logo_mark.png';
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();

@@ -8,9 +8,7 @@ Modification History:
     - 2026-04-24 (김민정) : 모듈화
 */
 import React, { useState } from 'react';
-import { Input } from "@/app/components/ui/input";
-import { Button } from "@/app/components/ui/button";
-import { Label } from "@/app/components/ui/label";
+import { Input, Button, Label } from "@shared/ui/forms";
 import { KeyRound, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'motion/react';
 

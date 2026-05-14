@@ -10,10 +10,14 @@ Modification History:
     - 2026-04-23 (김민정) : 랜딩 페이지 섹션 모듈화 및 스크롤 섹션 유지 보강
     - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경
     - 2026-04-27 (송주엽) : 라이트 테마 전환, 데모 영상 버튼 제거, Spline 제거
+    - 2026-05-14 (김지우) : AuthModalContext 연동으로 비로그인 CTA 인증 모달 호출 방식 개선
+    - 2026-05-14 (김지우) : 랜딩 페이지 우측 하단 가이드 챗봇 추가
  */
 import { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'motion/react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { useAuthModal } from './context/AuthModalContext';
 
 import {
   Building2,
@@ -31,6 +35,7 @@ import { LandingWorkflow } from '@/app/components/landing/LandingWorkflow';
 import { LandingPricing } from '@/app/components/landing/LandingPricing';
 import { LandingFAQ } from '@/app/components/landing/LandingFAQ';
 import { LandingFooter } from '@/app/components/landing/LandingFooter';
+import { LandingGuideChatbot } from '@/app/components/landing/LandingGuideChatbot';
 import landingMainImage from '@/assets/landing-main.png';
 
 const HERO_BACKGROUND_IMAGE = landingMainImage;
@@ -91,9 +96,27 @@ export default function App() {
   const [activeDomain, setActiveDomain] = useState(0);
   const { scrollYProgress } = useScroll();
   const { isAuthenticated, user, logout } = useAuth();
+  const { openAuthModal } = useAuthModal();
+  const [searchParams] = useSearchParams();
 
   const heroOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.97]);
+
+  useEffect(() => {
+    const domain = searchParams.get('domain');
+    if (domain) {
+      const domainIndex = domains.findIndex(d => d.id === domain);
+      if (domainIndex >= 0) {
+        setTimeout(() => {
+          const showcaseStart = 0.2;
+          const showcaseEnd = 0.65;
+          const targetPercent = showcaseStart + (domainIndex / domains.length) * (showcaseEnd - showcaseStart);
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          window.scrollTo({ top: targetPercent * maxScroll, behavior: 'smooth' });
+        }, 100);
+      }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -168,7 +191,7 @@ export default function App() {
                 transition={{ duration: 0.8, delay: 0.6 }}
               >
                 <button
-                  onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }))}
+                  onClick={() => openAuthModal('login')}
                   className="relative bg-white text-zinc-950 px-10 py-4 rounded-xl font-bold text-base shadow-[0_16px_48px_rgba(0,0,0,0.4)] hover:bg-white/90 hover:scale-105 transition-all overflow-hidden"
                 >
                   도면 분석 시작하기
@@ -288,6 +311,7 @@ export default function App() {
       </main>
 
       <LandingFooter />
+      <LandingGuideChatbot />
     </div>
   );
 }

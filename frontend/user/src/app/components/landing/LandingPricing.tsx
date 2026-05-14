@@ -5,11 +5,13 @@ Create  : 2026-04-23
 Description : 랜딩 페이지 가격 정책 및 결제 안내 컴포넌트 
 Modification History:
     - 2026-04-23 (김민정) : 결제 페이지로 이동하는 버튼 추가
+    - 2026-05-14 (김지우) : 비로그인 요금제 CTA를 AuthModalContext 기반 로그인 모달 호출로 변경
 */
 import React from 'react';
 import { motion } from 'framer-motion'; // motion/react 대신 일반적인 framer-motion 라이브러리 기준
 import { CheckCircle, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthModal } from '@/app/context/AuthModalContext';
 
 const plans = [
   {
@@ -64,6 +66,7 @@ interface LandingPricingProps {
 
 export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated, user }) => {
   const navigate = useNavigate();
+  const { openAuthModal } = useAuthModal();
 
   const handleAction = (planName: string) => {
     if (planName === 'Enterprise') {
@@ -80,7 +83,7 @@ export const LandingPricing: React.FC<LandingPricingProps> = ({ isAuthenticated,
         navigate('/payment');
       }
     } else {
-      window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }));
+      openAuthModal('login');
     }
   };
 

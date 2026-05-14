@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export const LandingFooter: React.FC = () => {
   return (
@@ -18,12 +19,20 @@ export const LandingFooter: React.FC = () => {
           <div className="flex flex-wrap items-center gap-4">
             <h5 className="text-zinc-900 text-xs font-bold uppercase tracking-widest w-20">Solutions</h5>
             <nav className="flex flex-wrap items-center gap-3">
-              {['Architecture', 'Electrical', 'Fire Safety', 'Piping'].map((item, index) => (
-                <React.Fragment key={item}>
+              {[
+                { label: 'Architecture', domain: 'architecture' },
+                { label: 'Electrical',   domain: 'electrical' },
+                { label: 'Fire Safety',  domain: 'fire' },
+                { label: 'Piping',       domain: 'piping' },
+              ].map((item, index) => (
+                <React.Fragment key={item.domain}>
                   {index > 0 && <span className="text-zinc-300 text-[10px]">|</span>}
-                  <a href="#" className="text-zinc-500 text-xs hover:text-[#0071e3] transition-colors">
-                    {item}
-                  </a>
+                  <Link
+                    to={`/?domain=${item.domain}`}
+                    className="text-zinc-500 text-xs hover:text-[#0071e3] transition-colors"
+                  >
+                    {item.label}
+                  </Link>
                 </React.Fragment>
               ))}
             </nav>
@@ -31,14 +40,14 @@ export const LandingFooter: React.FC = () => {
           <div className="flex flex-wrap items-center gap-4">
             <h5 className="text-zinc-900 text-xs font-bold uppercase tracking-widest w-20">Company</h5>
             <nav className="flex flex-wrap items-center gap-3">
-              {['Documentation', 'Safety Standard', 'Terms'].map((item, index) => (
-                <React.Fragment key={item}>
-                  {index > 0 && <span className="text-zinc-300 text-[10px]">|</span>}
-                  <a href="#" className="text-zinc-500 text-xs hover:text-[#0071e3] transition-colors">
-                    {item}
-                  </a>
-                </React.Fragment>
-              ))}
+              <a
+                href="https://github.com/SKNETWORKS-FAMILY-AICAMP/SKN23-FINAL-2Team"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-zinc-500 text-xs hover:text-[#0071e3] transition-colors"
+              >
+                SKN23-FINAL-2TEAM
+              </a>
             </nav>
           </div>
         </div>

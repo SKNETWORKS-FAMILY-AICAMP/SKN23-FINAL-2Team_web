@@ -7,12 +7,11 @@ Description : 회원가입 폼 UI
 Modification History:
     - 2026-04-24 (김민정) : 모듈화
     - 2026-04-27 (지우개) : B2B SaaS 모던 콤팩트 UI (세로 길이 축소, 2단 그리드 적용) 및 실시간 중복 체크 추가
+    - 2026-05-14 (김지우) : 분할 인증 모달 레이아웃에 맞춰 하단 로그인 링크 중복 제거
 */
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Input } from "@/app/components/ui/input";
-import { Button } from "@/app/components/ui/button";
-import { Label } from "@/app/components/ui/label";
+import { Input, Button, Label } from "@shared/ui/forms";
 
 import { toast } from 'sonner';
 import { verifyApi } from '@/app/api/email_verify';
@@ -340,16 +339,9 @@ export const SignupForm = ({ onChange, onFileChange, onSubmit, onSetTab, isLoadi
           onClick={handleSubmit}
           disabled={isLoading}
         >
-          {isLoading ? '가입 신청 중...' : '회원가입 완료'}
+          {isLoading ? '가입 신청 중...' : '회원가입'}
         </Button>
 
-        {/* 하단 로그인 유도 */}
-        <div className="text-center mt-2">
-          <span className="text-[12px] text-zinc-500 font-medium">이미 계정이 있으신가요? </span>
-          <button type="button" className="text-[12px] text-[#0071e3] hover:underline font-semibold" onClick={() => onSetTab('login')}>
-            로그인
-          </button>
-        </div>
       </div>
 
       {/* 약관 모달 (깔끔하게 정돈) */}

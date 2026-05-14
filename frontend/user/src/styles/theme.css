@@ -1,5 +1,9 @@
 @custom-variant dark (&:is(.dark *));
 
+/*
+Modification History:
+    - 2026-05-14 (김지우) : 페이지 스크롤 기능은 유지하고 브라우저 스크롤바 표시 숨김 처리
+*/
 :root {
   --font-size: 16px;
   --background: #ffffff;
@@ -179,21 +183,16 @@
     line-height: 1.5;
   }
 
-  /* Custom Scrollbar */
-  ::-webkit-scrollbar {
-    width: 4px;
+  html,
+  body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
-  ::-webkit-scrollbar-track {
-    background: #0e0e0e;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #353535;
-    border-radius: 10px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: #454545;
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 }
