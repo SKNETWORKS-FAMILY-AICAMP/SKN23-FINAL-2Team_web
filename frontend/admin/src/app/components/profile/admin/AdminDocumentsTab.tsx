@@ -23,24 +23,36 @@ interface Document {
   s3_url?: string;
   raw_s3_url: string;
   created_at: string;
+  domain?: DocumentDomain;
+  domain_label?: string;
+  doc_type?: DocumentType;
+  doc_type_label?: string;
 }
 
 type UploadKind = 'json' | 'markdown' | 'text' | 'binary';
+type DocumentDomain = 'arch' | 'elec' | 'fire' | 'pipe';
+type DocumentType = 'spec' | 'standard';
 
 type PendingUpload = {
   id: string;
   file: File;
-  category: string;
+  domain: DocumentDomain;
+  docType: DocumentType;
   content: string;
   kind: UploadKind;
   error?: string;
 };
 
-const CATEGORIES = [
-  { id: '소방', prefix: 'fire_', icon: Flame, color: 'text-orange-500', badge: 'bg-orange-50 text-orange-600 border-orange-200' },
-  { id: '건축', prefix: 'arch_', icon: BrickWall, color: 'text-blue-500', badge: 'bg-blue-50 text-blue-600 border-blue-200' },
-  { id: '배관', prefix: 'pipe_', icon: Pipette, color: 'text-emerald-500', badge: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
-  { id: '전기', prefix: 'elec_', icon: Zap, color: 'text-yellow-500', badge: 'bg-yellow-50 text-yellow-600 border-yellow-200' },
+const DOMAINS: Array<{ id: DocumentDomain; label: string; prefix: string; icon: typeof Flame; color: string; badge: string }> = [
+  { id: 'fire', label: '소방', prefix: 'fire_', icon: Flame, color: 'text-orange-500', badge: 'bg-orange-50 text-orange-600 border-orange-200' },
+  { id: 'arch', label: '건축', prefix: 'arch_', icon: BrickWall, color: 'text-blue-500', badge: 'bg-blue-50 text-blue-600 border-blue-200' },
+  { id: 'pipe', label: '배관', prefix: 'pipe_', icon: Pipette, color: 'text-emerald-500', badge: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+  { id: 'elec', label: '전기', prefix: 'elec_', icon: Zap, color: 'text-yellow-500', badge: 'bg-yellow-50 text-yellow-600 border-yellow-200' },
+];
+
+const DOC_TYPES: Array<{ id: DocumentType; label: string; folder: string }> = [
+  { id: 'spec', label: '시방서', folder: 'spec' },
+  { id: 'standard', label: '법령/기술지침', folder: 'standard' },
 ];
 
 const ITEMS_PER_PAGE = 10;
@@ -50,9 +62,11 @@ export const AdminDocumentsTab = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedDomain, setSelectedDomain] = useState<string>('all');
+  const [selectedDocType, setSelectedDocType] = useState<string>('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [uploadCategory, setUploadCategory] = useState<string>('소방');
+  const [uploadDomain, setUploadDomain] = useState<DocumentDomain>('fire');
+  const [uploadDocType, setUploadDocType] = useState<DocumentType>('spec');
   const [isUploadPickerOpen, setIsUploadPickerOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -71,7 +85,7 @@ export const AdminDocumentsTab = () => {
     }
     try {
       setIsLoading(true);
-      const res = await adminApi.getDocuments(token, selectedCategory);
+      const res = await adminApi.getDocuments(token, selectedDomain, selectedDocType);
       if (res.ok) setDocuments(await res.json());
       else toast.error('문서 목록을 불러오지 못했습니다.');
     } catch {
@@ -84,15 +98,17 @@ export const AdminDocumentsTab = () => {
   useEffect(() => {
     fetchDocuments();
     setCurrentPage(1);
-  }, [selectedCategory]);
+  }, [selectedDomain, selectedDocType]);
 
-  const getCategoryInfo = (fileName: string) => {
-    return CATEGORIES.find(cat => fileName.startsWith(cat.prefix)) || null;
+  const getDomainInfo = (doc: Pick<Document, 'file_name' | 'raw_s3_url' | 'domain'>) => {
+    if (doc.domain) return DOMAINS.find(domain => domain.id === doc.domain) || null;
+    const rawUrl = doc.raw_s3_url || '';
+    return DOMAINS.find(domain => rawUrl.includes(`/standards/${domain.id}/`) || doc.file_name.startsWith(domain.prefix)) || null;
   };
 
-  const inferCategoryFromFile = (file: File) => {
+  const inferDomainFromFile = (file: File): DocumentDomain => {
     const lowerName = file.name.toLowerCase();
-    return CATEGORIES.find(cat => lowerName.startsWith(cat.prefix.toLowerCase()))?.id || uploadCategory;
+    return DOMAINS.find(domain => lowerName.startsWith(domain.prefix.toLowerCase()))?.id || uploadDomain;
   };
 
   const createPendingUpload = async (file: File): Promise<PendingUpload> => {
@@ -105,10 +121,18 @@ export const AdminDocumentsTab = () => {
     const baseUpload = {
       id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
       file,
-      category: inferCategoryFromFile(file),
+      domain: inferDomainFromFile(file),
+      docType: uploadDocType,
       content: '',
       kind,
     };
+
+    if (!lowerName.endsWith('.pdf')) {
+      return {
+        ...baseUpload,
+        error: 'PDF 파일만 업로드할 수 있습니다.'
+      };
+    }
 
     try {
       const rawContent = kind === 'binary' ? '' : await file.text();
@@ -159,17 +183,21 @@ export const AdminDocumentsTab = () => {
 
     try {
       setIsUploading(true);
+      const results: Array<{ runpod?: { db_inserted_chunks?: number } }> = [];
       for (const item of pendingUploads) {
-        const res = await adminApi.uploadDocument(token, item.file, item.category);
-        if (!res.ok) throw new Error(item.file.name);
+        const res = await adminApi.uploadDocument(token, item.file, item.domain, item.docType);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || item.file.name);
+        results.push(data);
       }
-      toast.success(`${pendingUploads.length}개 문서 업로드 완료`);
+      const insertedChunks = results.reduce((sum, item) => sum + (item.runpod?.db_inserted_chunks || 0), 0);
+      toast.success(`${pendingUploads.length}개 문서 처리 완료 · ${insertedChunks}개 chunk 등록`);
       setPendingUploads([]);
       setSelectedPendingIndex(0);
       setIsUploadModalOpen(false);
       fetchDocuments();
-    } catch {
-      toast.error('업로드 중 오류가 발생했습니다.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '업로드 중 오류가 발생했습니다.');
     } finally {
       setIsUploading(false);
     }
@@ -201,14 +229,14 @@ export const AdminDocumentsTab = () => {
     <div className="space-y-5">
       {/* 툴바 */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap items-center gap-3">
-        {/* 카테고리 필터 */}
+        {/* 분야 필터 */}
         <div className="relative">
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             onBlur={() => setTimeout(() => setIsFilterOpen(false), 200)}
             className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-300 outline-none min-w-[120px] justify-between"
           >
-            <span>{selectedCategory === 'all' ? '전체 분야' : selectedCategory}</span>
+            <span>{selectedDomain === 'all' ? '전체 분야' : DOMAINS.find(domain => domain.id === selectedDomain)?.label}</span>
             <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
           </button>
           <AnimatePresence>
@@ -220,22 +248,37 @@ export const AdminDocumentsTab = () => {
                 className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden min-w-[140px]"
               >
                 <div
-                  onClick={() => { setSelectedCategory('all'); setIsFilterOpen(false); }}
-                  className={`px-4 py-2.5 text-sm cursor-pointer border-b border-slate-100 ${selectedCategory === 'all' ? 'bg-blue-50 text-[#1e40af] font-semibold' : 'text-slate-600 hover:bg-slate-50'}`}
+                  onClick={() => { setSelectedDomain('all'); setIsFilterOpen(false); }}
+                  className={`px-4 py-2.5 text-sm cursor-pointer border-b border-slate-100 ${selectedDomain === 'all' ? 'bg-blue-50 text-[#1e40af] font-semibold' : 'text-slate-600 hover:bg-slate-50'}`}
                 >전체 분야</div>
-                {CATEGORIES.map(cat => (
+                {DOMAINS.map(domain => (
                   <div
-                    key={cat.id}
-                    onClick={() => { setSelectedCategory(cat.id); setIsFilterOpen(false); }}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-sm cursor-pointer border-b border-slate-100 last:border-0 ${selectedCategory === cat.id ? 'bg-blue-50 text-[#1e40af] font-semibold' : 'text-slate-600 hover:bg-slate-50'}`}
+                    key={domain.id}
+                    onClick={() => { setSelectedDomain(domain.id); setIsFilterOpen(false); }}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-sm cursor-pointer border-b border-slate-100 last:border-0 ${selectedDomain === domain.id ? 'bg-blue-50 text-[#1e40af] font-semibold' : 'text-slate-600 hover:bg-slate-50'}`}
                   >
-                    <cat.icon className={`w-3.5 h-3.5 ${cat.color}`} />
-                    {cat.id}
+                    <domain.icon className={`w-3.5 h-3.5 ${domain.color}`} />
+                    {domain.label}
                   </div>
                 ))}
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+
+        <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+          {[{ id: 'all', label: '전체 종류' }, ...DOC_TYPES].map(type => (
+            <button
+              key={type.id}
+              type="button"
+              onClick={() => setSelectedDocType(type.id)}
+              className={`rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
+                selectedDocType === type.id ? 'bg-white text-[#1e40af] shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              {type.label}
+            </button>
+          ))}
         </div>
 
         {/* 검색 */}
@@ -255,7 +298,7 @@ export const AdminDocumentsTab = () => {
           )}
         </div>
 
-        <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" multiple />
+        <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept=".pdf,application/pdf" multiple />
         <button
           onClick={() => setIsUploadModalOpen(true)}
           disabled={isUploading}
@@ -270,9 +313,10 @@ export const AdminDocumentsTab = () => {
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-5">
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
           <div className="grid grid-cols-12 px-5 py-3 bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
-            <div className="col-span-5">파일명</div>
+            <div className="col-span-4">파일명</div>
             <div className="col-span-2">분야</div>
-            <div className="col-span-4">S3 URL</div>
+            <div className="col-span-2">종류</div>
+            <div className="col-span-3">S3 URL</div>
             <div className="col-span-1 text-right">삭제</div>
           </div>
 
@@ -286,8 +330,11 @@ export const AdminDocumentsTab = () => {
           ) : (
             <div className="divide-y divide-slate-100">
               {currentDocs.map((doc) => {
-                const catInfo = getCategoryInfo(doc.file_name);
-                const displayName = catInfo ? doc.file_name.replace(catInfo.prefix, '') : doc.file_name;
+                const domainInfo = getDomainInfo(doc);
+                const docTypeInfo = DOC_TYPES.find(type => type.id === doc.doc_type);
+                const displayName = domainInfo && doc.file_name.startsWith(domainInfo.prefix)
+                  ? doc.file_name.replace(domainInfo.prefix, '')
+                  : doc.file_name;
                 const documentUrl = getDocumentUrl(doc);
                 return (
                   <div
@@ -297,24 +344,27 @@ export const AdminDocumentsTab = () => {
                       selectedDoc?.id === doc.id ? 'bg-blue-50' : 'hover:bg-slate-50'
                     }`}
                   >
-                    <div className="col-span-5 flex items-center gap-3 min-w-0">
-                      {catInfo ? (
-                        <catInfo.icon className={`w-4 h-4 shrink-0 ${catInfo.color}`} />
+                    <div className="col-span-4 flex items-center gap-3 min-w-0">
+                      {domainInfo ? (
+                        <domainInfo.icon className={`w-4 h-4 shrink-0 ${domainInfo.color}`} />
                       ) : (
                         <FileText className="w-4 h-4 shrink-0 text-slate-400" />
                       )}
                       <span className="text-sm font-medium text-slate-800 truncate">{displayName}</span>
                     </div>
                     <div className="col-span-2">
-                      {catInfo ? (
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border ${catInfo.badge}`}>
-                          {catInfo.id}
+                      {domainInfo ? (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border ${domainInfo.badge}`}>
+                          {domainInfo.label}
                         </span>
                       ) : (
                         <span className="text-xs text-slate-400">기타</span>
                       )}
                     </div>
-                    <div className="col-span-4 flex items-center gap-2 min-w-0">
+                    <div className="col-span-2">
+                      <span className="text-xs font-semibold text-slate-500">{docTypeInfo?.label || doc.doc_type_label || '기존 문서'}</span>
+                    </div>
+                    <div className="col-span-3 flex items-center gap-2 min-w-0">
                       <span className="text-[11px] font-mono text-slate-400 truncate" title={doc.raw_s3_url}>
                         {doc.raw_s3_url}
                       </span>
@@ -381,14 +431,17 @@ export const AdminDocumentsTab = () => {
           {selectedDoc ? (
             <>
               {(() => {
-                const catInfo = getCategoryInfo(selectedDoc.file_name);
-                const displayName = catInfo ? selectedDoc.file_name.replace(catInfo.prefix, '') : selectedDoc.file_name;
+                const domainInfo = getDomainInfo(selectedDoc);
+                const docTypeInfo = DOC_TYPES.find(type => type.id === selectedDoc.doc_type);
+                const displayName = domainInfo && selectedDoc.file_name.startsWith(domainInfo.prefix)
+                  ? selectedDoc.file_name.replace(domainInfo.prefix, '')
+                  : selectedDoc.file_name;
                 const documentUrl = getDocumentUrl(selectedDoc);
                 return (
                   <>
                     <div className="flex items-start gap-3">
-                      {catInfo ? (
-                        <catInfo.icon className={`mt-1 h-5 w-5 shrink-0 ${catInfo.color}`} />
+                      {domainInfo ? (
+                        <domainInfo.icon className={`mt-1 h-5 w-5 shrink-0 ${domainInfo.color}`} />
                       ) : (
                         <FileText className="mt-1 h-5 w-5 shrink-0 text-slate-400" />
                       )}
@@ -400,7 +453,11 @@ export const AdminDocumentsTab = () => {
                     <div className="mt-5 space-y-3 text-sm">
                       <div className="flex justify-between border-b border-slate-100 pb-3">
                         <span className="text-slate-400">분야</span>
-                        <span className="font-semibold text-slate-700">{catInfo?.id || '기타'}</span>
+                        <span className="font-semibold text-slate-700">{domainInfo?.label || '기타'}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-slate-100 pb-3">
+                        <span className="text-slate-400">문서 종류</span>
+                        <span className="font-semibold text-slate-700">{docTypeInfo?.label || selectedDoc.doc_type_label || '기존 문서'}</span>
                       </div>
                       <div className="border-b border-slate-100 pb-3">
                         <span className="text-slate-400">S3 URL</span>
@@ -514,7 +571,7 @@ export const AdminDocumentsTab = () => {
                       onBlur={() => setTimeout(() => setIsUploadPickerOpen(false), 200)}
                       className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 outline-none hover:border-slate-300"
                     >
-                      <span>{uploadCategory}</span>
+                      <span>{DOMAINS.find(domain => domain.id === uploadDomain)?.label}</span>
                       <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${isUploadPickerOpen ? 'rotate-180' : ''}`} />
                     </button>
                     <AnimatePresence>
@@ -525,19 +582,36 @@ export const AdminDocumentsTab = () => {
                           exit={{ opacity: 0, y: 4 }}
                           className="absolute top-full left-0 z-50 mt-1 min-w-[140px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
                         >
-                          {CATEGORIES.map(cat => (
+                          {DOMAINS.map(domain => (
                             <div
-                              key={cat.id}
-                              onClick={() => { setUploadCategory(cat.id); setIsUploadPickerOpen(false); }}
-                              className={`flex cursor-pointer items-center gap-2 border-b border-slate-100 px-4 py-2.5 text-sm last:border-0 ${uploadCategory === cat.id ? 'bg-blue-50 font-semibold text-[#1e40af]' : 'text-slate-600 hover:bg-slate-50'}`}
+                              key={domain.id}
+                              onClick={() => { setUploadDomain(domain.id); setIsUploadPickerOpen(false); }}
+                              className={`flex cursor-pointer items-center gap-2 border-b border-slate-100 px-4 py-2.5 text-sm last:border-0 ${uploadDomain === domain.id ? 'bg-blue-50 font-semibold text-[#1e40af]' : 'text-slate-600 hover:bg-slate-50'}`}
                             >
-                              <cat.icon className={`h-3.5 w-3.5 ${cat.color}`} />
-                              {cat.id}
+                              <domain.icon className={`h-3.5 w-3.5 ${domain.color}`} />
+                              {domain.label}
                             </div>
                           ))}
                         </motion.div>
                       )}
                     </AnimatePresence>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-bold text-slate-500">문서 종류</label>
+                    <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+                      {DOC_TYPES.map(type => (
+                        <button
+                          key={type.id}
+                          type="button"
+                          onClick={() => setUploadDocType(type.id)}
+                          className={`rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
+                            uploadDocType === type.id ? 'bg-white text-[#1e40af] shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          {type.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -573,7 +647,7 @@ export const AdminDocumentsTab = () => {
                           <button type="button" onClick={() => setSelectedPendingIndex(index)} className="min-w-0 flex-1 text-left">
                             <p className="truncate text-xs font-bold text-slate-800">{item.file.name}</p>
                             <p className={`mt-0.5 text-[10px] ${item.error ? 'text-red-500' : 'text-slate-400'}`}>
-                              {item.category} · {(item.file.size / 1024).toFixed(1)}KB
+                              {DOMAINS.find(domain => domain.id === item.domain)?.label} · {DOC_TYPES.find(type => type.id === item.docType)?.label} · {(item.file.size / 1024).toFixed(1)}KB
                             </p>
                           </button>
                           <button

@@ -10,11 +10,12 @@ Modification History:
 from fastapi import APIRouter, Depends, HTTPException, status, Body, File, UploadFile, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import Any, List, Optional
 from jose import jwt, JWTError
 import datetime
 import uuid
 import os
+import re
 
 from ..models import models, schemas
 from ..core import auth_utils
@@ -346,6 +347,19 @@ def answer_support_ticket(ticket_id: int, payload: dict = Body(...), db: Session
     
     return {"success": True, "message": "답변 등록 완료"}
 
+# 관리자 문서 업로드는 공통 표준 레이어 S3 구조를 기준으로 저장한다.
+DOCUMENT_DOMAINS = {
+    "arch": {"label": "건축", "legacy_prefix": "arch_"},
+    "elec": {"label": "전기", "legacy_prefix": "elec_"},
+    "fire": {"label": "소방", "legacy_prefix": "fire_"},
+    "pipe": {"label": "배관", "legacy_prefix": "pipe_"},
+}
+
+DOCUMENT_TYPES = {
+    "spec": {"label": "시방서", "folder": "spec", "category": "spec", "runpod_doc_type": "specification"},
+    "standard": {"label": "법령/기술지침", "folder": "standard", "category": "standard", "runpod_doc_type": "regulation"},
+}
+
 # 카테고리별 파일명 접두어 정의
 CATEGORY_PREFIXES = {
     "소방": "fire_",
@@ -354,67 +368,271 @@ CATEGORY_PREFIXES = {
     "전기": "elec_"
 }
 
+LEGACY_CATEGORY_TO_DOMAIN = {
+    value["label"]: domain for domain, value in DOCUMENT_DOMAINS.items()
+}
+
+RUNPOD_GLOBAL_ORG_ID = os.getenv("RUNPOD_GLOBAL_ORG_ID", "00000000-0000-0000-0000-000000000000")
+
+
+def resolve_document_domain(domain: Optional[str], category: Optional[str] = None) -> str:
+    value = (domain or "").strip()
+    if value in DOCUMENT_DOMAINS:
+        return value
+    if value in LEGACY_CATEGORY_TO_DOMAIN:
+        return LEGACY_CATEGORY_TO_DOMAIN[value]
+
+    legacy = (category or "").strip()
+    if legacy in LEGACY_CATEGORY_TO_DOMAIN:
+        return LEGACY_CATEGORY_TO_DOMAIN[legacy]
+
+    raise HTTPException(status_code=400, detail="지원하지 않는 문서 분야입니다.")
+
+
+def resolve_document_type(doc_type: Optional[str]) -> str:
+    value = (doc_type or "spec").strip()
+    if value in DOCUMENT_TYPES:
+        return value
+    if value == "specification":
+        return "spec"
+    if value == "regulation":
+        return "standard"
+
+    raise HTTPException(status_code=400, detail="지원하지 않는 문서 종류입니다.")
+
+
+def standard_document_prefix(domain: str, doc_type: str) -> str:
+    return f"standards/{domain}/{DOCUMENT_TYPES[doc_type]['folder']}/"
+
+
+def sanitize_document_stem(filename: str) -> str:
+    stem = os.path.splitext(filename or "document")[0] or "document"
+    safe = re.sub(r"[^a-zA-Z0-9가-힣._-]+", "_", stem).strip("._-")
+    return safe[:120] or "document"
+
+
+def build_standard_document_s3_key(document_id: str, filename: str, domain: str, doc_type: str) -> tuple[str, str]:
+    normalized_domain = resolve_document_domain(domain)
+    normalized_doc_type = resolve_document_type(doc_type)
+    stem = f"{document_id}_{sanitize_document_stem(filename)}"
+    return f"{standard_document_prefix(normalized_domain, normalized_doc_type)}{stem}.pdf", stem
+
+
+def infer_domain_from_document(doc: models.DocumentS3) -> Optional[str]:
+    s3_url = doc.s3_url or ""
+    for domain in DOCUMENT_DOMAINS:
+        if f"/standards/{domain}/" in s3_url or s3_url.startswith(f"standards/{domain}/"):
+            return domain
+    for domain, meta in DOCUMENT_DOMAINS.items():
+        if (doc.file_name or "").startswith(meta["legacy_prefix"]):
+            return domain
+    return None
+
+
+def infer_doc_type_from_document(doc: models.DocumentS3) -> Optional[str]:
+    s3_url = doc.s3_url or ""
+    if "/spec/" in s3_url or s3_url.startswith("standards/") and "/spec/" in s3_url:
+        return "spec"
+    if "/standard/" in s3_url or s3_url.startswith("standards/") and "/standard/" in s3_url:
+        return "standard"
+    return None
+
+
+def document_response(doc: models.DocumentS3) -> dict[str, Any]:
+    domain = infer_domain_from_document(doc)
+    doc_type = infer_doc_type_from_document(doc)
+    return {
+        "id": str(doc.id),
+        "file_name": doc.file_name,
+        "s3_url": S3Service.get_presigned_url(doc.s3_url) if doc.s3_url else None,
+        "raw_s3_url": doc.s3_url,
+        "created_at": doc.created_at.isoformat() if doc.created_at else None,
+        "domain": domain,
+        "domain_label": DOCUMENT_DOMAINS.get(domain, {}).get("label") if domain else None,
+        "doc_type": doc_type,
+        "doc_type_label": DOCUMENT_TYPES.get(doc_type, {}).get("label") if doc_type else None,
+    }
+
+
+def build_runpod_document_input(
+    file_url: str,
+    doc_type: str,
+    document_id: str,
+    doc_name: str,
+    domain: str,
+    effective_date: Optional[str] = None,
+) -> dict[str, Any]:
+    normalized_doc_type = resolve_document_type(doc_type)
+    normalized_domain = resolve_document_domain(domain)
+    return {
+        "file_url": file_url,
+        "doc_type": DOCUMENT_TYPES[normalized_doc_type]["runpod_doc_type"],
+        "document_id": document_id,
+        "parent_document_id": document_id,
+        "doc_name": doc_name,
+        "domain": normalized_domain,
+        "category": DOCUMENT_TYPES[normalized_doc_type]["category"],
+        "org_id": RUNPOD_GLOBAL_ORG_ID,
+        "effective_date": effective_date,
+    }
+
+
+async def request_runpod_document_processing(payload: dict[str, Any]) -> dict[str, Any]:
+    api_key = os.getenv("RUNPOD_API_KEY", "").strip()
+    endpoint_id = os.getenv("RUNPOD_ENDPOINT_ID", "").strip()
+    if not api_key or not endpoint_id:
+        raise HTTPException(status_code=500, detail="RUNPOD_API_KEY 또는 RUNPOD_ENDPOINT_ID가 설정되지 않았습니다.")
+
+    try:
+        import httpx
+    except ImportError as exc:
+        raise HTTPException(status_code=500, detail="RunPod 호출에 필요한 httpx 패키지가 설치되지 않았습니다.") from exc
+
+    wait_ms = int(os.getenv("RUNPOD_SYNC_WAIT_MS", "300000"))
+    timeout_sec = max(60.0, wait_ms / 1000 + 30)
+    url = f"https://api.runpod.ai/v2/{endpoint_id}/runsync?wait={wait_ms}"
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout_sec) as client:
+            response = await client.post(
+                url,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={"input": payload},
+            )
+    except httpx.TimeoutException as exc:
+        raise HTTPException(status_code=504, detail="RunPod 문서 처리 시간이 초과되었습니다.") from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"RunPod 요청 중 오류가 발생했습니다: {exc}") from exc
+
+    if response.status_code >= 400:
+        raise HTTPException(status_code=502, detail=f"RunPod 요청 실패: {response.text[:500]}")
+
+    data = response.json()
+    runpod_status = data.get("status")
+    output = data.get("output")
+    if output is None and data.get("status") == "success":
+        output = data
+
+    if runpod_status and runpod_status != "COMPLETED":
+        raise HTTPException(status_code=504, detail=f"RunPod 작업이 완료되지 않았습니다: {runpod_status}")
+    if not isinstance(output, dict):
+        raise HTTPException(status_code=502, detail="RunPod 응답에 output이 없습니다.")
+    if output.get("status") != "success":
+        raise HTTPException(status_code=502, detail=output.get("message") or "RunPod 문서 처리에 실패했습니다.")
+
+    return output
+
+
+def cleanup_failed_document_upload(db: Session, doc_id: Optional[str], s3_url: Optional[str]) -> None:
+    try:
+        if s3_url:
+            S3Service.delete_file(s3_url)
+        if doc_id:
+            doc = db.query(models.DocumentS3).filter(models.DocumentS3.id == doc_id).first()
+            if doc:
+                db.delete(doc)
+                db.commit()
+    except Exception as cleanup_error:
+        db.rollback()
+        print(f"[Admin Documents] Cleanup failed: {cleanup_error}")
+
 @router.get("/documents")
-def get_documents(category: Optional[str] = None, db: Session = Depends(get_db), current_admin: models.SystemAdmin = Depends(get_current_admin)):
-    """파일명 접두어 기반 문서 목록 조회"""
-    query = db.query(models.DocumentsS3)
-    
-    if category and category in CATEGORY_PREFIXES:
-        prefix = CATEGORY_PREFIXES[category]
-        query = query.filter(models.DocumentsS3.file_name.like(f"{prefix}%"))
-        
-    docs = query.order_by(models.DocumentsS3.created_at.desc()).all()
-    results = []
-    for doc in docs:
-        results.append({
-            "id": str(doc.id),
-            "file_name": doc.file_name,
-            "s3_url": S3Service.get_presigned_url(doc.s3_url) if doc.s3_url else None,
-            "raw_s3_url": doc.s3_url,
-            "created_at": doc.created_at.isoformat() if doc.created_at else None
-        })
-    return results
+def get_documents(
+    category: Optional[str] = None,
+    domain: Optional[str] = None,
+    doc_type: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_admin: models.SystemAdmin = Depends(get_current_admin),
+):
+    """공통 표준 문서 목록 조회"""
+    selected_domain = resolve_document_domain(domain, category) if domain or category else None
+    selected_doc_type = resolve_document_type(doc_type) if doc_type else None
+
+    docs = db.query(models.DocumentS3).order_by(models.DocumentS3.created_at.desc()).all()
+    if selected_domain:
+        docs = [doc for doc in docs if infer_domain_from_document(doc) == selected_domain]
+    if selected_doc_type:
+        docs = [doc for doc in docs if infer_doc_type_from_document(doc) == selected_doc_type]
+
+    return [document_response(doc) for doc in docs]
 
 @router.post("/documents")
 async def upload_document(
     file: UploadFile = File(...), 
-    category: str = Form(...),
+    category: Optional[str] = Form(None),
+    domain: Optional[str] = Form(None),
+    doc_type: Optional[str] = Form("spec"),
+    effective_date: Optional[str] = Form(None),
     db: Session = Depends(get_db), 
     current_admin: models.SystemAdmin = Depends(get_current_admin)
 ):
-    """선택한 카테고리 접두어를 파일명에 붙여 업로드"""
-    prefix = CATEGORY_PREFIXES.get(category, "")
-    original_filename = file.filename
-    new_filename = original_filename if original_filename.startswith(prefix) else f"{prefix}{original_filename}"
-    
-    file.filename = new_filename
-    
-    s3_url = await S3Service.upload_file(file, folder="documents")
-    if not s3_url:
-        raise HTTPException(status_code=500, detail="S3 업로드 실패")
-    
-    doc = models.DocumentsS3(
-        file_name=new_filename,
-        s3_url=s3_url
+    """PDF를 S3에 저장하고 RunPod로 파싱/임베딩을 동기 처리"""
+    original_filename = file.filename or "document.pdf"
+    if not original_filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="PDF 파일만 업로드할 수 있습니다.")
+
+    selected_domain = resolve_document_domain(domain, category)
+    selected_doc_type = resolve_document_type(doc_type)
+    document_id = str(uuid.uuid4())
+    s3_key, doc_stem = build_standard_document_s3_key(
+        document_id=document_id,
+        filename=original_filename,
+        domain=selected_domain,
+        doc_type=selected_doc_type,
     )
-    db.add(doc)
-    db.commit()
-    db.refresh(doc)
-    
-    return {
-        "success": True, 
-        "message": f"[{category}] {new_filename} 업로드 완료",
-        "document": {
-            "id": str(doc.id),
-            "file_name": doc.file_name,
-            "s3_url": S3Service.get_presigned_url(doc.s3_url)
+
+    s3_url = None
+    try:
+        s3_url = await S3Service.upload_file_to_key(file, s3_key)
+        if not s3_url:
+            raise HTTPException(status_code=500, detail="S3 업로드 실패")
+
+        doc = models.DocumentS3(
+            id=document_id,
+            file_name=original_filename,
+            s3_url=s3_url,
+        )
+        db.add(doc)
+        db.commit()
+        db.refresh(doc)
+
+        file_url = S3Service.get_presigned_url(s3_url, expires_in=3600) or s3_url
+        runpod_payload = build_runpod_document_input(
+            file_url=file_url,
+            doc_type=selected_doc_type,
+            document_id=document_id,
+            doc_name=doc_stem,
+            domain=selected_domain,
+            effective_date=effective_date,
+        )
+        runpod_output = await request_runpod_document_processing(runpod_payload)
+
+        return {
+            "success": True,
+            "message": f"[{DOCUMENT_DOMAINS[selected_domain]['label']} / {DOCUMENT_TYPES[selected_doc_type]['label']}] {original_filename} 처리 완료",
+            "document": document_response(doc),
+            "runpod": {
+                "processed_chunks": runpod_output.get("processed_chunks", 0),
+                "db_inserted_chunks": runpod_output.get("db_inserted_chunks", 0),
+                "s3_md_path": runpod_output.get("s3_md_path"),
+                "s3_json_path": runpod_output.get("s3_json_path"),
+                "table_markdown_stats": runpod_output.get("table_markdown_stats"),
+            },
         }
-    }
+    except HTTPException:
+        cleanup_failed_document_upload(db, document_id, s3_url)
+        raise
+    except Exception as exc:
+        cleanup_failed_document_upload(db, document_id, s3_url)
+        raise HTTPException(status_code=500, detail=f"문서 처리 중 오류가 발생했습니다: {exc}") from exc
 
 @router.delete("/documents/{doc_id}")
 def delete_document(doc_id: str, db: Session = Depends(get_db), current_admin: models.SystemAdmin = Depends(get_current_admin)):
     """S3 문서 삭제"""
-    doc = db.query(models.DocumentsS3).filter(models.DocumentsS3.id == doc_id).first()
+    doc = db.query(models.DocumentS3).filter(models.DocumentS3.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     

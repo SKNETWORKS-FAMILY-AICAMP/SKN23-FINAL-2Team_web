@@ -86,15 +86,20 @@ export const adminApi = {
         }),
 
     // 문서 관리 (S3)
-    getDocuments: (token: string, category?: string) => {
-        const url = category && category !== 'all' ? `${ADMIN_API_BASE_URL}/documents?category=${encodeURIComponent(category)}` : `${ADMIN_API_BASE_URL}/documents`;
+    getDocuments: (token: string, domain?: string, docType?: string) => {
+        const params = new URLSearchParams();
+        if (domain && domain !== 'all') params.set('domain', domain);
+        if (docType && docType !== 'all') params.set('doc_type', docType);
+        const query = params.toString();
+        const url = `${ADMIN_API_BASE_URL}/documents${query ? `?${query}` : ''}`;
         return fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
     },
 
-    uploadDocument: (token: string, file: File, category: string) => {
+    uploadDocument: (token: string, file: File, domain: string, docType: string) => {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('category', category);
+        formData.append('domain', domain);
+        formData.append('doc_type', docType);
         return fetch(`${ADMIN_API_BASE_URL}/documents`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
