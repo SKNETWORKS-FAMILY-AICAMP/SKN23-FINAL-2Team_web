@@ -7,9 +7,14 @@ Description : 랜딩 가이드 챗봇에서 실행되는 도그 점프 미니게
 Modification History:
     - 2026-05-14 (김지우) : 챗봇 게임 명령어 응답용 캔버스 미니게임 구현
     - 2026-05-14 (김지우) : 강아지 점프 효과음 적용
+    - 2026-05-14 (김지우) : 뼈다귀 아이템 획득 및 추가 점수 기능 적용
+    - 2026-05-14 (김지우) : 뼈다귀 획득 효과음 및 다양한 생성 위치 적용
+    - 2026-05-14 (김지우) : 효과음 중첩 재생을 위한 오디오 풀 적용
+    - 2026-05-14 (김지우) : 키 입력 유지 중에도 효과음이 재생되도록 Web Audio 재생 적용
 */
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
+import boneSoundSrc from "@/assets/splites/bone.mp3";
 import jumpSoundSrc from "@/assets/splites/jump.mp3";
 
 type DogLoadingGameProps = {
@@ -29,6 +34,7 @@ const DOG_RENDER_HEIGHT = 64;
 const DOG_GROUND_OFFSET = -7;
 
 const OBSTACLE_WIDTH = 24;
+const AUDIO_POOL_SIZE = 4;
 
 type Obstacle = {
   x: number;
@@ -36,17 +42,36 @@ type Obstacle = {
   width: number;
 };
 
+type Bone = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  collected: boolean;
+};
+
+const createSound = (src: string, volume: number) => {
+  const audio = new Audio(src);
+  audio.volume = volume;
+  audio.preload = "auto";
+  return audio;
+};
+
 export default function DogLoadingGame({
   active,
   title = "가이드가 몸을 푸는 중입니다",
-  subtitle = "Space 또는 ↑ 키를 짧게/길게 눌러 점프 높이를 조절하세요.",
+  subtitle = "Space 또는 ↑ 키로 점프하고 뼈다귀를 먹어 점수를 얻으세요.",
 }: DogLoadingGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const resizeTimerRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
-  const jumpAudioRef = useRef<HTMLAudioElement | null>(null);
+  const jumpAudioPoolRef = useRef<HTMLAudioElement[]>([]);
+  const boneAudioPoolRef = useRef<HTMLAudioElement[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const jumpBufferRef = useRef<AudioBuffer | null>(null);
+  const boneBufferRef = useRef<AudioBuffer | null>(null);
 
   const [gameWidth, setGameWidth] = useState(DEFAULT_GAME_WIDTH);
   const [score, setScore] = useState(0);
@@ -58,6 +83,7 @@ export default function DogLoadingGame({
   const obstaclesRef = useRef<Obstacle[]>([
     { x: DEFAULT_GAME_WIDTH + 120, height: 42, width: OBSTACLE_WIDTH },
   ]);
+  const bonesRef = useRef<Bone[]>([]);
   const speedRef = useRef(300);
   const scoreRef = useRef(0);
   const jumpChargeRef = useRef(0);
@@ -84,11 +110,55 @@ export default function DogLoadingGame({
     return [{ x: startX, height: 42, width: OBSTACLE_WIDTH }];
   }, []);
 
+  const makeBones = useCallback((startX: number): Bone[] => {
+    const pattern = Math.random();
+    const lanes = [GROUND_Y - 48, GROUND_Y - 72, GROUND_Y - 98];
+    const makeBone = (x: number, y: number): Bone => ({
+      x,
+      y,
+      width: 28,
+      height: 16,
+      collected: false,
+    });
+
+    if (pattern < 0.3) return [];
+
+    if (pattern < 0.58) {
+      return [
+        makeBone(
+          startX + 40 + Math.random() * 170,
+          lanes[Math.floor(Math.random() * lanes.length)]
+        ),
+      ];
+    }
+
+    if (pattern < 0.82) {
+      const firstX = startX + 56 + Math.random() * 90;
+      const firstLane = Math.floor(Math.random() * lanes.length);
+      const secondLane = Math.min(firstLane + 1, lanes.length - 1);
+
+      return [
+        makeBone(firstX, lanes[firstLane]),
+        makeBone(firstX + 46 + Math.random() * 26, lanes[secondLane]),
+      ];
+    }
+
+    const trailX = startX + 74 + Math.random() * 70;
+    const trailLane = Math.floor(Math.random() * lanes.length);
+
+    return [0, 1, 2].map((index) =>
+      makeBone(trailX + index * 38, lanes[(trailLane + index) % lanes.length])
+    );
+  }, []);
+
   const resetGame = useCallback(() => {
+    const startX = gameWidthRef.current + 120;
+
     dogYRef.current = getDogGroundY();
     velocityYRef.current = 0;
     isJumpingRef.current = false;
-    obstaclesRef.current = makeObstacles(gameWidthRef.current + 120);
+    obstaclesRef.current = makeObstacles(startX);
+    bonesRef.current = makeBones(startX);
     speedRef.current = 300;
     scoreRef.current = 0;
     jumpChargeRef.current = 0;
@@ -96,16 +166,88 @@ export default function DogLoadingGame({
     setScore(0);
     setGameOver(false);
     gameOverRef.current = false;
-  }, [makeObstacles]);
+  }, [makeBones, makeObstacles]);
+
+  const getAudioContext = useCallback(() => {
+    if (typeof window === "undefined") return null;
+
+    const AudioContextConstructor =
+      window.AudioContext ||
+      (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+
+    if (!AudioContextConstructor) return null;
+
+    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
+      audioContextRef.current = new AudioContextConstructor();
+    }
+
+    return audioContextRef.current;
+  }, []);
+
+  const unlockAudio = useCallback(() => {
+    const context = getAudioContext();
+
+    if (context?.state === "suspended") {
+      context.resume().catch(() => {});
+    }
+
+    return context;
+  }, [getAudioContext]);
+
+  const playSoundFromPool = useCallback(
+    (pool: HTMLAudioElement[], src: string, volume: number) => {
+      let audio = pool.find((candidate) => candidate.paused || candidate.ended);
+
+      if (!audio && pool.length < AUDIO_POOL_SIZE) {
+        audio = createSound(src, volume);
+        pool.push(audio);
+      }
+
+      if (!audio) {
+        audio = pool[0];
+      }
+
+      if (!audio) return;
+
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    },
+    []
+  );
+
+  const playBufferedSound = useCallback(
+    (
+      bufferRef: { current: AudioBuffer | null },
+      fallbackPool: HTMLAudioElement[],
+      src: string,
+      volume: number
+    ) => {
+      const context = unlockAudio();
+
+      if (context && bufferRef.current) {
+        const source = context.createBufferSource();
+        const gain = context.createGain();
+
+        source.buffer = bufferRef.current;
+        gain.gain.value = volume;
+        source.connect(gain);
+        gain.connect(context.destination);
+        source.start(0);
+        return;
+      }
+
+      playSoundFromPool(fallbackPool, src, volume);
+    },
+    [playSoundFromPool, unlockAudio]
+  );
 
   const playJumpSound = useCallback(() => {
-    const audio = jumpAudioRef.current;
+    playBufferedSound(jumpBufferRef, jumpAudioPoolRef.current, jumpSoundSrc, 0.28);
+  }, [playBufferedSound]);
 
-    if (!audio) return;
-
-    audio.currentTime = 0;
-    audio.play().catch(() => {});
-  }, []);
+  const playBoneSound = useCallback(() => {
+    playBufferedSound(boneBufferRef, boneAudioPoolRef.current, boneSoundSrc, 0.32);
+  }, [playBufferedSound]);
 
   const jump = useCallback(() => {
     if (!active) return;
@@ -189,6 +331,34 @@ export default function DogLoadingGame({
     ctx.restore();
   };
 
+  const drawBone = (ctx: CanvasRenderingContext2D, bone: Bone) => {
+    if (bone.collected) return;
+
+    const { x, y } = bone;
+
+    ctx.save();
+    ctx.fillStyle = "#fff7ed";
+    ctx.strokeStyle = "#f59e0b";
+    ctx.lineWidth = 2;
+    ctx.shadowColor = "rgba(245, 158, 11, 0.25)";
+    ctx.shadowBlur = 8;
+
+    ctx.beginPath();
+    ctx.roundRect(x + 7, y + 5, 14, 6, 3);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x + 5, y + 5, 4, 0, Math.PI * 2);
+    ctx.arc(x + 5, y + 13, 4, 0, Math.PI * 2);
+    ctx.arc(x + 23, y + 5, 4, 0, Math.PI * 2);
+    ctx.arc(x + 23, y + 13, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+  };
+
   const drawCloud = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
     ctx.save();
     ctx.strokeStyle = "rgba(148, 163, 184, 0.55)";
@@ -222,11 +392,15 @@ export default function DogLoadingGame({
     ctx.restore();
   };
 
+  const getDogHitBox = () => ({
+    left: DOG_X + 18,
+    right: DOG_X + DOG_RENDER_WIDTH - 12,
+    top: dogYRef.current + 20,
+    bottom: dogYRef.current + DOG_RENDER_HEIGHT - 8,
+  });
+
   const checkCollision = () => {
-    const dogLeft = DOG_X + 18;
-    const dogRight = DOG_X + DOG_RENDER_WIDTH - 12;
-    const dogTop = dogYRef.current + 20;
-    const dogBottom = dogYRef.current + DOG_RENDER_HEIGHT - 8;
+    const dog = getDogHitBox();
 
     return obstaclesRef.current.some((obstacle) => {
       const obstacleLeft = obstacle.x;
@@ -234,12 +408,38 @@ export default function DogLoadingGame({
       const obstacleTop = GROUND_Y - obstacle.height;
 
       return (
-        dogRight > obstacleLeft &&
-        dogLeft < obstacleRight &&
-        dogBottom > obstacleTop &&
-        dogTop < GROUND_Y
+        dog.right > obstacleLeft &&
+        dog.left < obstacleRight &&
+        dog.bottom > obstacleTop &&
+        dog.top < GROUND_Y
       );
     });
+  };
+
+  const checkBoneCollection = () => {
+    const dog = getDogHitBox();
+    let didCollect = false;
+
+    bonesRef.current.forEach((bone) => {
+      if (bone.collected) return;
+
+      const hit =
+        dog.right > bone.x &&
+        dog.left < bone.x + bone.width &&
+        dog.bottom > bone.y &&
+        dog.top < bone.y + bone.height;
+
+      if (hit) {
+        bone.collected = true;
+        scoreRef.current += 3;
+        didCollect = true;
+        setScore(scoreRef.current);
+      }
+    });
+
+    if (didCollect) {
+      playBoneSound();
+    }
   };
 
   const render = useCallback(
@@ -285,13 +485,21 @@ export default function DogLoadingGame({
           x: obstacle.x - speedRef.current * delta,
         }));
 
+        bonesRef.current = bonesRef.current.map((bone) => ({
+          ...bone,
+          x: bone.x - speedRef.current * delta,
+        }));
+
         if (obstaclesRef.current.every((obstacle) => obstacle.x < -obstacle.width)) {
           const startX = width + 80 + Math.random() * 150;
           obstaclesRef.current = makeObstacles(startX);
+          bonesRef.current = makeBones(startX);
           scoreRef.current += 1;
           speedRef.current = Math.min(speedRef.current + 20, 760);
           setScore(scoreRef.current);
         }
+
+        checkBoneCollection();
 
         if (checkCollision()) {
           gameOverRef.current = true;
@@ -299,6 +507,7 @@ export default function DogLoadingGame({
         }
       }
 
+      bonesRef.current.forEach((bone) => drawBone(ctx, bone));
       drawDog(ctx, DOG_X, dogYRef.current, time);
       obstaclesRef.current.forEach((obstacle) => drawObstacle(ctx, obstacle.x, obstacle.height));
 
@@ -327,7 +536,7 @@ export default function DogLoadingGame({
         ctx.textAlign = "start";
       }
     },
-    [active, makeObstacles]
+    [active, makeBones, makeObstacles, playBoneSound]
   );
 
   useEffect(() => {
@@ -342,7 +551,9 @@ export default function DogLoadingGame({
       const farthestObstacleX = Math.max(...obstaclesRef.current.map((obstacle) => obstacle.x));
 
       if (farthestObstacleX > nextWidth + 260) {
-        obstaclesRef.current = makeObstacles(nextWidth + 120);
+        const startX = nextWidth + 120;
+        obstaclesRef.current = makeObstacles(startX);
+        bonesRef.current = makeBones(startX);
       }
     };
 
@@ -369,19 +580,66 @@ export default function DogLoadingGame({
 
       window.removeEventListener("resize", updateSize);
     };
-  }, [makeObstacles]);
+  }, [makeBones, makeObstacles]);
 
   useEffect(() => {
-    const jumpAudio = new Audio(jumpSoundSrc);
-    jumpAudio.volume = 0.28;
-    jumpAudio.preload = "auto";
-    jumpAudioRef.current = jumpAudio;
+    let cancelled = false;
+
+    jumpAudioPoolRef.current = Array.from({ length: 2 }, () =>
+      createSound(jumpSoundSrc, 0.28)
+    );
+    boneAudioPoolRef.current = Array.from({ length: 2 }, () =>
+      createSound(boneSoundSrc, 0.32)
+    );
+
+    const context = getAudioContext();
+
+    const loadBuffer = async (
+      src: string,
+      onLoad: (buffer: AudioBuffer) => void
+    ) => {
+      if (!context) return;
+
+      try {
+        const response = await fetch(src);
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = await context.decodeAudioData(arrayBuffer);
+
+        if (!cancelled) {
+          onLoad(buffer);
+        }
+      } catch {
+        // HTMLAudio fallback pool handles browsers that cannot decode the buffer here.
+      }
+    };
+
+    void loadBuffer(jumpSoundSrc, (buffer) => {
+      jumpBufferRef.current = buffer;
+    });
+    void loadBuffer(boneSoundSrc, (buffer) => {
+      boneBufferRef.current = buffer;
+    });
 
     return () => {
-      jumpAudio.pause();
-      jumpAudioRef.current = null;
+      cancelled = true;
+      [...jumpAudioPoolRef.current, ...boneAudioPoolRef.current].forEach((audio) => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+      jumpAudioPoolRef.current = [];
+      boneAudioPoolRef.current = [];
+      jumpBufferRef.current = null;
+      boneBufferRef.current = null;
+
+      const currentContext = audioContextRef.current;
+
+      if (currentContext && currentContext.state !== "closed") {
+        currentContext.close().catch(() => {});
+      }
+
+      audioContextRef.current = null;
     };
-  }, []);
+  }, [getAudioContext]);
 
   useEffect(() => {
     if (!active) {
@@ -417,6 +675,7 @@ export default function DogLoadingGame({
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if ((event.code === "Space" || event.code === "ArrowUp") && !jumpPressedRef.current) {
       event.preventDefault();
+      unlockAudio();
 
       if (gameOverRef.current) {
         jump();
@@ -431,6 +690,7 @@ export default function DogLoadingGame({
   const handleKeyUp = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.code === "Space" || event.code === "ArrowUp") {
       event.preventDefault();
+      unlockAudio();
       jumpPressedRef.current = false;
       jump();
     }
@@ -453,7 +713,10 @@ export default function DogLoadingGame({
           height={GAME_HEIGHT}
           className="block w-full rounded-xl"
           style={{ height: GAME_HEIGHT }}
-          onClick={() => wrapperRef.current?.focus()}
+          onClick={() => {
+            unlockAudio();
+            wrapperRef.current?.focus();
+          }}
         />
 
         <div className="px-2 pb-2 text-center">
