@@ -92,6 +92,21 @@ class S3Service:
             return None
 
     @classmethod
+    async def upload_file_to_key(cls, file, s3_key: str):
+        """지정한 S3 key로 파일 업로드"""
+        try:
+            cls.client.upload_fileobj(
+                file.file,
+                cls.BUCKET_NAME,
+                s3_key,
+                ExtraArgs={"ContentType": file.content_type or "application/octet-stream"}
+            )
+            return f"https://{cls.BUCKET_NAME}.s3.{cls.REGION}.amazonaws.com/{s3_key}"
+        except Exception as e:
+            print(f"[S3 Upload Error] {str(e)}")
+            return None
+
+    @classmethod
     def delete_file(cls, s3_url: str):
         """S3 파일 삭제"""
         if not s3_url: return

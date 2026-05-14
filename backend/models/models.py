@@ -10,7 +10,7 @@ Modification History:
 """
 import enum
 import uuid
-from sqlalchemy import Boolean, Column, DateTime, Numeric, ForeignKey, Index, Integer, String, Text, Enum, Identity, Date, text
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Numeric, ForeignKey, Index, Integer, String, Text, Enum, Identity, Date, text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR, UUID
 from sqlalchemy.sql import func
 
@@ -41,7 +41,7 @@ class SystemAdmin(Base):
     email = Column(String(255), unique=True, index=True)
     password_hash = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    # role = Column(String(50), default="super_admin")
+    role = Column(String(50), default="super_admin")
 
 
 class Organization(Base):
@@ -52,6 +52,7 @@ class Organization(Base):
     password_hash = Column(Text)
     plan = Column(String(20), default="basic")
     max_seats = Column(Integer)
+    business_reg_number = Column(String(50))
     business_reg_s3_url = Column(Text)
     verification_status = Column(String(20), default="pending")
     verified_by = Column(String, nullable=True)
@@ -81,7 +82,9 @@ class Device(Base):
     is_active = Column(Boolean, default=True)
     first_seen = Column(DateTime(timezone=True), server_default=func.now())
     last_seen = Column(DateTime(timezone=True), onupdate=func.now())
-    display_name = Column(Text, nullable=True)
+    hostname = Column(String(200), nullable=True)
+    os_user = Column(String(100), nullable=True)
+    display_name = Column(Text)
 
 
 class Payment(Base):
@@ -124,6 +127,7 @@ class ApiUsageLog(Base):
 class ChatSession(Base):
     __tablename__ = "chat_sessions"
     id = Column(PGUUID, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    org_id = Column(PGUUID, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=True, index=True)
     device_id = Column(PGUUID, ForeignKey("devices.id", ondelete="CASCADE"), nullable=True)
     domain_type = Column(String(20), nullable=False)
     session_title = Column(String(200), nullable=True)
@@ -169,7 +173,7 @@ class ChatMessage(Base):
     )
 
 
-class DocumentsS3(Base):
+class DocumentS3(Base):
     __tablename__ = "documents_s3"
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     file_name = Column(String(255))
@@ -191,6 +195,7 @@ class DocumentChunk(Base):
     section_id = Column(Text, nullable=True)
     chunk_type = Column(Text, nullable=True)
     search_vector = Column(TSVECTOR, nullable=True)
+    table_markdown = Column(Text, nullable=True)
     __table_args__ = (
         Index("idx_document_chunks_search_vector", "search_vector", postgresql_using="gin"),
         Index("idx_document_chunks_section_trgm", "section_id", postgresql_using="gin", postgresql_ops={"section_id": "gin_trgm_ops"}),
@@ -206,7 +211,7 @@ class DocumentChunk(Base):
 
 class TempDocument(Base):
     __tablename__ = "temp_documents"
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    id = Column(PGUUID, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     org_id = Column(PGUUID, ForeignKey("organizations.id", ondelete="CASCADE"))
     device_id = Column(PGUUID, ForeignKey("devices.id", ondelete="SET NULL"), nullable=True)
     file_name = Column(String(255))
@@ -218,21 +223,40 @@ class TempDocument(Base):
     domain = Column(String(50), nullable=True)
 
 
+class ProjectSpecLink(Base):
+    __tablename__ = "project_spec_links"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    org_id = Column(PGUUID, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    project_id = Column(PGUUID, nullable=False)
+    temp_document_id = Column(PGUUID, ForeignKey("temp_documents.id", ondelete="CASCADE"), nullable=False)
+    priority = Column(Integer, nullable=False, server_default=text("0"), default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("org_id", "project_id", "temp_document_id", name="uq_project_spec_links_project_temp_doc"),
+        Index("idx_project_spec_links_project", "org_id", "project_id", "priority"),
+        Index("idx_project_spec_links_temp_document", "temp_document_id"),
+    )
+
+
 class TempDocumentChunk(Base):
     __tablename__ = "temp_document_chunks"
     id = Column(Integer, Identity(always=True), primary_key=True)
-    temp_document_id = Column(String, ForeignKey("temp_documents.id", ondelete="CASCADE"))
+    temp_document_id = Column(PGUUID, ForeignKey("temp_documents.id", ondelete="CASCADE"))
     chunk_index = Column(Integer, nullable=True)
     content = Column(Text)
     dense_embedding = Column(Vector(1024))
-    domain = Column(String(50), nullable=True)
-    category = Column(String(100), nullable=True)
+    domain = Column(Text, nullable=True)
+    category = Column(Text, nullable=True)
     doc_name = Column(String(255), nullable=True)
     effective_date = Column(Date, nullable=True)
-    section_id = Column(String(50), nullable=True)
-    chunk_type = Column(String(50), nullable=True)
+    section_id = Column(Text, nullable=True)
+    chunk_type = Column(Text, nullable=True)
     org_id = Column(PGUUID, index=True)
     search_vector = Column(TSVECTOR, nullable=True)
+    table_markdown = Column(Text, nullable=True)
     __table_args__ = (
         Index("idx_temp_document_chunks_search_vector", "search_vector", postgresql_using="gin"),
         Index("idx_temp_document_chunks_section_trgm", "section_id", postgresql_using="gin", postgresql_ops={"section_id": "gin_trgm_ops"}),
@@ -261,10 +285,12 @@ class StandardTerm(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
+
 class FixStatus(str, enum.Enum):
     PENDING = "PENDING"
     CONFIRMED = "CONFIRMED"
     APPLIED = "APPLIED"
+    FAILED = "FAILED"
     REJECTED = "REJECTED"
 
 
@@ -303,10 +329,7 @@ class SupportInquiry(Base):
     __tablename__ = "support_inquiries"
 
     id = Column(Integer, Identity(always=True), primary_key=True)
-    org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=True, index=True)
-    is_anonymous = Column(Boolean, nullable=False, default=False)
-    anonymous_password = Column(String(20), nullable=True)
-    device_uuid = Column(String(255), nullable=True, index=True)
+    org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
     inquiry_type = Column(String(50), nullable=False)
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
