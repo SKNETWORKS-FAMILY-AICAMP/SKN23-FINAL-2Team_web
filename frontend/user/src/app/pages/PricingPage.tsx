@@ -1,5 +1,10 @@
+/*
+Modification History:
+    - 2026-05-14 (김지우) : 비로그인 요금제 액션을 AuthModalContext 기반 로그인 모달 호출로 변경
+*/
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/app/context/AuthContext';
+import { useAuthModal } from '@/app/context/AuthModalContext';
 import { LandingNav } from '@/app/components/landing/LandingNav';
 import { LandingFooter } from '@/app/components/landing/LandingFooter';
 import { Check } from 'lucide-react';
@@ -108,6 +113,7 @@ const detailedPlans = [
 
 export default function PricingPage() {
   const { isAuthenticated, user, logout } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const navigate = useNavigate();
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
   const highlightedPlan = hoveredPlan;
@@ -125,7 +131,7 @@ export default function PricingPage() {
         navigate('/payment');
       }
     } else {
-      window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }));
+      openAuthModal('login');
     }
   };
 

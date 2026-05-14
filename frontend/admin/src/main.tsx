@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AdminLoginPage from "@/app/pages/AdminLoginPage";
 import AdminPage from "@/app/pages/AdminPage";
 import { AdminAuthProvider, useAdminAuth } from "@/app/context/AdminAuthContext";
-import { Toaster } from "./app/components/ui/sonner";
+import { Toaster } from "@shared/ui/feedback";
 import "./styles/index.css";
 
 function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {

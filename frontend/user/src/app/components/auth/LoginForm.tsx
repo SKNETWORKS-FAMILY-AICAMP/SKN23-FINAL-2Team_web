@@ -6,12 +6,11 @@ Description : 로그인 폼 UI
 
 Modification History:
     - 2026-04-24 (김민정) : 모듈화
+    - 2026-05-14 (김지우) : 분할 인증 모달 레이아웃에 맞춰 하단 회원가입 링크 중복 제거
 */
 import React, { useState } from 'react';
-import { Input } from "@/app/components/ui/input";
-import { Button } from "@/app/components/ui/button";
-import { Label } from "@/app/components/ui/label";
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Input, Button, Label } from "@shared/ui/forms";
+import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface Props {
@@ -37,7 +36,7 @@ export const LoginForm = ({ mode, onChange, onSubmit, onRequestReset, onSetTab, 
           <p className="text-sm text-zinc-500">가입하신 이메일 주소를 입력하시면 인증 코드를 보내드립니다.</p>
         </div>
         <div className="space-y-4">
-          <Input name="email" placeholder="example@cadence.ai" onChange={onChange} className="bg-zinc-50 border-zinc-200 text-zinc-900" />
+          <Input name="email" placeholder="이메일을 입력하세요" onChange={onChange} className="bg-zinc-50 border-zinc-200 text-zinc-900" />
           <Button className="w-full bg-[#0071e3] hover:bg-[#0071e3]/90 text-white font-bold h-12" onClick={onRequestReset} disabled={isLoading}>
             {isLoading ? '발송 중...' : '인증 코드 발송'}
           </Button>
@@ -49,8 +48,8 @@ export const LoginForm = ({ mode, onChange, onSubmit, onRequestReset, onSetTab, 
   return (
     <div className="space-y-5 outline-none">
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-zinc-900 font-semibold">이메일</Label>
-        <Input id="email" name="email" placeholder="example@cadence.ai" onChange={onChange} className="bg-zinc-50 border-zinc-200 text-zinc-900" />
+        <Label htmlFor="email" className="text-zinc-900 font-semibold">아이디</Label>
+        <Input id="email" name="email" placeholder="이메일을 입력하세요" onChange={onChange} className="bg-zinc-50 border-zinc-200 text-zinc-900" />
       </div>
       <div className="space-y-2">
         <Label htmlFor="password" className="text-zinc-900 font-semibold">비밀번호</Label>
@@ -59,7 +58,7 @@ export const LoginForm = ({ mode, onChange, onSubmit, onRequestReset, onSetTab, 
             id="password" 
             name="password" 
             type={showPassword ? "text" : "password"} 
-            placeholder="비밀번호" 
+            placeholder="비밀번호을 입력하세요" 
             onChange={onChange} 
             className="bg-zinc-50 border-zinc-200 text-zinc-900 pr-10" 
           />
@@ -77,19 +76,18 @@ export const LoginForm = ({ mode, onChange, onSubmit, onRequestReset, onSetTab, 
           <input type="checkbox" id="keep-login" className="rounded border-zinc-300 text-[#0071e3] focus:ring-[#0071e3] w-4 h-4 bg-zinc-50" />
           <Label htmlFor="keep-login" className="text-xs text-zinc-600 cursor-pointer font-medium">로그인 유지</Label>
         </div>
-        <button type="button" className="text-xs text-[#0071e3] hover:underline font-medium" onClick={() => onSetTab('forgot_password')}>
+        <button type="button" className="text-xs text-zinc-500 hover:text-zinc-800 transition-colors font-medium" onClick={() => onSetTab('forgot_password')}>
           비밀번호를 잊으셨나요?
         </button>
       </div>
-      <Button className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-bold h-12" onClick={() => onSubmit('login')} disabled={isLoading}>
-        {isLoading ? '로그인 중...' : '로그인'}
+      <Button className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-bold h-12 flex items-center justify-center gap-2" onClick={() => onSubmit('login')} disabled={isLoading}>
+        {isLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            로그인 중...
+          </>
+        ) : '로그인'}
       </Button>
-      <div className="text-center pt-2">
-        <span className="text-xs text-zinc-500">계정이 없으신가요? </span>
-        <button type="button" className="text-xs text-[#0071e3] hover:underline font-bold" onClick={() => onSetTab('signup')}>
-          회원가입
-        </button>
-      </div>
     </div>
   );
 };

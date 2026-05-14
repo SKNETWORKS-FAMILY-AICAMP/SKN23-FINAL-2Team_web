@@ -1,3 +1,7 @@
+/*
+Modification History:
+    - 2026-05-14 (김지우) : 문의 페이지 헤더 좌측 정렬 및 비밀글 제목/색상 표시 개선
+*/
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, Send, Paperclip, CheckCircle, ChevronDown, Plus, Lock, KeyRound, X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -181,14 +185,17 @@ export default function InquiriesPage() {
 
       <main className="flex-1 pt-32 pb-24 border-b border-zinc-200">
         <div className="max-w-[1000px] mx-auto px-6">
-          <div className="text-center mb-10 space-y-4">
-            <div className="flex justify-center mb-6">
-              <MessageSquare className="w-12 h-12 text-[#0071e3]" />
+          <div className="mb-10 flex items-start gap-3">
+            <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+              <MessageSquare className="w-5 h-5 text-[#0071e3]" />
             </div>
-            <h2 className="text-4xl md:text-5xl font-black text-zinc-900 tracking-tight">
-              1:1 고객 문의 (Q&A)
-            </h2>
-            <p className="text-sm text-zinc-600 font-medium pb-4">Cadence AI 이용 중 궁금하신 점이나 오류를 남겨주시면 신속하게 답변해 드립니다.</p>
+            <div>
+              <p className="mb-1 text-[11px] font-black tracking-[0.18em] text-[#0071e3] uppercase">Q&A</p>
+              <h2 className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tight">
+                1:1 고객 문의
+              </h2>
+              <p className="mt-2 text-[13px] text-zinc-600 font-medium">Cadence AI 이용 중 궁금하신 점이나 오류를 남겨주시면 신속하게 답변해 드립니다.</p>
+            </div>
           </div>
 
           <div className="flex items-center justify-between border-b-2 border-zinc-900 pb-4 mb-4 mx-auto max-w-[1000px]">
@@ -249,7 +256,9 @@ export default function InquiriesPage() {
                         <div className="col-span-1 md:col-span-6 pl-0 md:pl-4">
                           <div className="font-bold text-zinc-900 text-[15px] flex items-center gap-2 group-hover:text-[#0071e3] transition-colors">
                             {t.is_anonymous && !unlockedTickets[t.id] && <Lock className="w-3.5 h-3.5 text-zinc-400" />}
-                            <span className="truncate">{t.title}</span>
+                            <span className={`truncate ${t.is_anonymous && !unlockedTickets[t.id] ? 'text-zinc-400' : ''}`}>
+                              {t.is_anonymous && !unlockedTickets[t.id] ? '비밀글입니다.' : t.title}
+                            </span>
                             {t.has_attachment && <Paperclip className="w-3.5 h-3.5 text-zinc-400" />}
                             {t.is_mine && (
                               <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded font-black uppercase bg-purple-50 text-purple-600 border border-purple-200">
