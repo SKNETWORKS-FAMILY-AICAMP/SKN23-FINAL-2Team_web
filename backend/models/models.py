@@ -7,6 +7,9 @@ Description : 데이터베이스 테이블 정의
 Modification History:
     - 2026-04-21 (김민정) : 초기 세팅
     - 2026-04-26 (김민정) : DB 스키마 변경
+    - 2026-05-15 (김지우) : 라이선스 API 키 이름 저장용 name 컬럼 추가
+    - 2026-05-15 (김지우) : 조직 담당자 이름/이메일 컬럼 추가
+    - 2026-05-15 (김지우) : 사용자 알림 저장 테이블 추가
 """
 import enum
 import uuid
@@ -49,6 +52,8 @@ class Organization(Base):
     id = Column(PGUUID, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     company_name = Column(String(200))
     admin_email = Column(String(255), unique=True)
+    contact_name = Column(String(120), nullable=True)
+    contact_email = Column(String(255), nullable=True)
     password_hash = Column(Text)
     plan = Column(String(20), default="basic")
     max_seats = Column(Integer)
@@ -68,6 +73,7 @@ class License(Base):
     id = Column(PGUUID, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     org_id = Column(PGUUID, ForeignKey("organizations.id", ondelete="CASCADE"))
     api_key = Column(String(64), unique=True, index=True)
+    name = Column(String(120), nullable=True)
     status = Column(String(20), default="active")
     starts_at = Column(DateTime(timezone=True), server_default=func.now())
     expires_at = Column(DateTime(timezone=True), nullable=True)
@@ -345,6 +351,21 @@ class SupportInquiry(Base):
         onupdate=func.now(), 
         nullable=True
     )
+
+class UserNotification(Base):
+    __tablename__ = "user_notifications"
+
+    id = Column(Integer, Identity(always=True), primary_key=True, index=True)
+    org_id = Column(PGUUID, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    type = Column(String(50), nullable=False, index=True)
+    title = Column(String(200), nullable=False)
+    message = Column(Text, nullable=False)
+    action_url = Column(String(300), nullable=True)
+    resource_type = Column(String(50), nullable=True)
+    resource_id = Column(String(100), nullable=True)
+    is_read = Column(Boolean, nullable=False, default=False, index=True)
+    read_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 class MappingRule(Base):
     """

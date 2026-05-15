@@ -307,27 +307,26 @@ uvicorn app:app --reload --port 8000
 
 ## 10. 환경 변수
 
-### 10.1 Frontend `.env`
+### 10.1 프로젝트 최상위 `.env`
 
-`frontend/user/.env`, `frontend/admin/.env` 파일에 설정합니다.
+환경 변수는 하위 폴더별로 나누지 않고 프로젝트 최상위 `.env` 파일에 한 번에 설정합니다.
+
+예시는 `.env.example` 파일을 참고합니다.
 
 ```bash
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_BASE_URL=http://localhost:8000/api/v1
 VITE_TOSS_CLIENT_KEY=test_ck_...
-```
 
-### 10.2 Backend `.env`
-
-`backend/.env` 파일에 설정합니다.
-
-```bash
-DB_URL=postgresql://user:password@localhost:5432/postgres
+DB_USER=postgres
+DB_PASSWORD=12341234
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=postgres
 REDIS_HOST=localhost
 REDIS_PORT=6379
 
 ADMIN_PIN=your_admin_pin
-JWT_SECRET_KEY=your_secret_key
-JWT_ALGORITHM=HS256
+SECRET_KEY=your_secret_key
 
 TOSS_SECRET_KEY=test_sk_...
 NTS_API_KEY=your_nts_key
@@ -345,11 +344,10 @@ APP_PASSWORD=your_app_password
 |---|---|
 | `VITE_API_BASE_URL` | 프론트엔드에서 호출할 백엔드 API 서버의 기본 주소 |
 | `VITE_TOSS_CLIENT_KEY` | 토스페이먼츠 결제창 호출 시 클라이언트 단에서 사용하는 공개 키 |
-| `DB_URL` | PostgreSQL 데이터베이스 연결 문자열 (ID, PW, Host, Port 포함) |
-| `REDIS_HOST` / `PORT` | 캐싱 및 세션 관리를 위한 Redis 서버 접속 정보 |
+| `DB_USER` / `DB_PASSWORD` / `DB_HOST` / `DB_PORT` / `DB_NAME` | PostgreSQL 데이터베이스 접속 정보 |
+| `REDIS_HOST` / `REDIS_PORT` | 캐싱 및 세션 관리를 위한 Redis 서버 접속 정보 |
 | `ADMIN_PIN` | 시스템 관리자 페이지 진입을 위한 4자리 보안 인증 번호 |
-| `JWT_SECRET_KEY` | 사용자 인증 토큰(JWT) 생성 및 검증을 위한 비밀 키 |
-| `JWT_ALGORITHM` | JWT 토큰 서명에 사용되는 암호화 알고리즘 (기본: HS256) |
+| `SECRET_KEY` | 사용자 인증 토큰(JWT) 생성 및 검증을 위한 비밀 키 |
 | `TOSS_SECRET_KEY` | 토스페이먼츠 결제 승인 API 호출 시 사용하는 서버 전용 비밀 키 |
 | `NTS_API_KEY` | 국세청 사업자등록 진위확인 API 서비스 키 (공공데이터포털) |
 | `AWS_ACCESS_KEY_ID` / `SECRET` | AWS S3 서비스 접근을 위한 인증 키 |

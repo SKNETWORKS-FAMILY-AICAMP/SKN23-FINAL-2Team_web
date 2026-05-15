@@ -7,8 +7,11 @@ Description : 인증(Login/Register/Verify/Reset) 관련 API 라우터 (Redis �
 Modification History:
     - 2026-04-23 (김민정) : 모듈화 및 Redis 기반 이메일 인증 시스템 구현
     - 2026-04-26 (김민정) : qna -> inquiries 파일명 변경
+    - 2026-05-15 (김지우) : 이메일 인증 기반 프로필 정보 변경 API 추가
+    - 2026-05-15 (김지우) : 담당자 정보 관리 및 담당자 이메일 우선 인증 발송 처리
 """
 import traceback
+import re
 from fastapi import APIRouter, Depends, HTTPException, Body, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from jose import jwt
@@ -19,11 +22,31 @@ from ..core import database
 from ..core.plan_utils import get_effective_max_seats
 from ..core.database import get_db
 from ..core.dependencies import get_current_user
+from ..core.notification_utils import create_user_notification
+from ..core.schema_utils import ensure_organization_contact_columns
 from ..services.email_service import EmailService
 from ..services.s3_service import S3Service
 from ..services.auth_service import AuthService
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+def get_profile_verification_email(org: models.Organization) -> str:
+    return (org.contact_email or org.admin_email or "").strip()
+
+def build_user_payload(db: Session, org: models.Organization) -> dict:
+    return {
+        "email": org.admin_email,
+        "companyName": org.company_name,
+        "contactName": org.contact_name,
+        "contactEmail": org.contact_email,
+        "role": "user",
+        "orgId": str(org.id),
+        "verification_status": org.verification_status,
+        "plan": org.plan,
+        "max_seats": get_effective_max_seats(db, org),
+        "business_reg_s3_url": org.business_reg_s3_url,
+    }
 
 @router.post("/register", response_model=schemas.CommonResponse)
 async def register(
@@ -34,6 +57,7 @@ async def register(
     db: Session = Depends(get_db)
 ):
     try:
+        ensure_organization_contact_columns(db)
         if db.query(models.Organization).filter(models.Organization.admin_email == email).first():
             raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
         
@@ -68,6 +92,7 @@ async def register(
 
 @router.post("/verify-email", response_model=schemas.LoginResponse)
 async def verify_email(data: schemas.EmailVerification, db: Session = Depends(get_db)):
+    ensure_organization_contact_columns(db)
     pending_data = AuthService.get_pending_signup(data.email)
     if not pending_data:
         raise HTTPException(status_code=400, detail="인증 시간이 만료되었습니다.")
@@ -95,16 +120,7 @@ async def verify_email(data: schemas.EmailVerification, db: Session = Depends(ge
             "success": True,
             "token": auth.create_access_token(data={"sub": new_org.admin_email}),
             "refresh_token": auth.create_refresh_token(data={"sub": new_org.admin_email}),
-            "user": {
-                "email": new_org.admin_email,
-                "companyName": new_org.company_name,
-                "role": "user",
-                "orgId": str(new_org.id),
-                "verification_status": new_org.verification_status,
-                "plan": new_org.plan,
-                "max_seats": new_org.max_seats,
-                "business_reg_s3_url": new_org.business_reg_s3_url
-            }
+            "user": build_user_payload(db, new_org)
         }
     except Exception as e:
         db.rollback()
@@ -117,7 +133,8 @@ def login(login_data: schemas.OrgLogin, db: Session = Depends(get_db)):
     1. system_admins 테이블을 먼저 조회 (관리자 우선순위)
     2. 관리자가 아니면 organizations 테이블 조회 (사용자)
     """
-    
+    ensure_organization_contact_columns(db)
+
     # 1. 시스템 관리자(Admin) 확인
     # DB의 system_admins 테이블에 없는 role 컬럼 조회를 피하기 위해 개별 필드만 선택합니다.
     from sqlalchemy import select
@@ -157,16 +174,7 @@ def login(login_data: schemas.OrgLogin, db: Session = Depends(get_db)):
             "success": True,
             "token": auth.create_access_token(data={"sub": org.admin_email}),
             "refresh_token": auth.create_refresh_token(data={"sub": org.admin_email}),
-            "user": {
-                "email": org.admin_email,
-                "companyName": org.company_name,
-                "role": "user",
-                "orgId": str(org.id),
-                "verification_status": org.verification_status,
-                "plan": org.plan,
-                "max_seats": get_effective_max_seats(db, org),
-                "business_reg_s3_url": org.business_reg_s3_url
-            }
+            "user": build_user_payload(db, org)
         }
 
     # 둘 다 해당하지 않는 경우
@@ -217,20 +225,31 @@ class EmailCheckRequest(BaseModel):
 class CompanyCheckRequest(BaseModel):
     company_name: str
 
+class ProfileUpdateRequest(BaseModel):
+    code: str
+    company_name: str | None = None
+    email: str | None = None
+    new_password: str | None = None
+    contact_name: str | None = None
+    contact_email: str | None = None
+
 @router.post("/check-email", response_model=schemas.CommonResponse)
 async def check_email(data: EmailCheckRequest, db: Session = Depends(get_db)):
+    ensure_organization_contact_columns(db)
     if db.query(models.Organization).filter(models.Organization.admin_email == data.email).first():
         raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
     return {"success": True, "message": "사용 가능한 이메일입니다."}
 
 @router.post("/check-company", response_model=schemas.CommonResponse)
 async def check_company(data: CompanyCheckRequest, db: Session = Depends(get_db)):
+    ensure_organization_contact_columns(db)
     if db.query(models.Organization).filter(models.Organization.company_name == data.company_name).first():
         raise HTTPException(status_code=400, detail="이미 사용중인 기업명입니다.")
     return {"success": True, "message": "사용 가능한 기업명입니다."}
 
 @router.post("/send-code", response_model=schemas.CommonResponse)
 async def send_code(data: EmailCheckRequest, db: Session = Depends(get_db)):
+    ensure_organization_contact_columns(db)
     if db.query(models.Organization).filter(models.Organization.admin_email == data.email).first():
         raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
     
@@ -255,6 +274,107 @@ async def verify_code(data: schemas.EmailVerification, db: Session = Depends(get
     AuthService.save_pending_signup(data.email, pending_data)
     return {"success": True, "message": "이메일 인증이 완료되었습니다."}
 
+@router.post("/profile-change/request-code", response_model=schemas.CommonResponse)
+async def request_profile_change_code(current_user: models.Organization = Depends(get_current_user)):
+    verification_email = get_profile_verification_email(current_user)
+    if not verification_email:
+        raise HTTPException(status_code=400, detail="인증 코드를 받을 이메일이 없습니다.")
+
+    v_code = AuthService.generate_verification_code()
+    AuthService.save_password_reset_code(verification_email, v_code)
+
+    try:
+        EmailService.send_verification_email(verification_email, v_code)
+    except Exception as e:
+        print(f"[Email Error] {e}")
+
+    return {"success": True, "message": "인증 코드가 발송되었습니다."}
+
+@router.patch("/profile")
+async def update_profile(
+    data: ProfileUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: models.Organization = Depends(get_current_user),
+):
+    verification_email = get_profile_verification_email(current_user)
+    saved_code = AuthService.get_password_reset_code(verification_email)
+    if not saved_code or saved_code != data.code:
+        raise HTTPException(status_code=400, detail="인증 코드가 일치하지 않거나 만료되었습니다.")
+
+    next_company_name = data.company_name.strip() if data.company_name else None
+    next_email = data.email.strip() if data.email else None
+    next_password = data.new_password.strip() if data.new_password else None
+    next_contact_name = data.contact_name.strip() if data.contact_name is not None else None
+    next_contact_email = data.contact_email.strip() if data.contact_email is not None else None
+    changed_labels: list[str] = []
+
+    if not any([next_company_name, next_email, next_password, next_contact_name, next_contact_email]):
+        raise HTTPException(status_code=400, detail="변경할 항목이 없습니다.")
+
+    if next_company_name and next_company_name != current_user.company_name:
+        duplicated_company = db.query(models.Organization).filter(
+            models.Organization.company_name == next_company_name,
+            models.Organization.id != current_user.id,
+        ).first()
+        if duplicated_company:
+            raise HTTPException(status_code=400, detail="이미 사용 중인 기업명입니다.")
+        current_user.company_name = next_company_name
+        changed_labels.append("기업명")
+
+    if next_email and next_email != current_user.admin_email:
+        if not EMAIL_PATTERN.match(next_email):
+            raise HTTPException(status_code=400, detail="올바른 기업 이메일을 입력해주세요.")
+        duplicated_email = db.query(models.Organization).filter(
+            models.Organization.admin_email == next_email,
+            models.Organization.id != current_user.id,
+        ).first()
+        if duplicated_email:
+            raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
+        current_user.admin_email = next_email
+        changed_labels.append("기업 이메일")
+
+    if next_password:
+        if len(next_password) < 8:
+            raise HTTPException(status_code=400, detail="비밀번호는 8자 이상이어야 합니다.")
+        current_user.password_hash = auth.get_password_hash(next_password)
+        changed_labels.append("비밀번호")
+
+    if data.contact_name is not None:
+        if not next_contact_name:
+            raise HTTPException(status_code=400, detail="담당자 이름을 입력해주세요.")
+        current_user.contact_name = next_contact_name
+        changed_labels.append("담당자 이름")
+
+    if data.contact_email is not None:
+        if not next_contact_email or not EMAIL_PATTERN.match(next_contact_email):
+            raise HTTPException(status_code=400, detail="올바른 담당자 이메일을 입력해주세요.")
+        current_user.contact_email = next_contact_email
+        changed_labels.append("담당자 이메일")
+
+    create_user_notification(
+        db,
+        org_id=str(current_user.id),
+        type_="profile_updated",
+        title="계정 정보가 수정되었습니다",
+        message=f"{', '.join(changed_labels) if changed_labels else '계정 정보'} 항목이 변경되었습니다.",
+        action_url="/profile?tab=security",
+    )
+
+    db.commit()
+    db.refresh(current_user)
+    AuthService.delete_password_reset_code(verification_email)
+
+    token = auth.create_access_token(data={"sub": current_user.admin_email})
+    refresh_token = auth.create_refresh_token(data={"sub": current_user.admin_email})
+
+    return {
+        "success": True,
+        "message": "계정 정보가 변경되었습니다.",
+        "token": token,
+        "refresh_token": refresh_token,
+        "user": build_user_payload(db, current_user)
+    }
+
 @router.get("/me")
 async def get_me(
     db: Session = Depends(get_db),
@@ -263,14 +383,5 @@ async def get_me(
     """현재 로그인 사용자의 최신 프로필 정보 반환"""
     return {
         "success": True,
-        "user": {
-            "email": current_user.admin_email,
-            "companyName": current_user.company_name,
-            "role": "user",
-            "orgId": str(current_user.id),
-            "verification_status": current_user.verification_status,
-            "plan": current_user.plan,
-            "max_seats": get_effective_max_seats(db, current_user),
-            "business_reg_s3_url": current_user.business_reg_s3_url,
-        }
+        "user": build_user_payload(db, current_user)
     }

@@ -422,7 +422,7 @@ export default function PaymentPage() {
                   </p>
                   {!IS_TOSS_CONFIGURED && import.meta.env.DEV && (
                     <p className="text-[10px] leading-relaxed text-amber-600">
-                      개발 환경에서는 frontend/user/.env에 VITE_TOSS_CLIENT_KEY를 설정해야 합니다.
+                      개발 환경에서는 프로젝트 최상위 .env에 VITE_TOSS_CLIENT_KEY를 설정해야 합니다.
                     </p>
                   )}
                 </div>

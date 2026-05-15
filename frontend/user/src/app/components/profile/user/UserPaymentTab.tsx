@@ -98,7 +98,7 @@ export const UserPaymentTab: React.FC<BillingTabProps> = ({
   const planAmount = Number(paymentInfo?.amount ?? 0);
   const planPrice = planAmount > 0
     ? formatCurrency(planAmount)
-    : paymentInfo?.plan_name?.toLowerCase() === 'basic' ? '600,000' : '1,200,000';
+    : paymentInfo?.plan_name?.toUpperCase() === 'BASIC' ? '600,000' : '1,200,000';
   const nextDate = paymentInfo?.next_payment_date?.split('T')[0];
   const lastDate = paymentInfo?.last_payment_date?.split('T')[0];
   const totalSeats = paymentInfo?.max_seats ?? paymentInfo?.seats ?? 0;
@@ -128,7 +128,7 @@ export const UserPaymentTab: React.FC<BillingTabProps> = ({
 
         <div className="px-6 py-5">
           <div className="flex items-end gap-3 mb-5">
-            <span className="text-3xl font-semibold text-zinc-900">{paymentInfo.plan_name}</span>
+            <span className="text-3xl font-semibold text-zinc-900">{paymentInfo.plan_name?.toUpperCase()}</span>
             <span className="text-sm text-zinc-500 mb-1">₩{planPrice} / 연</span>
           </div>
 

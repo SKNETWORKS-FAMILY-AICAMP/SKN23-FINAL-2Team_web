@@ -7,6 +7,8 @@ Description : Pydantic 스키마 정의 (요청/응답 모델)
 Modification History:
     - 2026-04-21 (김민정) : 초기 생성 및 기본 스키마 정의
     - 2026-04-22 (김민정) : LoginResponse 내 refresh_token 추가 및 필드 바인딩 최적화
+    - 2026-05-14 (김지우) : License 응답 스키마에 API 키 이름 필드 추가
+    - 2026-05-15 (김지우) : 조직 담당자 이름/이메일 응답 필드 추가
     
 """
 from pydantic import BaseModel, Field, AliasChoices
@@ -28,6 +30,8 @@ class OrgLogin(BaseModel):
 class OrgResponse(BaseModel):
     email: str
     companyName: Optional[str] = None
+    contactName: Optional[str] = None
+    contactEmail: Optional[str] = None
     role: str = "admin"
     orgId: Optional[str] = None
     verification_status: Optional[str] = "pending"
@@ -63,6 +67,7 @@ class LoginResponse(BaseModel):
 class LicenseBase(BaseModel):
     api_key: str
     status: str
+    name: Optional[str] = None
     starts_at: Optional[str] = None
     expires_at: Optional[str] = None
     created_at: Optional[str] = None
