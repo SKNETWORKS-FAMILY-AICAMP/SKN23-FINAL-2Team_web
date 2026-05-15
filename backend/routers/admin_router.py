@@ -419,16 +419,48 @@ def standard_document_prefix(domain: str, doc_type: str) -> str:
 
 
 def sanitize_document_stem(filename: str) -> str:
-    stem = os.path.splitext(filename or "document")[0] or "document"
-    safe = re.sub(r"[^a-zA-Z0-9가-힣._-]+", "_", stem).strip("._-")
+    stem = os.path.splitext(os.path.basename(filename or "document"))[0] or "document"
+    safe = re.sub(r"[^a-zA-Z0-9\uac00-\ud7a3._-]+", "_", stem).strip("._-")
     return safe[:120] or "document"
 
 
 def build_standard_document_s3_key(document_id: str, filename: str, domain: str, doc_type: str) -> tuple[str, str]:
     normalized_domain = resolve_document_domain(domain)
     normalized_doc_type = resolve_document_type(doc_type)
-    stem = f"{document_id}_{sanitize_document_stem(filename)}"
+    stem = sanitize_document_stem(filename)
     return f"{standard_document_prefix(normalized_domain, normalized_doc_type)}{stem}.pdf", stem
+
+
+LEGACY_DOCUMENT_ID_PREFIX_RE = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}_"
+)
+
+
+def canonical_standard_document_stem(filename_or_key: str) -> str:
+    s3_key = S3Service._extract_s3_key(filename_or_key) or filename_or_key
+    stem = sanitize_document_stem(os.path.basename(s3_key))
+    return LEGACY_DOCUMENT_ID_PREFIX_RE.sub("", stem, count=1)
+
+
+def find_duplicate_standard_document(
+    documents: list[models.DocumentS3],
+    filename: str,
+    domain: str,
+) -> Optional[models.DocumentS3]:
+    normalized_domain = resolve_document_domain(domain)
+    target_stem = canonical_standard_document_stem(filename).casefold()
+
+    for doc in documents:
+        if infer_domain_from_document(doc) != normalized_domain:
+            continue
+
+        for candidate in (doc.file_name, doc.s3_url):
+            if not candidate:
+                continue
+            if canonical_standard_document_stem(candidate).casefold() == target_stem:
+                return doc
+
+    return None
 
 
 def infer_domain_from_document(doc: models.DocumentS3) -> Optional[str]:
@@ -539,6 +571,17 @@ async def request_runpod_document_processing(payload: dict[str, Any]) -> dict[st
     return output
 
 
+def delete_document_database_rows(db: Session, doc: models.DocumentS3) -> int:
+    deleted_chunks = (
+        db.query(models.DocumentChunk)
+        .filter(models.DocumentChunk.document_id == str(doc.id))
+        .delete(synchronize_session=False)
+    )
+    db.delete(doc)
+    db.commit()
+    return int(deleted_chunks or 0)
+
+
 def cleanup_failed_document_upload(db: Session, doc_id: Optional[str], s3_url: Optional[str]) -> None:
     try:
         if s3_url:
@@ -546,8 +589,7 @@ def cleanup_failed_document_upload(db: Session, doc_id: Optional[str], s3_url: O
         if doc_id:
             doc = db.query(models.DocumentS3).filter(models.DocumentS3.id == doc_id).first()
             if doc:
-                db.delete(doc)
-                db.commit()
+                delete_document_database_rows(db, doc)
     except Exception as cleanup_error:
         db.rollback()
         print(f"[Admin Documents] Cleanup failed: {cleanup_error}")
@@ -589,6 +631,17 @@ async def upload_document(
 
     selected_domain = resolve_document_domain(domain, category)
     selected_doc_type = resolve_document_type(doc_type)
+    duplicate_doc = find_duplicate_standard_document(
+        db.query(models.DocumentS3).all(),
+        filename=original_filename,
+        domain=selected_domain,
+    )
+    if duplicate_doc:
+        raise HTTPException(
+            status_code=409,
+            detail="이미 같은 문서명이 등록되어 있습니다. 같은 분야에서는 시방서/법령 폴더가 달라도 중복 업로드할 수 없습니다.",
+        )
+
     document_id = str(uuid.uuid4())
     s3_key, doc_stem = build_standard_document_s3_key(
         document_id=document_id,
@@ -648,13 +701,12 @@ def delete_document(doc_id: str, db: Session = Depends(get_db), current_admin: m
     doc = db.query(models.DocumentS3).filter(models.DocumentS3.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    
-    S3Service.delete_file(doc.s3_url)
-    
-    db.delete(doc)
-    db.commit()
-    
-    return {"success": True, "message": "문서 삭제 완료"}
+
+    s3_url = doc.s3_url
+    deleted_chunks = delete_document_database_rows(db, doc)
+    S3Service.delete_file(s3_url)
+
+    return {"success": True, "message": "문서 삭제 완료", "deleted_chunks": deleted_chunks}
 
 @router.post("/verify-business")
 async def verify_business(
