@@ -9,21 +9,21 @@ from ..models import models
 
 
 DEFAULT_PLANS = {
-    "basic": {
+    "Basic": {
         "plan_code": "Basic",
         "plan_name": "Basic",
         "base_seats": 5,
         "base_price": Decimal("600000"),
         "addon_price_per_seat": Decimal("60000"),
     },
-    "pro": {
+    "Pro": {
         "plan_code": "Pro",
         "plan_name": "Pro",
         "base_seats": 10,
         "base_price": Decimal("1200000"),
         "addon_price_per_seat": Decimal("120000"),
     },
-    "enterprise": {
+    "Enterprise": {
         "plan_code": "Enterprise",
         "plan_name": "Enterprise",
         "base_seats": 30,
@@ -34,11 +34,11 @@ DEFAULT_PLANS = {
 
 
 def _normalize_plan(plan_name: str | None) -> str:
-    normalized = (plan_name or "").strip().lower()
-    if "enterprise" in normalized:
-        return "enterprise"
-    if "pro" in normalized:
-        return "pro"
+    normalized = (plan_name or "").strip()
+    if "Enterprise" in normalized:
+        return "Enterprise"
+    if "Pro" in normalized:
+        return "Pro"
     if "basic" in normalized:
         return "basic"
     return normalized

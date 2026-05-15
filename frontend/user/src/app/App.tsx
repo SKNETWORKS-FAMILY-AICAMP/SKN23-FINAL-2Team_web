@@ -12,10 +12,13 @@ Modification History:
     - 2026-04-27 (송주엽) : 라이트 테마 전환, 데모 영상 버튼 제거, Spline 제거
     - 2026-05-14 (김지우) : AuthModalContext 연동으로 비로그인 CTA 인증 모달 호출 방식 개선
     - 2026-05-14 (김지우) : 랜딩 페이지 우측 하단 가이드 챗봇 추가
+    - 2026-05-14 (김지우) : 랜딩 히어로 배경을 Spline 씬으로 교체
+    - 2026-05-14 (김지우) : Spline 히어로 배경 선명도 및 오버레이 농도 조정
  */
 import { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'motion/react';
 import { useSearchParams } from 'react-router-dom';
+import Spline from '@splinetool/react-spline';
 import { useAuth } from './context/AuthContext';
 import { useAuthModal } from './context/AuthModalContext';
 
@@ -36,9 +39,8 @@ import { LandingPricing } from '@/app/components/landing/LandingPricing';
 import { LandingFAQ } from '@/app/components/landing/LandingFAQ';
 import { LandingFooter } from '@/app/components/landing/LandingFooter';
 import { LandingGuideChatbot } from '@/app/components/landing/LandingGuideChatbot';
-import landingMainImage from '@/assets/landing-main.png';
 
-const HERO_BACKGROUND_IMAGE = landingMainImage;
+const HERO_SPLINE_SCENE = 'https://prod.spline.design/IoTB2q-C0LxyvgoL/scene.splinecode';
 
 const domains = [
   {
@@ -142,17 +144,17 @@ export default function App() {
       <div className="h-[1000vh] relative z-10">
         {/* HERO */}
         <section className="sticky top-0 h-screen flex items-center justify-center overflow-hidden bg-black">
-          <img
-            className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
-            src={HERO_BACKGROUND_IMAGE}
-            alt=""
-            aria-hidden="true"
-          />
-          <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-b from-black/70 via-black/35 to-black/80" />
-          <div className="absolute inset-0 z-10 pointer-events-none bg-black/20" />
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            <Spline
+              scene={HERO_SPLINE_SCENE}
+              className="h-full w-full"
+              style={{ filter: 'brightness(1.14) contrast(1.12) saturate(1.16)' }}
+            />
+          </div>
+          <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-b from-black/42 via-black/10 to-black/58" />
           {/* 좌우 엣지 페이드 */}
           <div className="absolute inset-0 z-10 pointer-events-none"
-            style={{ boxShadow: 'inset 120px 0 120px -48px rgba(0,0,0,0.72), inset -120px 0 120px -48px rgba(0,0,0,0.72)' }}
+            style={{ boxShadow: 'inset 96px 0 110px -52px rgba(0,0,0,0.52), inset -96px 0 110px -52px rgba(0,0,0,0.52)' }}
           />
 
           <motion.div

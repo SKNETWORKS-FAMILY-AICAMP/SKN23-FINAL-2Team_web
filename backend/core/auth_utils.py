@@ -8,14 +8,17 @@ Modification History:
     - 2026-04-21 (김민정) : 초기 생성 및 JWT 설정
     - 2026-04-22 (김민정) : Refresh Token 생성 및 토션 검증 로직 고도화
     - 2026-04-26 (김민정) : qna 파일명 변경
+    - 2026-05-14 (김지우) : 프로젝트 최상위 .env 파일을 명시적으로 로드하도록 변경
 """
 import os
 import bcrypt
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Optional
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    ROOT_ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
+    load_dotenv(ROOT_ENV_PATH)
 except ImportError:
     pass
 

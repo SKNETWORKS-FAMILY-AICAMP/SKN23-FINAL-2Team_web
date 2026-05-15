@@ -6,6 +6,7 @@ Description : 결제(Payment) 및 구독 관련 API 라우터 (토스 페이먼�
 
 Modification History:
     - 2026-04-26 (김민정) : 결제 승인 시 상세 필드 계산 및 구독 종료일DB 저장 로직 추가, 구독 해지
+    - 2026-05-15 (김지우) : 구독 변경 관련 사용자 알림 생성
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -17,6 +18,7 @@ import base64
 from ..models import models
 from ..core.database import get_db
 from ..core.dependencies import get_current_user, ensure_verified
+from ..core.notification_utils import create_user_notification
 from ..core.plan_utils import apply_plan_seats, calculate_plan_amount, get_effective_max_seats, get_plan_base_seats, get_plan_definition, list_plan_definitions
 from ..services.email_service import EmailService
 
@@ -93,6 +95,14 @@ def cancel_subscription(current_org: models.Organization = Depends(get_current_u
         raise HTTPException(status_code=404, detail="해지할 활성 구독 결제 내역이 없습니다.")
         
     last_payment.status = "cancelling"
+    create_user_notification(
+        db,
+        org_id=str(current_org.id),
+        type_="billing_changed",
+        title="구독 해지가 예약되었습니다",
+        message="현재 요금제의 구독 해지가 예약되었습니다.",
+        action_url="/profile?tab=billing",
+    )
     db.commit()
     return {"success": True, "message": "해지가 예약되었습니다."}
 
@@ -108,6 +118,14 @@ def resume_subscription(current_org: models.Organization = Depends(get_current_u
         raise HTTPException(status_code=404, detail="해지 예약된 구독 결제 내역이 없습니다.")
         
     last_payment.status = "completed"
+    create_user_notification(
+        db,
+        org_id=str(current_org.id),
+        type_="billing_changed",
+        title="구독 유지가 확정되었습니다",
+        message="요금제 구독 유지가 확정되었습니다.",
+        action_url="/profile?tab=billing",
+    )
     db.commit()
     return {"success": True, "message": "구독 유지가 확정되었습니다."}
 
@@ -150,6 +168,14 @@ def activate_subscription(payload: dict, current_org: models.Organization = Depe
         billing_period_end=billing_end
     ))
     apply_plan_seats(db, current_org)
+    create_user_notification(
+        db,
+        org_id=str(current_org.id),
+        type_="billing_changed",
+        title="요금제가 변경되었습니다",
+        message=f"{plan_name} 요금제가 활성화되었습니다.",
+        action_url="/profile?tab=billing",
+    )
     db.commit()
 
     try:
@@ -229,6 +255,14 @@ def toss_confirm(payload: dict, current_org: models.Organization =Depends(get_cu
             )
             db.add(new_payment)
             apply_plan_seats(db, current_org)
+            create_user_notification(
+                db,
+                org_id=str(current_org.id),
+                type_="billing_changed",
+                title="요금제가 변경되었습니다",
+                message=f"{plan_name} 요금제 결제가 완료되었습니다.",
+                action_url="/profile?tab=billing",
+            )
             db.commit()
             # 영수증 메일 발송
             try:

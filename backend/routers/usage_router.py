@@ -64,8 +64,8 @@ def get_usage_stats(
         current_dt += timedelta(days=1)
         
     plan = current_org.plan or "none"
-    limit_map = {"basic": 100, "pro": 10000, "enterprise": 1000000}
-    limit = limit_map.get(plan.lower(), 5)
+    limit_map = {"Basic": 100, "Pro": 10000, "Enterprise": 1000000}
+    limit = limit_map.get(plan, 5)
     
     return {
         "success": True,

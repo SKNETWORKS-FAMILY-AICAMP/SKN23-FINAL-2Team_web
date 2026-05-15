@@ -31,22 +31,22 @@ export const AdminManagementTab = ({ isLoading, orgs, onSearch, onRefresh }: Pro
   const planOptions = [
     { id: 'all', label: '모든 요금제' },
     { id: 'none', label: '미지정 (None)' },
-    { id: 'basic', label: 'Basic Plan' },
-    { id: 'pro', label: 'Pro Plan' },
-    { id: 'enterprise', label: 'Enterprise Plan' }
+    { id: 'Basic', label: 'Basic Plan' },
+    { id: 'Pro', label: 'Pro Plan' },
+    { id: 'Enterprise', label: 'Enterprise Plan' }
   ];
 
   const planTypes = [
     { id: 'none', name: 'None', desc: '요금제 미지정 상태', price: '-', period: '', color: 'slate' },
-    { id: 'basic', name: 'Basic', desc: '기본 법규 검토, 5개 API 키, 4개 도메인 지원', price: '600,000', period: '/ 연', color: 'emerald' },
-    { id: 'pro', name: 'Pro', desc: 'API 키 무제한, 시방서 무제한 저장, 우선 지원', price: '1,200,000', period: '/ 연', color: 'blue' },
-    { id: 'enterprise', name: 'Enterprise', desc: '30명+ 무제한 확장, sLLM 튜닝, 5M 토큰 보장', price: '3,600,000', period: '/ 연', color: 'purple' }
+    { id: 'Basic', name: 'Basic', desc: '기본 법규 검토, 5개 API 키, 4개 도메인 지원', price: '600,000', period: '/ 연', color: 'emerald' },
+    { id: 'Pro', name: 'Pro', desc: 'API 키 무제한, 시방서 무제한 저장, 우선 지원', price: '1,200,000', period: '/ 연', color: 'blue' },
+    { id: 'Enterprise', name: 'Enterprise', desc: '30명+ 무제한 확장, sLLM 튜닝, 5M 토큰 보장', price: '3,600,000', period: '/ 연', color: 'purple' }
   ];
 
   const planBadge: Record<string, string> = {
-    enterprise: 'bg-purple-50 text-purple-700 border-purple-200',
-    pro: 'bg-blue-50 text-blue-700 border-blue-200',
-    basic: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    Enterprise: 'bg-purple-50 text-purple-700 border-purple-200',
+    Pro: 'bg-blue-50 text-blue-700 border-blue-200',
+    Basic: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     none: 'bg-slate-100 text-slate-500 border-slate-200',
   };
 
@@ -151,7 +151,7 @@ export const AdminManagementTab = ({ isLoading, orgs, onSearch, onRefresh }: Pro
             </div>
             <div className="divide-y divide-slate-100">
               {orgs.map((org) => {
-                const planKey = org.plan?.toLowerCase() || 'none';
+                const planKey = org.plan || 'none';
                 const isExpired = org?.payment_info?.billing_period_end && new Date(org.payment_info.billing_period_end) < new Date();
                 return (
                   <button
@@ -196,7 +196,7 @@ export const AdminManagementTab = ({ isLoading, orgs, onSearch, onRefresh }: Pro
                 <h3 className="truncate text-lg font-black text-slate-900">{selectedOrg.company_name}</h3>
                 <p className="truncate text-xs text-slate-500">{selectedOrg.admin_email}</p>
               </div>
-              <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${planBadge[selectedOrg.plan?.toLowerCase()] || planBadge.none}`}>
+              <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${planBadge[selectedOrg.plan] || planBadge.none}`}>
                 {selectedOrg.plan?.toUpperCase() || 'NONE'}
               </span>
             </div>
@@ -268,7 +268,7 @@ export const AdminManagementTab = ({ isLoading, orgs, onSearch, onRefresh }: Pro
               <div className="flex-1 overflow-y-auto p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {planTypes.map((plan) => {
-                    const isActive = targetOrg.plan?.toLowerCase() === plan.id;
+                    const isActive = targetOrg.plan === plan.id;
                     const colorMap: Record<string, string> = {
                       emerald: 'border-emerald-300 bg-emerald-50',
                       blue: 'border-blue-300 bg-blue-50',

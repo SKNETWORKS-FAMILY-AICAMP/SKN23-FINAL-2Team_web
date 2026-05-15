@@ -6,11 +6,14 @@ Description : 데이터베이스 연결 및 SSH 터널링 설정
 
 Modification History:
     - 2026-04-21 (김민정) : 초기 DB 설정 및 SSH 터널링 IPv4 강제 바인딩 처리
+    - 2026-05-14 (김지우) : 프로젝트 최상위 .env 파일을 명시적으로 로드하도록 변경
 """
 import os
+from pathlib import Path
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    ROOT_ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
+    load_dotenv(ROOT_ENV_PATH)
 except ImportError:
     print("Warning: python-dotenv not installed, skipping load_dotenv()")
 

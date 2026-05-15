@@ -22,6 +22,7 @@ from ..core import auth_utils
 from ..core.database import get_db
 from ..core.plan_utils import get_effective_max_seats
 from ..services.email_service import EmailService
+from ..core.notification_utils import create_user_notification
 from ..core.dependencies import security
 from ..services.s3_service import S3Service
 
@@ -337,6 +338,18 @@ def answer_support_ticket(ticket_id: int, payload: dict = Body(...), db: Session
     ticket.answer_content = answer
     ticket.status = "answered"
     ticket.answered_at = datetime.datetime.now()
+    if ticket.org_id:
+        create_user_notification(
+            db,
+            org_id=str(ticket.org_id),
+            type_="support_answered",
+            title="문의 답변이 등록되었습니다",
+            message="남기신 문의에 대해서 답변이 달렸습니다.",
+            action_url="/inquiries",
+            resource_type="support_inquiry",
+            resource_id=str(ticket.id),
+            dedupe_resource=True,
+        )
     db.commit()
     
     try:
