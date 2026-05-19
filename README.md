@@ -54,7 +54,7 @@
     <td style="border: 1px solid #ddd; padding: 12px 10px; color: #555; vertical-align: top;">
           <div style="font-size: 10px; text-align: left; line-height: 1.5;">
               - 프로젝트 총괄 및 기획<br>
-              - RunPod/GPU 인프라 기반 베이스 모델 파인튜닝 수행
+              - RunPod/GPU 인프라 기반 베이스 모델 파인튜닝 수행<br>
               - vLLM 추론 엔진 최적화<br>
               - 소방 에이전트 설계 및 구현<br>
           </div>
