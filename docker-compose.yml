@@ -13,18 +13,22 @@ services:
 
   user:
     build:
-      context: ./frontend/user
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/user/Dockerfile
     container_name: cadence-user
     env_file:
       - ./frontend/user/.env
     ports:
       - "3000:3000"
+    depends_on:
+      - backend
 
   admin:
     build:
-      context: ./frontend/admin
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/admin/Dockerfile
     container_name: cadence-admin
     ports:
       - "3001:3001"
+    depends_on:
+      - backend
