@@ -76,18 +76,20 @@
     </td>
     <td style="border: 1px solid #ddd; padding: 12px 10px; color: #555; vertical-align: top;">
           <div style="font-size: 10px; text-align: left; line-height: 1.5;">
-              - C# ↔ Python Interop 설계<br>
               - 전기 에이전트 설계<br>
               - DB 관리 및 설계
               - AutoCAD UI/UX/Plugin 설계 및 구현<br>
+              - [WEB] Docker & AWS EC2 배포<br>
+              - C# ↔ Python Interop 설계<br>
           </div>
     </td>
     <td style="border: 1px solid #ddd; padding: 12px 10px; color: #555; vertical-align: top;">
           <div style="font-size: 10px; text-align: left; line-height: 1.5;">
+              - 배관 에이전트 설계<br>
               - Docker & AWS 배포<br>
               - langfuse 설계 및 구현<br>
+              - KPI 설계 및 구현<br>
               - WEB 백엔드 연동
-              - 배관 에이전트 설계
           </div>
     </td>
   </tr>
@@ -245,113 +247,3 @@ WEB은 React 기반의 관리자 대시보드로, Backend API와 연동하여 �
 ```
 
 <br />
-
-## 9. 시작하기
-
-### 9.1 저장소 복제
-
-```bash
-git clone https://github.com/jooooww/SKN23-FINAL-2TEAM_WEB.git
-cd SKN23-FINAL-2TEAM_WEB
-```
-
-### 9.2 의존성 설치
-
-#### Frontend - 기업 관리자 페이지
-
-```bash
-cd frontend/user
-npm install
-```
-
-#### Frontend - 시스템 관리자 페이지
-
-```bash
-cd frontend/admin
-npm install
-```
-
-#### Backend
-
-```bash
-cd backend
-pip install -r requirements.txt
-```
-
-<br />
-
-### 9.3 개발 서버 실행
-
-#### Terminal 1 - 기업 관리자 페이지
-
-```bash
-cd frontend/user
-npm run dev
-```
-
-#### Terminal 2 - 시스템 관리자 페이지
-
-```bash
-cd frontend/admin
-npm run dev
-```
-
-#### Terminal 3 - Backend
-
-```bash
-cd backend
-uvicorn app:app --reload --port 8000
-```
-
-<br />
-<br />
-
-## 10. 환경 변수
-
-### 10.1 프로젝트 최상위 `.env`
-
-환경 변수는 하위 폴더별로 나누지 않고 프로젝트 최상위 `.env` 파일에 한 번에 설정합니다.
-
-예시는 `.env.example` 파일을 참고합니다.
-
-```bash
-VITE_API_BASE_URL=http://localhost:8000/api/v1
-VITE_TOSS_CLIENT_KEY=test_ck_...
-
-DB_USER=postgres
-DB_PASSWORD=12341234
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=postgres
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-ADMIN_PIN=your_admin_pin
-SECRET_KEY=your_secret_key
-
-TOSS_SECRET_KEY=test_sk_...
-NTS_API_KEY=your_nts_key
-
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
-AWS_REGION=ap-northeast-2
-AWS_S3_BUCKET_NAME=your_bucket_name
-
-SENDER_EMAIL=your_email@gmail.com
-APP_PASSWORD=your_app_password
-```
-
-| 변수명 | 설명 |
-|---|---|
-| `VITE_API_BASE_URL` | 프론트엔드에서 호출할 백엔드 API 서버의 기본 주소 |
-| `VITE_TOSS_CLIENT_KEY` | 토스페이먼츠 결제창 호출 시 클라이언트 단에서 사용하는 공개 키 |
-| `DB_USER` / `DB_PASSWORD` / `DB_HOST` / `DB_PORT` / `DB_NAME` | PostgreSQL 데이터베이스 접속 정보 |
-| `REDIS_HOST` / `REDIS_PORT` | 캐싱 및 세션 관리를 위한 Redis 서버 접속 정보 |
-| `ADMIN_PIN` | 시스템 관리자 페이지 진입을 위한 4자리 보안 인증 번호 |
-| `SECRET_KEY` | 사용자 인증 토큰(JWT) 생성 및 검증을 위한 비밀 키 |
-| `TOSS_SECRET_KEY` | 토스페이먼츠 결제 승인 API 호출 시 사용하는 서버 전용 비밀 키 |
-| `NTS_API_KEY` | 국세청 사업자등록 진위확인 API 서비스 키 (공공데이터포털) |
-| `AWS_ACCESS_KEY_ID` / `SECRET` | AWS S3 서비스 접근을 위한 인증 키 |
-| `AWS_REGION` | AWS S3 버킷 리전 (예: ap-northeast-2) |
-| `AWS_S3_BUCKET_NAME` | 사업자등록증 및 플러그인 파일을 저장하는 S3 버킷 명 |
-| `SENDER_EMAIL` / `APP_PASSWORD` | 메일 발송용 Gmail 계정 및 앱 비밀번호 |
