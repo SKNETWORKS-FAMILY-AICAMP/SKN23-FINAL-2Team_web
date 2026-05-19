@@ -55,7 +55,7 @@
           <div style="font-size: 10px; text-align: left; line-height: 1.5;">
               - 프로젝트 총괄 및 기획<br>
               - vLLM 추론 엔진 최적화<br>
-              - 소방 에이전트 설계<br>
+              - 소방 에이전트 설계 및 구현<br>
           </div>
     </td>
     <td style="border: 1px solid #ddd; padding: 12px 10px; color: #555; vertical-align: top;">
@@ -71,7 +71,6 @@
               - 초기 소방 에이전트 설계<br>
               - KPI 지표 수정 및 추가<br>
               - 서버 상태 확인 API<br>
-              - 리포트 작성 다운로드<br>
               - 산출물 작성<br>
           </div>
     </td>
@@ -79,13 +78,15 @@
           <div style="font-size: 10px; text-align: left; line-height: 1.5;">
               - C# ↔ Python Interop 설계<br>
               - 전기 에이전트 설계<br>
+              - DB 관리 및 설계
               - AutoCAD UI/UX/Plugin 설계 및 구현<br>
           </div>
     </td>
     <td style="border: 1px solid #ddd; padding: 12px 10px; color: #555; vertical-align: top;">
           <div style="font-size: 10px; text-align: left; line-height: 1.5;">
-              - AWS 클라우드 인프라 설계<br>
               - Docker & AWS 배포<br>
+              - langfuse 설계 및 구현<br>
+              - WEB 백엔드 연동
               - 배관 에이전트 설계
           </div>
     </td>
