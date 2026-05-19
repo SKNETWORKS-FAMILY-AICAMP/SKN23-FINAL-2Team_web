@@ -77,7 +77,7 @@
     <td style="border: 1px solid #ddd; padding: 12px 10px; color: #555; vertical-align: top;">
           <div style="font-size: 10px; text-align: left; line-height: 1.5;">
               - 전기 에이전트 설계<br>
-              - DB 관리 및 설계
+              - DB 관리 및 설계<br>
               - AutoCAD UI/UX/Plugin 설계 및 구현<br>
               - [WEB] Docker & AWS EC2 배포<br>
               - C# ↔ Python Interop 설계<br>
